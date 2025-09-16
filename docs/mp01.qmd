@@ -1,0 +1,8 @@
+---
+title: "Mini Project #01"
+format: html
+---
+
+#How Many Different Countries Does Netflix Operate In?
+
+Hello world, Quarto is working!

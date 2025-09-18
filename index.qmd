@@ -1,23 +1,38 @@
 ---
-title: Tanmay Sharma - Data Science Portfolio
+
+title: "Tanmay Sharma - Data Science Portfolio"
+format: html
+
 ---
-```{r}
+
+# Welcome 👋
+
+Hi, I’m **Tanmay Sharma**, a Master’s student at [Baruch College](https://zicklin.baruch.cuny.cuny.edu/).\
+I am passionate about turning data into actionable insights. My work spans data analysis, visualization, and predictive modeling, helping uncover patterns and drive smarter decisions. I enjoy exploring real-world datasets, building interactive tools, and communicating findings in a clear, impactful way.
+
+You can also connect with me on [LinkedIn](https://www.linkedin.com/in/tanmay-sharma-3146bb160).
+
+------------------------------------------------------------------------
+
+## Interactive Map {r}
+
 #| echo: false
 #| message: false
 #| warning: false
 
-if(!require("leaflet")){
-    options(repos=c(CRAN="https://cloud.r-project.org"))
-    install.packages("leaflet")
-    stopifnot(require("leaflet"))
+if(!require("leaflet")){ 
+  options(repos=c(CRAN="https://cloud.r-project.org")) 
+  install.packages("leaflet") 
+  stopifnot(require("leaflet")) 
 }
 
 baruch_longitude <- -73.98333
-baruch_latitude  <- +40.75028
+baruch_latitude <- 40.75028
 
 leaflet() |>
   addTiles() |>
   setView(baruch_longitude, baruch_latitude, zoom=17) |>
   addPopups(baruch_longitude, baruch_latitude, 
             "I am a Master's student at <b>Baruch College</b>!")
-```
+
+

@@ -1,6 +1,12 @@
 ---
 title: "Tanmay Sharma - Data Science Portfolio"
 ---
+<style>
+.main-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+</style>
 
 # Welcome 👋
 
@@ -39,49 +45,65 @@ leaflet() |>
 ## Want to test your data science knowledge? Try this quiz!
 
 ---
-title: "Data Science Quiz"
-format:
-  learnr::tutorial:    # <-- enables interactive quiz
-    progressive: false
-runtime: shiny_prerendered
----
+<div style="margin:20px; padding:20px; border:2px solid #ccc; border-radius:10px; max-width:500px;">
+  <h3>Data Science Quiz</h3>
+  <p id="question"></p>
+  <div id="options"></div>
+  <button onclick="nextQuestion()">Next</button>
+  <p id="feedback" style="font-weight:bold;"></p>
+</div>
 
-```{r setup, include=FALSE}
-library(learnr)
-```
+<script>
+  const quiz = [
+    {
+      q: "Which of these is a supervised learning algorithm?",
+      options: ["K-means", "Linear Regression", "PCA"],
+      answer: "Linear Regression"
+    },
+    {
+      q: "What does 'overfitting' mean?",
+      options: [
+        "Model performs well on training but poorly on test data",
+        "Model generalizes perfectly",
+        "Model has too little variance"
+      ],
+      answer: "Model performs well on training but poorly on test data"
+    },
+    {
+      q: "Which library is commonly used for data visualization in R?",
+      options: ["NumPy", "ggplot2", "scikit-learn"],
+      answer: "ggplot2"
+    }
+  ];
 
-## Mini Data Science Quiz
+  let current = 0;
 
-### Question 1
-```{r}
-quiz(
-  question("Which of these is **NOT** a supervised learning algorithm?",
-           answer("Linear regression"),
-           answer("K-means clustering", correct = TRUE),
-           answer("Random forest"),
-           answer("Logistic regression"),
-           allow_retry = TRUE)
-)
-```
+  function loadQuestion() {
+    document.getElementById("feedback").innerHTML = "";
+    const q = quiz[current];
+    document.getElementById("question").innerText = q.q;
+    const optionsDiv = document.getElementById("options");
+    optionsDiv.innerHTML = "";
+    q.options.forEach(opt => {
+      const btn = document.createElement("button");
+      btn.innerText = opt;
+      btn.style.margin = "5px";
+      btn.onclick = () => {
+        if(opt === q.answer){
+          document.getElementById("feedback").innerHTML = "✅ Correct!";
+        } else {
+          document.getElementById("feedback").innerHTML = "❌ Wrong. Try again.";
+        }
+      };
+      optionsDiv.appendChild(btn);
+    });
+  }
 
-### Question 2
-```{r}
-quiz(
-  question("What does the R function `set.seed()` do?",
-           answer("It improves model accuracy"),
-           answer("It ensures reproducible random results", correct = TRUE),
-           answer("It normalizes the data"),
-           allow_retry = TRUE)
-)
-```
+  function nextQuestion() {
+    current = (current + 1) % quiz.length;
+    loadQuestion();
+  }
 
-### Question 3
-```{r}
-quiz(
-  question("Which of the following best describes **tidy data**?",
-           answer("Each column is a variable and each row is an observation", correct = TRUE),
-           answer("All numeric values are standardized"),
-           answer("Data stored in a single CSV file"),
-           allow_retry = TRUE)
-)
-```
+  // load first question on page load
+  loadQuestion();
+</script>

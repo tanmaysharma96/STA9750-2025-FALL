@@ -5,7 +5,7 @@ format: html
 
 # Welcome 👋
 
-Hi, I’m **Tanmay Sharma**, a Master’s student at [Baruch College](https://zicklin.baruch.cuny.cuny.edu/).  
+Hi, I’m **Tanmay Sharma**, a Master’s student at [Baruch College](https://zicklin.baruch.cuny.edu/).  
 I am passionate about turning data into actionable insights. My work spans data analysis, visualization, and predictive modeling, helping uncover patterns and drive smarter decisions. I enjoy exploring real-world datasets, building interactive tools, and communicating findings in a clear, impactful way.
 
 You can also connect with me on [LinkedIn](https://www.linkedin.com/in/tanmay-sharma-3146bb160).

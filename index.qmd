@@ -38,10 +38,7 @@ leaflet() |>
 
 ## Want to test your data science knowledge? Try this quiz!
 
-# ==========================
-# Data Science Quiz in R
-# ==========================
-
+```{r}
 cat("Welcome to the Data Science Quiz! 🎯\n")
 cat("Answer the following questions. Type the letter (a, b, c, or d) and press Enter.\n\n")
 
@@ -108,4 +105,4 @@ if (score == length(questions)) {
 } else {
   cat("Keep learning—data science is a journey! 📚\n")
 }
-
+```

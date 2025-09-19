@@ -38,71 +38,50 @@ leaflet() |>
 
 ## Want to test your data science knowledge? Try this quiz!
 
+---
+title: "Data Science Quiz"
+format:
+  learnr::tutorial:    # <-- enables interactive quiz
+    progressive: false
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+```
+
+## Mini Data Science Quiz
+
+### Question 1
 ```{r}
-cat("Welcome to the Data Science Quiz! 🎯\n")
-cat("Answer the following questions. Type the letter (a, b, c, or d) and press Enter.\n\n")
-
-# Questions and answers
-questions <- list(
-  list(
-    q = "1) Which of these is NOT a supervised learning algorithm?",
-    options = c("a) Linear Regression", "b) K-Means Clustering", 
-                "c) Decision Tree", "d) Random Forest"),
-    answer = "b"
-  ),
-  list(
-    q = "2) What does the 'tidyverse' primarily help with in R?",
-    options = c("a) Machine learning", "b) Web scraping", 
-                "c) Data manipulation & visualization", "d) Creating R packages"),
-    answer = "c"
-  ),
-  list(
-    q = "3) In a dataset, what does a 'factor' represent in R?",
-    options = c("a) A continuous numeric variable",
-                "b) A categorical variable",
-                "c) A missing value",
-                "d) A probability distribution"),
-    answer = "b"
-  ),
-  list(
-    q = "4) Which metric is best for evaluating a classification model with imbalanced classes?",
-    options = c("a) Accuracy", "b) Precision", "c) Recall", "d) F1 Score"),
-    answer = "d"
-  ),
-  list(
-    q = "5) What is the purpose of cross-validation?",
-    options = c("a) To create more training data",
-                "b) To evaluate model performance on unseen data",
-                "c) To balance the dataset",
-                "d) To speed up training"),
-    answer = "b"
-  )
+quiz(
+  question("Which of these is **NOT** a supervised learning algorithm?",
+           answer("Linear regression"),
+           answer("K-means clustering", correct = TRUE),
+           answer("Random forest"),
+           answer("Logistic regression"),
+           allow_retry = TRUE)
 )
+```
 
-score <- 0
+### Question 2
+```{r}
+quiz(
+  question("What does the R function `set.seed()` do?",
+           answer("It improves model accuracy"),
+           answer("It ensures reproducible random results", correct = TRUE),
+           answer("It normalizes the data"),
+           allow_retry = TRUE)
+)
+```
 
-# Quiz loop
-for (i in seq_along(questions)) {
-  cat("\n", questions[[i]]$q, "\n")
-  cat(paste(questions[[i]]$options, collapse = "\n"), "\n")
-  ans <- tolower(trimws(readline("Your answer: ")))
-  
-  if (ans == questions[[i]]$answer) {
-    cat("✅ Correct!\n")
-    score <- score + 1
-  } else {
-    cat("❌ Incorrect. The correct answer was",
-        toupper(questions[[i]]$answer), "\n")
-  }
-}
-
-cat("\n🎉 Quiz complete! Your score:", score, "out of", length(questions), "\n")
-
-if (score == length(questions)) {
-  cat("Excellent! You’re a Data Science star! 🌟\n")
-} else if (score >= 3) {
-  cat("Good job! Keep practicing your data skills. 💪\n")
-} else {
-  cat("Keep learning—data science is a journey! 📚\n")
-}
+### Question 3
+```{r}
+quiz(
+  question("Which of the following best describes **tidy data**?",
+           answer("Each column is a variable and each row is an observation", correct = TRUE),
+           answer("All numeric values are standardized"),
+           answer("Data stored in a single CSV file"),
+           allow_retry = TRUE)
+)
 ```

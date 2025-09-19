@@ -1,12 +1,7 @@
 ---
 title: "Tanmay Sharma - Data Science Portfolio"
+format: html
 ---
-<style>
-.main-container {
-  max-width: 900px;
-  margin: 0 auto;
-}
-</style>
 
 # Welcome 👋
 

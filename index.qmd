@@ -2,6 +2,7 @@
 title: "Tanmay Sharma - Data Science Portfolio"
 format: html
 ---
+
 <img src="tanmay.JPG" alt="Tanmay Sharma" 
      style="float:right; width:180px; margin:0 0 20px 20px; border-radius:15px;" />
 
@@ -26,11 +27,13 @@ P.S. Scroll down if you feel like testing your knowledge!
 #| fig.height: 6     # <-- add a height in inches
 #| fig.width: 8
 
-if(!require("leaflet")){
-  options(repos=c(CRAN="https://cloud.r-project.org"))
-  install.packages("leaflet")
-  stopifnot(require("leaflet"))
-}
+#if(!require("leaflet")){
+#  options(repos=c(CRAN="https://cloud.r-project.org"))
+#  install.packages("leaflet")
+#  stopifnot(require("leaflet"))
+#}
+
+library(leaflet) #take this out if map still doesnt work
 
 baruch_longitude <- -73.98333
 baruch_latitude  <- 40.75028

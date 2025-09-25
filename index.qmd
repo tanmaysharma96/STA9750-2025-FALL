@@ -22,6 +22,7 @@ P.S. Scroll down if you feel like testing your knowledge!
 #| echo: false
 #| message: false
 #| warning: false
+#| include: true
 #| fig.height: 6     # <-- add a height in inches
 #| fig.width: 8
 

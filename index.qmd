@@ -1,12 +1,7 @@
-```qmd
 ---
 title: "Tanmay Sharma - Data Science Portfolio"
 format: html
 ---
-```r{} //
-#| include: false
-1+1
-
 <img src="tanmay.JPG" alt="Tanmay Sharma" 
      style="float:right; width:180px; margin:0 0 20px 20px; border-radius:15px;" />
 

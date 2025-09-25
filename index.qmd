@@ -2,7 +2,7 @@
 title: "Tanmay Sharma - Data Science Portfolio"
 format: html
 ---
-<img src="tanmay.jpg.JPG" alt="Tanmay Sharma" 
+<img src="tanmay.JPG" alt="Tanmay Sharma" 
      style="float:right; width:180px; margin:0 0 20px 20px; border-radius:15px;" />
 
 # Welcome 👋

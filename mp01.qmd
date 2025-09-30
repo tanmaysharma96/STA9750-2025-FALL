@@ -72,4 +72,16 @@ GLOBAL_TOP_10 |>
   head(n=20) |>
   datatable(options=list(searching=FALSE, info=FALSE)) |>
   formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
+
+library(dplyr)
+
+num_countries <- COUNTRY_TOP_10 %>%
+  distinct(country_name) %>%
+  nrow()
+
+#1. How many countries does Netflix operate in?
+
+cat("Netflix operates in", num_countries, "countries.\n")
 ```
+
+Netflix operates in `r num_countries`

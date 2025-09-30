@@ -39,4 +39,28 @@ COUNTRY_TOP_10 <- read_tsv(
 )
 
 glimpse(COUNTRY_TOP_10)
+
+library(DT)
+GLOBAL_TOP_10 |> 
+    head(n=20) |>
+    datatable(options=list(searching=FALSE, info=FALSE))
+
+library(stringr)
+format_titles <- function(df){
+    colnames(df) <- str_replace_all(colnames(df), "_", " ") |> str_to_title()
+    df
+}
+
+GLOBAL_TOP_10 |> 
+    format_titles() |>
+    head(n=20) |>
+    datatable(options=list(searching=FALSE, info=FALSE)) |>
+    formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
+
+GLOBAL_TOP_10 |> 
+    select(-season_title) |>
+    format_titles() |>
+    head(n=20) |>
+    datatable(options=list(searching=FALSE, info=FALSE)) |>
+    formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
 ```

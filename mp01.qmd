@@ -1,0 +1,20 @@
+---
+title: Mini Project 01 - Netflix Analysis
+format: html
+---
+
+```{r}
+# Setup: load libraries
+if(!require("tidyverse")) install.packages("tidyverse")
+library(readr)
+library(dplyr)
+
+# Define file paths (example)
+GLOBAL_TOP_10_FILENAME <- file.path("data","mp01","global_top10_alltime.csv")
+
+# Read in data
+GLOBAL_TOP_10 <- read_tsv(GLOBAL_TOP_10_FILENAME)
+
+# Peek at data
+glimpse(GLOBAL_TOP_10)
+```

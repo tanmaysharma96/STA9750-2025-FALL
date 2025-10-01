@@ -31,14 +31,10 @@ GLOBAL_TOP_10 <- read_tsv(GLOBAL_TOP_10_FILENAME)
 GLOBAL_TOP_10 <- GLOBAL_TOP_10 |>
   mutate(season_title = if_else(season_title == "N/A", NA_character_, season_title))
 
-glimpse(GLOBAL_TOP_10)
-
 COUNTRY_TOP_10 <- read_tsv(
   COUNTRY_TOP_10_FILENAME,
   na = "N/A"
 )
-
-glimpse(COUNTRY_TOP_10)
 
 library(DT)
 GLOBAL_TOP_10 |> 
@@ -50,6 +46,15 @@ format_titles <- function(df){
     colnames(df) <- str_replace_all(colnames(df), "_", " ") |> str_to_title()
     df
 }
+
+# THIS IS THE NEW CHUNK; Clean country table column names for Question 5 and interactive tables
+COUNTRY_TOP_10_CLEAN <- COUNTRY_TOP_10 %>% 
+  format_titles()
+
+colnames(COUNTRY_TOP_10_CLEAN)[1] <- "Country"
+colnames(COUNTRY_TOP_10_CLEAN)[colnames(COUNTRY_TOP_10_CLEAN) == "Show Title"] <- "Show_Title"
+colnames(COUNTRY_TOP_10_CLEAN)[colnames(COUNTRY_TOP_10_CLEAN) == "Cumulative Weeks In Top 10"] <- "Cumulative_weeks_In_Top_10"
+#NEW CHUNK ENDS HERE
 
 GLOBAL_TOP_10 |> 
     format_titles() |>
@@ -75,13 +80,95 @@ GLOBAL_TOP_10 |>
 
 library(dplyr)
 
+#Setting variable num_countries for Question 1
 num_countries <- COUNTRY_TOP_10 %>%
   distinct(country_name) %>%
   nrow()
 
-#1. How many countries does Netflix operate in?
+#Non english top film for Question 2
+non_english_top <- GLOBAL_TOP_10 %>%
+  mutate(Language = str_extract(category, "\\((.*)\\)")) %>%
+  mutate(Language = str_replace_all(Language, "[()]", "")) %>%
+  filter(str_detect(category, "Film"), Language != "English") %>%
+  group_by(show_title) %>%
+  summarise(total_weeks = sum(cumulative_weeks_in_top_10, na.rm = TRUE)) %>%
+  arrange(desc(total_weeks)) %>%
+  slice(1)
 
-cat("Netflix operates in", num_countries, "countries.\n")
+#Longest film and runtime for Question 3
+longest_film <- GLOBAL_TOP_10 %>%
+  filter(str_detect(category, "Film")) %>%
+  arrange(desc(runtime)) %>%
+  slice(1)
+
+#Program (per category) with most total hours of global viewership for Question 4
+top_hours <-GLOBAL_TOP_10 %>%
+  group_by(category, show_title) %>%
+  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE), .groups = "drop") %>%
+  group_by(category) %>%
+  slice_max(total_hours, n=1)
+
+#Creating variable for longest run in top 10 for country for Question 5
+longest_country_run <- COUNTRY_TOP_10_CLEAN %>% 
+  filter(str_detect(Category, "TV")) %>% #match both English & Non-English TV
+  group_by(Show_Title, Country) %>%
+  summarise(run_weeks = sum(Cumulative_weeks_In_Top_10, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(run_weeks)) %>%
+  slice(1)
+
+#Creating variable for Country with < 200 weeks of history for Question 6
+country_history <- COUNTRY_TOP_10_CLEAN %>%
+  group_by(Country) %>%
+  summarise(
+    total_weeks = n_distinct(Week),
+    last_week = max(as.Date(Week), na.rm = TRUE)
+  ) %>%
+  filter(total_weeks < 200)
+
+#Creating variable for total viewership of Squid Game for Question 7
+squid_game_hours <- GLOBAL_TOP_10 %>%
+  filter(str_detect(show_title, "Squid Game")) %>%
+  summarise(total_hours = sum(weekly_hours_viewed, na.rm = TRUE))
+
+#Creating variable for Red Notice Views for Question 8
+red_notice_views <- GLOBAL_TOP_10 %>%
+  filter(str_detect(show_title, "Red Notice"), year(week) == 2021) %>%
+  mutate(approx_views = weekly_hours_viewed / (1+58/60)) %>%
+  summarise(total_views = sum(approx_views, na.rm = TRUE))
 ```
 
-Netflix operates in `r num_countries`
+1. How many countries does Netflix operate in?
+
+Netflix operates in `r num_countries` countries
+
+2. Which non-English-language film has spent the most cumulative weeks in the global top 10?
+
+The non-English-language film with the most cumulative weeks in global Top 10 is `r non_english_top$show_title` with `r non_english_top$total_weeks` weeks
+
+3. What is the longest film (English or non-English) to have ever appeared in the Netflix global Top 10? How long is it in minutes?
+
+The longest film in the Global Top 10 is `r longest_film$show_title` with a runtime of `r round(longest_film$runtime*60)` minutes
+
+4. For each of the four categories, what program has the most total hours of global viewership?
+
+Programs with the most total hours per category:
+
+`r DT::datatable(top_hours, options = list(searching=FALSE, info=FALSE))`
+
+5. Which TV show had the longest run in a country's Top 10? How long was this run and in what country did it occur?
+
+The TV show with the longest run in a country is `r longest_country_run$Show_Title` in `r longest_country_run$Country` with `r longest_country_run$run_weeks` weeks.
+
+6. Netflix provides over 200 weeks of service history for all but one country in our data set. Which country is this and when did Netflix cease operations in that country?
+
+The country with fewer than 200 weeks of history is
+`r country_history$Country`, with last recorded week on `r country_history$last_week`.
+
+7. What is the total viewership of the TV show Squid Game? Note that there are three seasons total and we are looking for the total number of hours watched across all seasons.
+
+Total viewership of Squid Game across all seasons is `r squid_game_hours$total_hours` hours.
+
+8. Approximate number of views of Red Notice in 2021 is
+`r round(red_notice_views$total_views)` views
+
+

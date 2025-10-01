@@ -135,6 +135,26 @@ red_notice_views <- GLOBAL_TOP_10 %>%
   filter(str_detect(show_title, "Red Notice"), year(week) == 2021) %>%
   mutate(approx_views = weekly_hours_viewed / (1+58/60)) %>%
   summarise(total_views = sum(approx_views, na.rm = TRUE))
+
+#Films that reached #1 in US after debuting lower for Question 9
+us_films <- COUNTRY_TOP_10_CLEAN %>%
+  filter(Country == "United States", str_detect(Category, "Film"))
+
+# Getting debut rank for each film and whether it later hit #1
+film_climbers <- us_films %>%
+  group_by(Show_Title) %>%
+  summarise(
+    debut_week = min(Week, na.rm = TRUE),
+    debut_rank = `Weekly Rank`[which.min(Week)],
+    ever_number1 = any(`Weekly Rank` == 1, na.rm = TRUE),
+    last_number1_week = if (any(`Weekly Rank` == 1, na.rm = TRUE)) {
+      max(Week[`Weekly Rank` == 1], na.rm = TRUE)
+    } else {
+      as.Date(NA)
+    },
+    .groups = "drop"
+  ) %>%
+  filter(debut_rank != 1 & ever_number1 == TRUE)
 ```
 
 1. How many countries does Netflix operate in?
@@ -171,4 +191,8 @@ Total viewership of Squid Game across all seasons is `r squid_game_hours$total_h
 8. Approximate number of views of Red Notice in 2021 is
 `r round(red_notice_views$total_views)` views
 
+9. How many Films reached Number 1 in the US but did not originally debut there? That is, find films that first appeared on the Top 10 chart at, e.g., Number 4 but then became more popular and eventually hit Number 1? What is the most recent film to pull this off?
+
+A total of `r nrow(film_climbers)` films reached **#1 in the US** after debuting at a lower rank. The most recent film to do this was `r film_climbers$Show_Title[which.max(film_climbers$last_number1_week)]`,
+which hit #1 in the week of `r max(film_climbers$last_number1_week, na.rm = TRUE)`.
 

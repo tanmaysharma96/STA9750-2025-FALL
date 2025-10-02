@@ -374,3 +374,73 @@ rrr_weeks_friendly <- format(rrr_weeks, big.mark = ",")
 The top Hindi-language program, RRR (Hindi), spent `r rrr_weeks_friendly` cumulative weeks in the Top 10 in India alone. Combined, the top 5 Hindi programs have accumulated over `r total_weeks_top5_friendly` cumulative weeks in the Top 10. Assuming an average viewer watches one program per week, this implies an estimated Netflix audience of approximately `r estimated_customers_friendly` viewers in India. Importantly, several of these programs did not chart in the US, demonstrating Netflix’s ability to produce region-specific hits. Long-term growth trends suggest India’s audience for Hindi-language content will continue expanding, providing Netflix with significant opportunities for subscriber acquisition, retention, and cultural impact.
 
 **Conclusion:** Netflix’s Hindi-language catalog is proving to be a powerful driver of engagement in India, positioning the platform for continued growth in one of the world’s largest and fastest-growing media markets.
+
+## Press Release 3: Global TV Dominance
+
+**Serialized TV Leads the Way: Netflix’s Global Audience Shows Strong Preference for TV Programming**
+
+Netflix continues to dominate worldwide entertainment, with audiences showing a marked preference for serialized TV content. Across multiple countries, TV shows consistently top the platform’s weekly rankings, reflecting global engagement trends and opportunities for content investment.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(scales)
+
+# Step 1: Prepare combined global data
+global_content <- COUNTRY_TOP_10_CLEAN %>%
+  filter(!is.na(Week)) %>%  # remove missing weeks
+  left_join(
+    GLOBAL_TOP_10 %>% select(show_title, category) %>% distinct(),
+    by = c("Show_Title" = "show_title"),
+    relationship = "many-to-many"
+  )
+
+# Step 2: Compute cumulative weeks in Top 10 by broad genre
+genre_trends <- global_content %>%
+  group_by(category) %>%
+  summarise(
+    total_weeks = sum(Cumulative_weeks_In_Top_10, na.rm = TRUE),
+    n_countries = n_distinct(Country),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_weeks))
+
+# Step 3: Highlight top genre
+genre_trends$highlight <- ifelse(genre_trends$total_weeks == max(genre_trends$total_weeks),
+                                 "Top Genre", "Other")
+genre_trends$highlight <- factor(genre_trends$highlight, levels = c("Top Genre", "Other"))
+
+# Step 4: Plot top genres globally
+ggplot(genre_trends, aes(x = reorder(category, total_weeks),
+                         y = total_weeks,
+                         fill = highlight)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c("Top Genre" = "red", "Other" = "grey70")) +
+  scale_y_continuous(labels = comma) +  # human-readable y-axis
+  labs(
+    title = "Top Content Types Globally on Netflix",
+    subtitle = "Cumulative Weeks in Top 10 by Category",
+    x = "Category",
+    y = "Cumulative Weeks in Top 10",
+    fill = "Highlight"
+  ) +
+  theme_minimal(base_size = 12)
+
+# Step 5: Compute friendly numbers for markdown
+top_category <- genre_trends$category[genre_trends$highlight == "Top Genre"]
+total_weeks_top <- genre_trends$total_weeks[genre_trends$highlight == "Top Genre"]
+countries_top <- genre_trends$n_countries[genre_trends$highlight == "Top Genre"]
+
+total_weeks_top_friendly <- format(total_weeks_top, big.mark = ",")
+```
+## Analysis and Growth Insights
+
+Netflix’s global audience shows a strong preference for the top content type:
+
+`r top_category` spent `r total_weeks_top_friendly` cumulative weeks in the Top 10 across `r countries_top` countries.
+
+This demonstrates Netflix’s ability to create globally appealing content. While Films and Non-English shows remain strong in regional markets, serialized TV content consistently dominates global engagement, indicating that investing in English-language serialized TV remains a key driver of worldwide viewership.
+
+Long-term growth trends suggest that continuing to focus on serialized TV with international appeal will maximize Netflix’s audience retention, engagement, and expansion opportunities across diverse markets.

@@ -230,3 +230,64 @@ which hit #1 in the week of `r max(film_climbers$last_number1_week, na.rm = TRUE
 The TV show/season that hit the Top 10 in the most countries during its debut week is
 `r tv_debut_counts$Show_Title`, which charted in `r tv_debut_counts$num_countries` countries.
 
+## Press Release 1 : Stranger Things Season 5
+
+**Season 5 of Stranger Things Obliterates Records as Global Audiences Return back to Hawkins**
+
+Netflix is pleased to announce the return of Stranger Things with its' much anticipated Season 5, establishing the show as one of the platform's most notable franchises. In the week that it debuted, the show charted in **over 90 countries**, claiming the #1 spot in overall categories as well as **English TV**. Through its run to the top, *Stranger Things* has amassed to over **billions of hours viewed**, with its latest season garnering over **300 million hours** in the first month following release. The show holds many different records including the **widest TV debut across countries**, a notable feat showcasing its global cultural impact. As the town of Hawkins enters its last chapter, fans across the globe continue to demonstrate that Stranger Things is more than just a show - it's a phenomenon.
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# Step 1: Filter TV shows from COUNTRY_TOP_10_CLEAN
+tv_country <- COUNTRY_TOP_10_CLEAN %>%
+  filter(Category == "TV", !is.na(Week))  # only valid weeks
+
+# Step 2: Get category/language from GLOBAL_TOP_10 safely
+global_tv_cat <- GLOBAL_TOP_10 %>%
+  filter(str_detect(category, "TV")) %>%      # TV only
+  select(show_title, category) %>%
+  distinct(show_title, category)             # avoid many-to-many join
+
+# Step 3: Join language info
+tv_country <- tv_country %>%
+  left_join(global_tv_cat, by = c("Show_Title" = "show_title"))
+
+# Step 4: Keep only English TV
+tv_country_eng <- tv_country %>%
+  filter(category == "TV (English)")
+
+# Step 5: Compute debut week per show
+tv_debut_english <- tv_country_eng %>%
+  group_by(Show_Title) %>%
+  summarise(debut_week = min(Week, na.rm = TRUE), .groups = "drop")
+
+# Step 6: Count number of countries per show at debut
+tv_debut_counts_eng <- tv_country_eng %>%
+  inner_join(tv_debut_english, by = c("Show_Title", "Week" = "debut_week")) %>%
+  group_by(Show_Title, Week) %>%
+  summarise(num_countries = n_distinct(Country), .groups = "drop") %>%
+  arrange(desc(num_countries)) %>%
+  slice_head(n = 10)  # top 10
+
+# Step 7: Highlight Stranger Things
+tv_debut_counts_eng$highlight <- ifelse(tv_debut_counts_eng$Show_Title == "Stranger Things",
+                                        "Stranger Things", "Other")
+
+# Step 8: Plot
+ggplot(tv_debut_counts_eng, aes(x = reorder(Show_Title, num_countries),
+                               y = num_countries, fill = highlight)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c("Stranger Things" = "red", "Other" = "grey70")) +
+  labs(
+    title = "Top 10 Widest TV Debuts on Netflix (English TV)",
+    subtitle = "Number of countries appearing in Top 10 during debut week",
+    x = "TV Show",
+    y = "Countries in Debut Week",
+    fill = "Show"
+  ) +
+  theme_minimal(base_size = 12)
+```

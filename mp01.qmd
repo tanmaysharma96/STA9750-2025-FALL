@@ -291,3 +291,86 @@ ggplot(tv_debut_counts_eng, aes(x = reorder(Show_Title, num_countries),
   ) +
   theme_minimal(base_size = 12)
 ```
+
+## Press Release 2: Netflix’s Commercial Success in India
+
+**Netflix Sees Rapid Growth in India with Hindi-Language Programs**
+
+Netflix’s investment in region-specific content continues to pay off, with Hindi-language films and TV shows achieving remarkable popularity across India. These hits are helping the platform reach new audiences and solidify its presence in one of the world's largest media markets.
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(stringr)
+library(ggtext)  # for element_markdown()
+
+# Step 1: Filter Hindi/non-English programs in India
+india_non_english <- COUNTRY_TOP_10_CLEAN %>%
+  filter(Country == "India", !is.na(Week)) %>%
+  left_join(
+    GLOBAL_TOP_10 %>% select(show_title, category) %>% distinct(),
+    by = c("Show_Title" = "show_title")
+  ) %>%
+  filter(str_detect(category, "Non-English")) %>%
+  group_by(Show_Title) %>%
+  summarise(total_weeks = sum(Cumulative_weeks_In_Top_10, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(total_weeks))
+
+# Step 2: Select top Hindi programs
+hindi_programs <- c("RRR (Hindi)", "The Great Indian Kapil Show", 
+                    "Sooryavanshi", "Haseen Dillruba", "Khakee: The Bihar Chapter")
+
+top_hindi <- india_non_english %>%
+  filter(Show_Title %in% hindi_programs)
+
+# Step 3: Highlight the top program
+top_hindi$highlight <- ifelse(top_hindi$total_weeks == max(top_hindi$total_weeks),
+                              "Top Program", "Other")
+top_hindi$highlight <- factor(top_hindi$highlight, levels = c("Top Program", "Other"))
+
+# Step 4: Plot top Hindi programs in India with bold y-axis labels and colored top program
+top_program <- top_hindi$Show_Title[top_hindi$highlight=="Top Program"]
+
+ggplot(top_hindi, aes(x = reorder(Show_Title, total_weeks),
+                       y = total_weeks, fill = highlight)) +
+  geom_col() +
+  coord_flip() +
+  scale_fill_manual(values = c("Top Program" = "red", "Other" = "grey70")) +
+  labs(
+    title = "Top Hindi-Language Programs on Netflix India",
+    subtitle = "Cumulative Weeks in Top 10",
+    x = "Program",
+    y = "Cumulative Weeks in Top 10",
+    fill = "Highlight"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    axis.text.y = element_markdown()
+  ) +
+  scale_x_discrete(labels = function(x) {
+    ifelse(x == top_program,
+           paste0("<span style='color:red;'><b>", x, "</b></span>"),
+           paste0("<b>", x, "</b>"))
+  })
+
+# Step 5: Estimate audience
+total_weeks_top5 <- sum(top_hindi$total_weeks)
+average_weeks_per_user <- 4   # assumption: 1 program/week per user
+estimated_customers_india <- total_weeks_top5 / average_weeks_per_user
+estimated_customers_friendly <- format(round(estimated_customers_india, 0), big.mark = ",")
+
+# Compute statistics in the code chunk
+total_weeks_top5 <- sum(top_hindi$total_weeks)
+rrr_weeks <- top_hindi$total_weeks[top_hindi$Show_Title == "RRR (Hindi)"]
+average_weeks_per_user <- 4   # assumption: 1 program/week per user
+estimated_customers_india <- total_weeks_top5 / average_weeks_per_user
+estimated_customers_friendly <- format(round(estimated_customers_india, 0), big.mark = ",")
+total_weeks_top5_friendly <- format(total_weeks_top5, big.mark = ",")
+rrr_weeks_friendly <- format(rrr_weeks, big.mark = ",")
+```
+
+**Analysis and Growth Insights:**
+
+The top Hindi-language program, RRR (Hindi), spent `r rrr_weeks_friendly` cumulative weeks in the Top 10 in India alone. Combined, the top 5 Hindi programs have accumulated over `r total_weeks_top5_friendly` cumulative weeks in the Top 10. Assuming an average viewer watches one program per week, this implies an estimated Netflix audience of approximately `r estimated_customers_friendly` viewers in India. Importantly, several of these programs did not chart in the US, demonstrating Netflix’s ability to produce region-specific hits. Long-term growth trends suggest India’s audience for Hindi-language content will continue expanding, providing Netflix with significant opportunities for subscriber acquisition, retention, and cultural impact.
+
+**Conclusion:** Netflix’s Hindi-language catalog is proving to be a powerful driver of engagement in India, positioning the platform for continued growth in one of the world’s largest and fastest-growing media markets.

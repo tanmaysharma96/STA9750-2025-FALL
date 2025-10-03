@@ -419,11 +419,11 @@ Khakee: The Bihar Chapter, the top Hindi-language program, spent `r khakee_weeks
 
 It can be seen that the Hindi-language catalog on Netflix is proving to be a significant driver of engagement across India, positioning Netflix for continued growth and success in one of the world's fastest and largest-growing media markets.
 
-## Press Release 3: Global TV Dominance
+## Press Release 3: Global TV Outperforms Films by Miles
 
-**Serialized TV Leads the Way: Netflix’s Global Audience Shows Strong Preference for TV Programming**
+**TV Shows Lead the Way: Netflix’s International Audience Demonstrates a Strong Preference for TV Shows**
 
-Netflix continues to dominate worldwide entertainment, with audiences showing a marked preference for serialized TV content. Across multiple countries, TV shows consistently top the platform’s weekly rankings, reflecting global engagement trends and opportunities for content investment.
+As shown in the graph below, Netflix seems to dominate worldwide entertainment. Audiences are showing a preference towards serialized TV content. TV shows across multiple countries are consistently making the Top 10 weekly rankings, showcasing engagement trends globally as well as opportunities for content investment.
 
 ```{r, echo=TRUE}
 #| code-fold: true
@@ -484,8 +484,8 @@ total_weeks_top_friendly <- format(total_weeks_top, big.mark = ",")
 
 Netflix’s global audience shows a strong preference for the top content type:
 
-`r top_category` spent `r total_weeks_top_friendly` cumulative weeks in the Top 10 across `r countries_top` countries.
+**`r top_category`** spent **`r total_weeks_top_friendly`** cumulative weeks in the Top 10 across **`r countries_top`** countries.
 
-This demonstrates Netflix’s ability to create globally appealing content. While Films and Non-English shows remain strong in regional markets, serialized TV content consistently dominates global engagement, indicating that investing in English-language serialized TV remains a key driver of worldwide viewership.
+One can see that Netflix has an ability to put out appealing content to international viewers. Although both English and Non-English Films perform well in regional markets, Non-English TV remains on top in terms of global engagement. This could indicate to investors and producers alike that Non-English serialized TV continues to be a key driver of viewership worldwide.
 
-Long-term growth trends suggest that continuing to focus on serialized TV with international appeal will maximize Netflix’s audience retention, engagement, and expansion opportunities across diverse markets.
+To add to this, growth trends in the longer-term suggest that focusing on serialized TV appealing to international markets can help in maximizing Netflix's audience engagement and retention, further exploiting expansion opportunities across diverse markets.

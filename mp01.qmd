@@ -69,7 +69,7 @@ format_titles <- function(df){
     df
 }
 
-# THIS IS THE NEW CHUNK; Clean country table column names for Question 5 and interactive tables
+# THIS IS THE NEW CHUNK; Cleaning country table column names for Question 5 and interactive tables
 COUNTRY_TOP_10_CLEAN <- COUNTRY_TOP_10 %>% 
   format_titles()
 
@@ -277,32 +277,32 @@ library(dplyr)
 library(ggplot2)
 library(stringr)
 
-# Step 1: Filter TV shows from COUNTRY_TOP_10_CLEAN
+# Step 1: Filtering TV shows from COUNTRY_TOP_10_CLEAN
 tv_country <- COUNTRY_TOP_10_CLEAN %>%
   filter(Category == "TV", !is.na(Week))  # only valid weeks
 
-# Step 2: Get category/language from GLOBAL_TOP_10 safely
+# Step 2: Getting category/language from GLOBAL_TOP_10 safely
 global_tv_cat <- GLOBAL_TOP_10 %>%
   filter(str_detect(category, "TV")) %>%      # TV only
   select(show_title, category) %>%
   distinct(show_title, category)             # avoid many-to-many join
 
-# Step 3: Join language info
+# Step 3: Joining language info
 tv_country <- tv_country %>%
   left_join(global_tv_cat,
             by = c("Show_Title" = "show_title"),
             relationship = "many-to-many")
 
-# Step 4: Keep only English TV
+# Step 4: Keeping only English TV
 tv_country_eng <- tv_country %>%
   filter(category == "TV (English)")
 
-# Step 5: Compute debut week per show
+# Step 5: Computing debut week per show
 tv_debut_english <- tv_country_eng %>%
   group_by(Show_Title) %>%
   summarise(debut_week = min(Week, na.rm = TRUE), .groups = "drop")
 
-# Step 6: Count number of countries per show at debut
+# Step 6: Counting number of countries per show at debut
 tv_debut_counts_eng <- tv_country_eng %>%
   inner_join(tv_debut_english, by = c("Show_Title", "Week" = "debut_week")) %>%
   group_by(Show_Title, Week) %>%
@@ -310,7 +310,7 @@ tv_debut_counts_eng <- tv_country_eng %>%
   arrange(desc(num_countries)) %>%
   slice_head(n = 10)  # top 10
 
-# Step 7: Highlight Stranger Things
+# Step 7: Highlighting Stranger Things
 tv_debut_counts_eng$highlight <- ifelse(tv_debut_counts_eng$Show_Title == "Stranger Things",
                                         "Stranger Things", "Other")
 
@@ -343,7 +343,7 @@ library(ggplot2)
 library(stringr)
 library(ggtext)  # for element_markdown()
 
-# Step 1: Filter Hindi/non-English programs in India
+# Step 1: Filtering Hindi/non-English programs in India
 india_non_english <- COUNTRY_TOP_10_CLEAN %>%
   filter(Country == "India", !is.na(Week)) %>%
   left_join(
@@ -355,19 +355,19 @@ india_non_english <- COUNTRY_TOP_10_CLEAN %>%
   summarise(total_weeks = sum(Cumulative_weeks_In_Top_10, na.rm = TRUE), .groups = "drop") %>%
   arrange(desc(total_weeks))
 
-# Step 2: Select top Hindi programs
+# Step 2: Selecting top Hindi programs
 hindi_programs <- c("RRR (Hindi)", "The Great Indian Kapil Show", 
                     "Sooryavanshi", "Haseen Dillruba", "Khakee: The Bihar Chapter")
 
 top_hindi <- india_non_english %>%
   filter(Show_Title %in% hindi_programs)
 
-# Step 3: Highlight the top program
+# Step 3: Highlighting the top program
 top_hindi$highlight <- ifelse(top_hindi$total_weeks == max(top_hindi$total_weeks),
                               "Top Program", "Other")
 top_hindi$highlight <- factor(top_hindi$highlight, levels = c("Top Program", "Other"))
 
-# Step 4: Plot top Hindi programs in India with bold y-axis labels and colored top program
+# Step 4: Plotting top Hindi programs in India with bold y-axis labels and colored top program
 top_program <- top_hindi$Show_Title[top_hindi$highlight=="Top Program"]
 
 ggplot(top_hindi, aes(x = reorder(Show_Title, total_weeks),
@@ -392,13 +392,13 @@ ggplot(top_hindi, aes(x = reorder(Show_Title, total_weeks),
            paste0("<b>", x, "</b>"))
   })
 
-# Step 5: Estimate audience
+# Step 5: Estimating audience
 total_weeks_top5 <- sum(top_hindi$total_weeks)
 average_weeks_per_user <- 4   # assumption: 1 program/week per user
 estimated_customers_india <- total_weeks_top5 / average_weeks_per_user
 estimated_customers_friendly <- format(round(estimated_customers_india, 0), big.mark = ",")
 
-# Compute statistics in the code chunk
+# Computing statistics in the code chunk
 total_weeks_top5 <- sum(top_hindi$total_weeks)
 #new section here
 khakee <- top_hindi$total_weeks[top_hindi$Show_Title == "Khakee: The Bihar Chapter"]
@@ -432,7 +432,7 @@ library(ggplot2)
 library(stringr)
 library(scales)
 
-# Step 1: Prepare combined global data
+# Step 1: Preparing combined global data
 global_content <- COUNTRY_TOP_10_CLEAN %>%
   filter(!is.na(Week)) %>%  # remove missing weeks
   left_join(
@@ -441,7 +441,7 @@ global_content <- COUNTRY_TOP_10_CLEAN %>%
     relationship = "many-to-many"
   )
 
-# Step 2: Compute cumulative weeks in Top 10 by broad genre
+# Step 2: Computing cumulative weeks in Top 10 by broad genre
 genre_trends <- global_content %>%
   group_by(category) %>%
   summarise(
@@ -451,12 +451,12 @@ genre_trends <- global_content %>%
   ) %>%
   arrange(desc(total_weeks))
 
-# Step 3: Highlight top genre
+# Step 3: Highlighting top genre
 genre_trends$highlight <- ifelse(genre_trends$total_weeks == max(genre_trends$total_weeks),
                                  "Top Genre", "Other")
 genre_trends$highlight <- factor(genre_trends$highlight, levels = c("Top Genre", "Other"))
 
-# Step 4: Plot top genres globally
+# Step 4: Plotting top genres globally
 ggplot(genre_trends, aes(x = reorder(category, total_weeks),
                          y = total_weeks,
                          fill = highlight)) +
@@ -473,7 +473,7 @@ ggplot(genre_trends, aes(x = reorder(category, total_weeks),
   ) +
   theme_minimal(base_size = 12)
 
-# Step 5: Compute friendly numbers for markdown
+# Step 5: Computing friendly numbers for markdown
 top_category <- genre_trends$category[genre_trends$highlight == "Top Genre"]
 total_weeks_top <- genre_trends$total_weeks[genre_trends$highlight == "Top Genre"]
 countries_top <- genre_trends$n_countries[genre_trends$highlight == "Top Genre"]

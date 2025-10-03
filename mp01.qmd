@@ -2,8 +2,10 @@
 title: Mini Project 01 - Netflix Analysis
 format: html
 ---
+**Step 1:** Acquiring Data From Netflix's TuDum Top 10. Click the *Code* Icon to See Full Code Throughout This Mini-Project
 
-```{r}
+```{r, echo=TRUE}
+#| code-fold: true
 if(!dir.exists(file.path("data", "mp01"))){
     dir.create(file.path("data", "mp01"), showWarnings=FALSE, recursive=TRUE)
 }
@@ -21,13 +23,23 @@ if(!file.exists(COUNTRY_TOP_10_FILENAME)){
     download.file("https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv", 
                   destfile=COUNTRY_TOP_10_FILENAME)
 }
+```
 
+**Step 2:** Data Import & Preparation
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 if(!require("tidyverse")) install.packages("tidyverse")
 library(readr)
 library(dplyr)
 
 GLOBAL_TOP_10 <- read_tsv(GLOBAL_TOP_10_FILENAME)
+```
 
+**Step 3:** Data Cleaning
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 GLOBAL_TOP_10 <- GLOBAL_TOP_10 |>
   mutate(season_title = if_else(season_title == "N/A", NA_character_, season_title))
 
@@ -35,12 +47,22 @@ COUNTRY_TOP_10 <- read_tsv(
   COUNTRY_TOP_10_FILENAME,
   na = "N/A"
 )
+```
 
+**Step 4:** Initial Data Exploration
+
+```{r, echo=TRUE}
+#| code-fold: true
 library(DT)
 GLOBAL_TOP_10 |> 
     head(n=20) |>
     datatable(options=list(searching=FALSE, info=FALSE))
+```
 
+**Formatting Column Names**. Also setting up a *clean* table for Question #5 as well as for interactive tables used subsequently. Click the *Code* Icon Below to See Full Code
+
+```{r, echo = TRUE}
+#| code-fold: true
 library(stringr)
 format_titles <- function(df){
     colnames(df) <- str_replace_all(colnames(df), "_", " ") |> str_to_title()
@@ -61,14 +83,24 @@ GLOBAL_TOP_10 |>
     head(n=20) |>
     datatable(options=list(searching=FALSE, info=FALSE)) |>
     formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
+```
 
+Dropping **season_title** to get closer to publication quality titles
+
+```{r, echo = TRUE}
+#| code-fold: true
 GLOBAL_TOP_10 |> 
     select(-season_title) |>
     format_titles() |>
     head(n=20) |>
     datatable(options=list(searching=FALSE, info=FALSE)) |>
     formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
+```
 
+Converting runtime from *hours* to *minutes*:
+
+```{r, echo=TRUE}
+#| code-fold: true
 GLOBAL_TOP_10 |>
   mutate(`runtime_(minutes)` = round(60 * runtime)) |>
   select(-season_title,
@@ -77,7 +109,12 @@ GLOBAL_TOP_10 |>
   head(n=20) |>
   datatable(options=list(searching=FALSE, info=FALSE)) |>
   formatRound(c('Weekly Hours Viewed', 'Weekly Views'))
+```
 
+**Now Beginning Exploratory Data Analysis Section.** The code fold below shows all code for Questions 1-10 given on Prof. Weylandt's website. Markdown is subsequently used for inline text and to "call" variables out of the code.
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 library(dplyr)
 
 #Setting variable num_countries for Question 1
@@ -182,50 +219,48 @@ tv_debut_counts <- COUNTRY_TOP_10_CLEAN |>
   summarise(num_countries = n_distinct(Country), .groups = "drop") |>
   arrange(desc(num_countries)) |>
   slice(1)
-
-tv_debut_counts
 ```
 
-1. How many countries does Netflix operate in?
+#### 1. How many countries does Netflix operate in?
 
-Netflix operates in `r num_countries` countries
+Netflix operates in `r num_countries` countries.
 
-2. Which non-English-language film has spent the most cumulative weeks in the global top 10?
+#### 2. Which non-English-language film has spent the most cumulative weeks in the global top 10?
 
-The non-English-language film with the most cumulative weeks in global Top 10 is `r non_english_top$show_title` with `r non_english_top$total_weeks` weeks
+The non-English-language film with the most cumulative weeks in global Top 10 is `r non_english_top$show_title` with `r non_english_top$total_weeks` weeks.
 
-3. What is the longest film (English or non-English) to have ever appeared in the Netflix global Top 10? How long is it in minutes?
+#### 3. What is the longest film (English or non-English) to have ever appeared in the Netflix global Top 10? How long is it in minutes?
 
-The longest film in the Global Top 10 is `r longest_film$show_title` with a runtime of `r round(longest_film$runtime*60)` minutes
+The longest film in the Global Top 10 is `r longest_film$show_title` with a runtime of `r round(longest_film$runtime*60)` minutes.
 
-4. For each of the four categories, what program has the most total hours of global viewership?
+#### 4. For each of the four categories, what program has the most total hours of global viewership?
 
 Programs with the most total hours per category:
 
 `r DT::datatable(top_hours, options = list(searching=FALSE, info=FALSE))`
 
-5. Which TV show had the longest run in a country's Top 10? How long was this run and in what country did it occur?
+#### 5. Which TV show had the longest run in a country's Top 10? How long was this run and in what country did it occur?
 
 The TV show with the longest run in a country is `r longest_country_run$Show_Title` in `r longest_country_run$Country` with `r longest_country_run$run_weeks` weeks.
 
-6. Netflix provides over 200 weeks of service history for all but one country in our data set. Which country is this and when did Netflix cease operations in that country?
+#### 6. Netflix provides over 200 weeks of service history for all but one country in our data set. Which country is this and when did Netflix cease operations in that country?
 
 The country with fewer than 200 weeks of history is
 `r country_history$Country`, with last recorded week on `r country_history$last_week`.
 
-7. What is the total viewership of the TV show Squid Game? Note that there are three seasons total and we are looking for the total number of hours watched across all seasons.
+#### 7. What is the total viewership of the TV show Squid Game? Note that there are three seasons total and we are looking for the total number of hours watched across all seasons.
 
 Total viewership of Squid Game across all seasons is `r squid_game_total` hours.
 
-8. Approximate number of views of Red Notice in 2021 is
+#### 8. Approximate number of views of Red Notice in 2021 is
 `r red_notice_total` views
 
-9. How many Films reached Number 1 in the US but did not originally debut there? That is, find films that first appeared on the Top 10 chart at, e.g., Number 4 but then became more popular and eventually hit Number 1? What is the most recent film to pull this off?
+#### 9. How many Films reached Number 1 in the US but did not originally debut there? That is, find films that first appeared on the Top 10 chart at, e.g., Number 4 but then became more popular and eventually hit Number 1? What is the most recent film to pull this off?
 
 A total of `r nrow(film_climbers)` films reached **#1 in the US** after debuting at a lower rank. The most recent film to do this was `r film_climbers$Show_Title[which.max(film_climbers$last_number1_week)]`,
 which hit #1 in the week of `r max(film_climbers$last_number1_week, na.rm = TRUE)`.
 
-10. Which TV show/season hit the top 10 in the most countries in its debut week? In how many countries did it chart?
+#### 10. Which TV show/season hit the top 10 in the most countries in its debut week? In how many countries did it chart?
 
 The TV show/season that hit the Top 10 in the most countries during its debut week is
 `r tv_debut_counts$Show_Title`, which charted in `r tv_debut_counts$num_countries` countries.
@@ -236,7 +271,8 @@ The TV show/season that hit the Top 10 in the most countries during its debut we
 
 Netflix is pleased to announce the return of Stranger Things with its' much anticipated Season 5, establishing the show as one of the platform's most notable franchises. In the week that it debuted, the show charted in **over 90 countries**, claiming the #1 spot in overall categories as well as **English TV**. Through its run to the top, *Stranger Things* has amassed to over **billions of hours viewed**, with its latest season garnering over **300 million hours** in the first month following release. The show holds many different records including the **widest TV debut across countries**, a notable feat showcasing its global cultural impact. As the town of Hawkins enters its last chapter, fans across the globe continue to demonstrate that Stranger Things is more than just a show - it's a phenomenon.
 
-```{r}
+```{r, warning=FALSE, message=FALSE, echo=TRUE}
+#| code-fold: true
 library(dplyr)
 library(ggplot2)
 library(stringr)
@@ -253,7 +289,9 @@ global_tv_cat <- GLOBAL_TOP_10 %>%
 
 # Step 3: Join language info
 tv_country <- tv_country %>%
-  left_join(global_tv_cat, by = c("Show_Title" = "show_title"))
+  left_join(global_tv_cat,
+            by = c("Show_Title" = "show_title"),
+            relationship = "many-to-many")
 
 # Step 4: Keep only English TV
 tv_country_eng <- tv_country %>%
@@ -294,11 +332,12 @@ ggplot(tv_debut_counts_eng, aes(x = reorder(Show_Title, num_countries),
 
 ## Press Release 2: Netflix’s Commercial Success in India
 
-**Netflix Sees Rapid Growth in India with Hindi-Language Programs**
+**Through the Introduction of Hindi-Language Programs, Netflix Experiences Rapid Growth in India**
 
 Netflix’s investment in region-specific content continues to pay off, with Hindi-language films and TV shows achieving remarkable popularity across India. These hits are helping the platform reach new audiences and solidify its presence in one of the world's largest media markets.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 library(dplyr)
 library(ggplot2)
 library(stringr)
@@ -381,7 +420,8 @@ The top Hindi-language program, RRR (Hindi), spent `r rrr_weeks_friendly` cumula
 
 Netflix continues to dominate worldwide entertainment, with audiences showing a marked preference for serialized TV content. Across multiple countries, TV shows consistently top the platform’s weekly rankings, reflecting global engagement trends and opportunities for content investment.
 
-```{r}
+```{r, echo=TRUE}
+#| code-fold: true
 library(dplyr)
 library(ggplot2)
 library(stringr)

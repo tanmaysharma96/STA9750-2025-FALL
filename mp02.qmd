@@ -264,69 +264,72 @@ employment_health <- WAGES %>%
     total_employment = total_emp,
     health_employment = health_emp
   )
-#| label: viz2-animate
-#| echo: false
-#| message: false
-#| warning: false
-#| fig-cap: "Health Care & Social Assistance vs. Total Employment (Animated, 2009–2023)"
+# ---- ANIMATION (GUARDED, NO knit_exit) ----
+have_anim <- requireNamespace("gganimate", quietly = TRUE) &&
+             requireNamespace("gifski",    quietly = TRUE)
 
-suppressPackageStartupMessages({
+if (!have_anim) {
+  cat("Animation skipped (gganimate/gifski not installed).\n")
+} else {
   library(ggplot2)
   library(scales)
-  if (requireNamespace("gganimate", quietly = TRUE) && requireNamespace("gifski", quietly = TRUE)) {
-    library(gganimate)
+  library(gganimate)
+
+  eh <- employment_health |>
+    dplyr::transmute(
+      GEOID,
+      year,
+      total_emp  = total_employment,
+      health_emp = health_employment
+    ) |>
+    dplyr::filter(is.finite(total_emp), is.finite(health_emp), is.finite(year))
+
+  if (nrow(eh) == 0L) {
+    cat("Animation skipped (no rows in employment_health).\n")
   } else {
-    cat("Animation skipped (gganimate/gifski not installed).")
-    knitr::knit_exit()
+    p_anim <- ggplot(eh, aes(x = total_emp, y = health_emp, group = GEOID)) +
+      geom_point(aes(color = year), alpha = 0.7, size = 1.8) +
+      scale_color_viridis_c(option = "plasma") +
+      scale_x_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+      scale_y_continuous(labels = label_number(scale_cut = cut_short_scale())) +
+      labs(
+        title = "Health Care & Social Assistance vs. Total Employment",
+        subtitle = "Year: {frame_time}",
+        x = "Total Employment (All Industries)",
+        y = "Health Care & Social Assistance Employment",
+        color = "Year",
+        caption = "Source: BLS QCEW Annual Averages (2009–2023)"
+      ) +
+      theme_minimal(base_size = 12) +
+      theme(
+        plot.title = element_text(face = "bold", hjust = 0.5, size = 13),
+        plot.subtitle = element_text(hjust = 0.5, size = 11),
+        plot.caption = element_text(size = 9, hjust = 1),
+        panel.grid.minor = element_blank()
+      ) +
+      transition_time(year) +
+      shadow_mark(alpha = 0.15, size = 1) +
+      ease_aes("linear")
+
+    dir.create("docs", showWarnings = FALSE)
+    gif_path <- file.path("docs", "img_employment_health.gif")
+
+    ok <- try({
+      anim <- animate(
+        p_anim,
+        nframes = length(unique(eh$year)) * 6,
+        fps = 10, width = 900, height = 600,
+        renderer = gifski_renderer()
+      )
+      anim_save(gif_path, animation = anim)
+    }, silent = TRUE)
+
+    if (inherits(ok, "try-error") || !file.exists(gif_path)) {
+      cat("Animation skipped (render failed).\n")
+    } else {
+      knitr::include_graphics(gif_path)
+    }
   }
-})
-
-# Use the dataset you built earlier:
-# employment_health must have columns: GEOID, year, total_employment, health_employment
-eh <- employment_health %>%
-  dplyr::filter(is.finite(total_employment), is.finite(health_employment), is.finite(year))
-
-if (nrow(eh) == 0L) {
-  cat("Animation skipped (no rows in employment_health after filtering).")
-} else {
-  p_anim <- ggplot(eh, aes(x = total_employment, y = health_employment, group = GEOID)) +
-    geom_point(aes(color = year), alpha = 0.7, size = 1.8) +
-    scale_color_viridis_c(option = "plasma") +
-    scale_x_continuous(labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
-    scale_y_continuous(labels = scales::label_number(scale_cut = scales::cut_short_scale())) +
-    labs(
-      title = "Health Care & Social Assistance vs. Total Employment",
-      subtitle = "Year: {frame_time}",
-      x = "Total Employment (All Industries)",
-      y = "Health Care & Social Assistance Employment",
-      color = "Year",
-      caption = "Source: BLS QCEW Annual Averages (2009–2023)"
-    ) +
-    theme_minimal(base_size = 12) +
-    theme(
-      plot.title = element_text(face = "bold", hjust = 0.5, size = 13),
-      plot.subtitle = element_text(hjust = 0.5, size = 11),
-      plot.caption = element_text(size = 9, hjust = 1),
-      panel.grid.minor = element_blank()
-    ) +
-    transition_time(year) +               # <-- uses lowercase 'year'
-    shadow_mark(alpha = 0.15, size = 1) +
-    ease_aes("linear")
-
-  dir.create("docs", showWarnings = FALSE)
-  gif_path <- file.path("docs", "img_employment_health.gif")
-
-  anim <- animate(
-    p_anim,
-    nframes = length(unique(eh$year)) * 6,  # <-- use eh$year (not YEAR)
-    fps = 10,
-    width = 900,
-    height = 600,
-    renderer = gifski_renderer()
-  )
-  anim_save(gif_path, animation = anim)
-
-  knitr::include_graphics(gif_path)
 }
 ```
 
@@ -575,11 +578,14 @@ gif_path <- file.path("docs", "img_employment_health.gif")
 
 anim <- animate(
   p_anim,
-  nframes = length(unique(eh$year)) * 6,   # <-- use eh$year, not employment_health$YEAR
-  fps = 10, width = 900, height = 600,
+  nframes = length(unique(eh$year)) * 6,
+  fps = 10,
+  width = 900, height = 600, units = "px",   # ← key change
   renderer = gifski_renderer()
 )
 anim_save(gif_path, animation = anim)
+
+knitr::include_graphics(gif_path)
 
 # 4) Show in the document
 knitr::include_graphics(gif_path)
@@ -680,10 +686,44 @@ ggplot() +
 **Task 4: Rent Burden Analysis**
 
 ```{r}
+# --- Task 4: Build rent-burden metric and rankings --------------------------
+
+library(dplyr)
+library(scales)
+
+# 1) Join INCOME + RENT and compute rent-to-income
+rent_burden <- RENT %>%
+  inner_join(INCOME, by = c("GEOID", "NAME", "year")) %>%
+  transmute(
+    GEOID, NAME = enc2utf8(NAME), year,
+    monthly_rent,
+    household_income,
+    rent_to_income = (monthly_rent * 12) / household_income      # annual rent / income
+  )
+
+# 2) Standardize to a 0–100 index across all CBSA-years (min–max scaling)
+rb_range <- range(rent_burden$rent_to_income, na.rm = TRUE)
+rent_burden <- rent_burden %>%
+  mutate(
+    rent_burden_index = rescale(rent_to_income, to = c(0, 100), from = rb_range)
+  )
+
+# 3) Create the latest-year ranking table used later (this is what your code expects)
+latest_year <- max(rent_burden$year, na.rm = TRUE)
+
+rent_rank <- rent_burden %>%
+  filter(year == latest_year) %>%
+  arrange(desc(rent_burden_index)) %>%
+  select(
+    NAME,
+    latest_rent_burden = rent_burden_index,
+    rent_to_income
+  )
+# ---------------------------------------------------------------------------
 # Convert text encoding and round values
 rent_rank_clean <- rent_rank %>%
   mutate(
-    NAME = enc2utf8(NAME),  # fix encoding for characters like é
+    NAME = enc2utf8(NAME),
     latest_rent_burden = round(latest_rent_burden, 2),
     rent_to_income = round(rent_to_income, 4)
   )
@@ -700,7 +740,7 @@ datatable(
     pageLength = 10,
     autoWidth = TRUE,
     columnDefs = list(
-      list(className = "dt-right", targets = c(1, 2))  # right-align numeric cols
+      list(className = "dt-right", targets = c(1, 2))
     )
   ),
   caption = "CBSAs with Highest and Lowest Rent Burden (Latest Year)",

@@ -1,5 +1,13 @@
 ---
 title: "Making Backyards Affordable for All"
+format:
+  html:
+    toc: true
+    toc-location: left   # or "right"
+    toc-depth: 3         # include up to ### headings
+    toc-expand: true
+    smooth-scroll: true
+    number-sections: false
 ---
 
 ## Introduction

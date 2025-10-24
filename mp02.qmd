@@ -1201,7 +1201,9 @@ hg_rb_summary <- hg_rb_summary %>%
 
 **Rent Burden Change vs. Population Growth**
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
+
 library(ggplot2)
 library(scales)
 library(ggrepel)
@@ -1265,9 +1267,11 @@ ggplot(df_rb_pop, aes(x = pop_growth_pct, y = rb_change)) +
   )
 ```
 
-#Housing Growth vs Rent-Burden Decrease (positive = burden falling)
+**Housing Growth vs Rent-Burden Decrease (positive = burden falling)**
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
+
 library(ggplot2)
 library(scales)
 library(ggrepel)

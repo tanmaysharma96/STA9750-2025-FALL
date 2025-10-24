@@ -2,29 +2,27 @@
 title: "Making Backyards Affordable for All"
 ---
 
-## Introduction  
+## Introduction
 
-Housing affordability is considered to be one of the biggest economic challenges in the 21st century.  
-Stagnant wages, increasing rent, and obstacles to enable newer construction have put an increasing strain on many households all around the United States. Although various metropolitan areas have responded by 
-encouraging development initiatives through means such as flexible zoning and streamlining processes relating to permitting  (often described as **“Yes In My Backyard” – YIMBY – policies**), others still face obstacles through less friendly land-use laws as well as limited growth in the housing sector. (**“Not In My Backyard” – NIMBY – policies**).
+Housing affordability is considered to be one of the biggest economic challenges in the 21st century.\
+Stagnant wages, increasing rent, and obstacles to enable newer construction have put an increasing strain on many households all around the United States. Although various metropolitan areas have responded by encouraging development initiatives through means such as flexible zoning and streamlining processes relating to permitting (often described as **“Yes In My Backyard” – YIMBY – policies**), others still face obstacles through less friendly land-use laws as well as limited growth in the housing sector. (**“Not In My Backyard” – NIMBY – policies**).
 
-The objective of this report is to examine various divergent trajectories using data that is available publicly from the **American Community Survey (ACS)**, the **U.S. Census Bureau’s Building Permits Survey**, and the **Bureau of Labor Statistics (BLS) Quarterly Census of Employment and Wages (QCEW)**.  
-We can evaluate the evolution of housing markets from 2009-2023 across various different U.S. metropolitan areas by combining housing construction data, socioeconomic indicators, and employment metrics.  
+The objective of this report is to examine various divergent trajectories using data that is available publicly from the **American Community Survey (ACS)**, the **U.S. Census Bureau’s Building Permits Survey**, and the **Bureau of Labor Statistics (BLS) Quarterly Census of Employment and Wages (QCEW)**.\
+We can evaluate the evolution of housing markets from 2009-2023 across various different U.S. metropolitan areas by combining housing construction data, socioeconomic indicators, and employment metrics.
 
 The analysis is conducted in 5 different stages:
 
-1. **Data Collection & Cleaning** – combining both BLS & ACS data-sets on different metrics such as income, rent, households, employment, and population.
-2. **Exploratory Analysis** – seeing if there are any evident relationships between income, rent burden and sectoral employment.  
-3. **Index Construction** – creating two indicators:  
-   - A *Rent-Burden Index* (the share of income allocated for rent)  
-   - A *Housing-Growth Index* (studies the rate of new construction relative to population growth)  
-4. **Visualization & Interpretation** – creating visuals and conducting interpretation of how these metrics can help to reveal “YIMBY” versus “NIMBY” patterns across different regions.  
-5. **Policy Brief** – recommending a federal framework that aims to incentivize supply of housing, using data to draw on insights from both high-growth and high burden metro areas.drawing on data-driven insights from both high-growth (Houston) and high-burden (New York City) metro areas.
+1.  **Data Collection & Cleaning** – combining both BLS & ACS data-sets on different metrics such as income, rent, households, employment, and population.
+2.  **Exploratory Analysis** – seeing if there are any evident relationships between income, rent burden and sectoral employment.\
+3.  **Index Construction** – creating two indicators:
+    -   A *Rent-Burden Index* (the share of income allocated for rent)\
+    -   A *Housing-Growth Index* (studies the rate of new construction relative to population growth)\
+4.  **Visualization & Interpretation** – creating visuals and conducting interpretation of how these metrics can help to reveal “YIMBY” versus “NIMBY” patterns across different regions.\
+5.  **Policy Brief** – recommending a federal framework that aims to incentivize supply of housing, using data to draw on insights from both high-growth and high burden metro areas.drawing on data-driven insights from both high-growth (Houston) and high-burden (New York City) metro areas.
 
-This report hopes to quantify how local housing dynamics influence affordability, and to be able to translate these findings into actionable recommendations to federal policy. Furthermore, the goal is to combine both **policy advocacy and quantitative analysis**, demonstration how evidence-based 
-metrics can help to inform housing reform efforts on a national level.
+This report hopes to quantify how local housing dynamics influence affordability, and to be able to translate these findings into actionable recommendations to federal policy. Furthermore, the goal is to combine both **policy advocacy and quantitative analysis**, demonstration how evidence-based metrics can help to inform housing reform efforts on a national level.
 
----
+------------------------------------------------------------------------
 
 **Step 1:** Data Acquisition
 
@@ -87,7 +85,7 @@ POPULATION <- get_acs_all_years("B01003_001") |>
 HOUSEHOLDS <- get_acs_all_years("B11001_001") |>
     rename(households = B11001_001)
 ```
-    
+
 **Step 2:** Downloading and Preparing Data Regarding Number of New Housing Units Built Each Year
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
@@ -151,6 +149,7 @@ get_building_permits <- function(start_year = 2009, end_year = 2023){
 
 PERMITS <- get_building_permits()
 ```
+
 **Step 3**: Downloading NAICS Data Schema & Manipulating Into a Format Suitable for Analysis
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
@@ -473,6 +472,7 @@ datatable(
 peak <- q2_2_tbl |>
   slice_max(`New Housing Units Permitted`, n = 1)
 ```
+
 Albuquerque's peak year for new housing permits was 2021, with 4,021 units permitted.
 
 **3. Which state (not CBSA) had the highest average individual income in 2015?**
@@ -559,7 +559,8 @@ top_state <- q2_3 |>
   dplyr::filter(!is.na(state)) |>
   dplyr::slice_max(avg_individual_income, n = 1, with_ties = FALSE)
 ```
-In 2015, DC (District of Columbia) had the highest average individual income (approximately $33,233).
+
+In 2015, DC (District of Columbia) had the highest average individual income (approximately \$33,233).
 
 **4.What is the last year in which the NYC CBSA had the most data scientists in the country?**
 
@@ -626,6 +627,7 @@ datatable(
 ) |>
   formatRound("Employment (NAICS 5182)", digits = 0, interval = 3, mark = ",")
 ```
+
 New York–Newark–Jersey City, NY–NJ–PA (CBSA 35620) last led NAICS 5182 in 2015.
 
 **5. What fraction of total wages in the NYC CBSA was earned by people employed in the finance and insurance industries (NAICS code 52)? In what year did this fraction peak?**
@@ -690,9 +692,6 @@ rent_income_2009 <- RENT |>
     by = "GEOID"
   )
 
-# Quick sanity check
-head(rent_income_2009)
-
 # Plot rent vs income relationship
 library(ggplot2)
 
@@ -712,11 +711,14 @@ ggplot(rent_income_2009, aes(x = household_income, y = monthly_rent)) +
     panel.grid.minor = element_blank()
   )
 ```
-##The relationship between household income and monthly rent in 2009 is strongly positive across CBSAs. Metropolitan areas with higher average incomes (e.g., San Francisco, New York) also have higher rents, reflecting general cost-of-living gradients and housing demand in more affluent regions.##
+
+The relationship between household income and monthly rent in 2009 is strongly positive across CBSAs. Metropolitan areas with higher average incomes (e.g., San Francisco, New York) also have higher rents, reflecting general cost-of-living gradients and housing demand in more affluent regions.
 
 **2. The relationship between total employment and total employment in the health care and social services sector (NAICS 62) across different CBSAs.**
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
+
 # ---- FIXED ANIMATION CHUNK (drop-in replacement) ----
 # Requirements
 if (!requireNamespace("gganimate", quietly = TRUE)) install.packages("gganimate")
@@ -752,10 +754,12 @@ p_anim <- ggplot(eh, aes(x = total_emp, y = health_emp, group = GEOID)) +
     color = "Year",
     caption = "Source: BLS QCEW Annual Averages (2009–2023)"
   ) +
-  theme_minimal(base_size = 12) +
+  theme_minimal(base_size = 9) +
   theme(
-    plot.title = element_text(face = "bold", hjust = 0.5, size = 13),
-    plot.subtitle = element_text(hjust = 0.5, size = 11),
+    plot.title = element_text(face = "bold", hjust = 0.5, size = 10),
+    plot.subtitle = element_text(hjust = 0.5, size = 8),
+    axis.title    = element_text(size = 8),
+    axis.text     = element_text(size = 7),
     plot.caption = element_text(size = 9, hjust = 1),
     panel.grid.minor = element_blank()
   ) +
@@ -782,9 +786,13 @@ knitr::include_graphics(gif_path)
 knitr::include_graphics(gif_path)
 ```
 
+The visualization above shows us employment in the health care industry is an expanding (and stable) share of total employment in the U.S., with concentrations of growth in the biggest metropolitan areas. This confirms the sector’s pivotal role in population and economic-driven expansion from years 2009-2023.
+
 **3. The evolution of average household size over time. Different lines represent different CBSAs.**
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
+
 ### Household size over time — stable lines & correct labels (Top 10 CBSAs)
 
 library(dplyr)
@@ -818,12 +826,12 @@ df <- hhsize %>%
   filter(GEOID %in% top10) %>%
   left_join(latest_names, by = "GEOID") %>%           # attach stable label
   mutate(
-    highlight = case_when(
-      grepl("^New York-", label_name) ~ "NYC",
-      grepl("^Los Angeles-", label_name) ~ "Los Angeles",
-      TRUE ~ "Other"
-    )
+  highlight = case_when(
+    GEOID == "35620" ~ "NYC",          # New York–Newark–Jersey City
+    GEOID == "31100" ~ "Los Angeles",  # Los Angeles–Long Beach–Anaheim
+    TRUE ~ "Other"
   )
+)
 
 # 4) Endpoints for labels (use latest year per GEOID)
 end_labels <- df %>%
@@ -870,13 +878,16 @@ ggplot() +
   ) +
   coord_cartesian(clip = "off")
 ```
-##Average household size has been relatively stable across most large CBSAs, with modest shifts over time. NYC and Los Angeles track slightly above/below the national median (≈2.5–2.7 persons/household), reflecting differences in housing stock and demographics.##
+
+Average household size has been relatively stable across most large CBSAs, with modest shifts to the downside over time. NYC and Los Angeles track slightly above/below the national median (≈2.5–2.7 persons/household), reflecting differences in housing stock and demographics.
 
 **Building Indices of Housing Affordability and Housing Stock Growth**
 
 **Task 4: Rent Burden Analysis**
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
+
 # --- Task 4: Build rent-burden metric and rankings --------------------------
 
 library(dplyr)
@@ -939,11 +950,13 @@ datatable(
 )
 ```
 
-##The rent burden index measures how much of a typical household’s income goes to rent (normalized 0–100). Cities with higher values (e.g., San Francisco, Los Angeles, New York) show consistently high rent pressure, while more affordable CBSAs (e.g., St. Louis, Cleveland) cluster toward the lower end of the scale. For New York, the index has remained among the top quartile nationwide, with only moderate fluctuations over 2009–2023.##
+The rent burden index measures exactly how much of a typical household’s income goes to rent (normalized 0–100). Cities with higher values (e.g., San Francisco, Los Angeles, New York) show consistently high rent pressure, while more affordable CBSAs (e.g., St. Louis, Cleveland) cluster toward the lower end of the scale. For New York, the index has remained among the top quartile nationwide, with only moderate fluctuations over 2009–2023.
 
 **Task 5: Housing Growth**
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
+
 library(dplyr)
 library(scales)
 library(DT)
@@ -1070,8 +1083,12 @@ dt_comp <- fmt_dt(dt_comp)
 
 # Display the three tables
 dt_inst
+cat("*Shows the metros issuing the most (and least) new housing permits per 1,000 residents in the latest year—an indicator of near-term construction intensity.*")
 dt_rate
+cat("*Ranks metros by permits relative to five-year population growth, highlighting where housing supply is keeping pace—or lagging—behind demand.*")
 dt_comp
+cat("*Combines both measures into a single 0–100 index, identifying metros with the strongest overall housing-growth performance.*")
+
 # ---- Task 6 PREP: build rb_change and hg_rb_summary -------------------------
 library(dplyr)
 library(scales)
@@ -1182,7 +1199,7 @@ hg_rb_summary <- hg_rb_summary %>%
 
 **Task 6: Visualization**
 
-#Rent Burden Change vs. Population Growth#
+**Rent Burden Change vs. Population Growth**
 
 ```{r}
 library(ggplot2)
@@ -1247,6 +1264,7 @@ ggplot(df_rb_pop, aes(x = pop_growth_pct, y = rb_change)) +
     panel.grid.minor = element_blank()
   )
 ```
+
 #Housing Growth vs Rent-Burden Decrease (positive = burden falling)
 
 ```{r}
@@ -1308,57 +1326,63 @@ ggplot(df_hg_rb, aes(x = comp_growth_index, y = rb_decrease)) +
   )
 ```
 
-## Policy Brief: Making Backyards Affordable for All  
+## Policy Brief: Making Backyards Affordable for All
 
-### Overview  
-Across the United States, housing affordability remains one of the most urgent economic and social challenges. While some metropolitan areas have successfully expanded housing supply and reduced rent burdens, others remain constrained by restrictive policies and chronic under-supply.  
+### Overview
 
-We propose establishing a **Federal YIMBY Partnership Program** to provide **grants and incentives** for local governments that adopt housing-friendly zoning, streamline permitting, and increase new housing production.  
+Across the United States, housing affordability remains one of the most urgent economic and social challenges. While some metropolitan areas have successfully expanded housing supply and reduced rent burdens, others remain constrained by restrictive policies and chronic under-supply.
 
-### Proposed Congressional Sponsors  
+We propose establishing a **Federal YIMBY Partnership Program** to provide **grants and incentives** for local governments that adopt housing-friendly zoning, streamline permitting, and increase new housing production.
 
-**Primary Sponsor – Houston, TX (Houston–The Woodlands–Sugar Land Metro Area)**  
-Houston’s flexible land-use and low zoning barriers have long kept rents more affordable than other major metros. As of 2022, the median renter household spent **~30.9 %** of income on rent and utilities, compared with nearly 40 % in New York City[^1]. Houston issued over **480,000 residential building permits from 2010-2019**, among the highest in the nation[^2]. A representative from Houston could credibly highlight how market-driven supply expansion sustains affordability and economic growth.  
+### Proposed Congressional Sponsors
 
-**Co-Sponsor – New York City, NY (New York–Newark–Jersey City Metro Area)**  
-New York City illustrates the reverse case: persistent affordability crises and limited new supply. More than **1 million renter households (≈53 %)** are rent-burdened, spending over 30 % of income on housing[^3]. Construction remains constrained by zoning limits—only **~25,000 new units** were permitted city-wide in 2023[^4]. A representative from New York could champion this bill as a federal lifeline to modernize outdated zoning and stimulate mid-income housing production.
+**Primary Sponsor – Houston, TX (Houston–The Woodlands–Sugar Land Metro Area)**\
+Houston’s flexible land-use and low zoning barriers have long kept rents more affordable than other major metros. As of 2022, the median renter household spent **\~30.9 %** of income on rent and utilities, compared with nearly 40 % in New York City[^1]. Houston issued over **480,000 residential building permits from 2010-2019**, among the highest in the nation[^2]. A representative from Houston could credibly highlight how market-driven supply expansion sustains affordability and economic growth.
 
-### Key Metrics for Identifying Target Cities  
+[^1]: USAFacts, “How much do households spend on rent? Houston Metro vs. national average,” 2022. [https://usafacts.org](https://usafacts.org/answers/how-much-do-households-spend-on-rent/metro-area/houston-tx/)
 
-- **Rent-Burden Index:**  
-  Measures the share of household income spent on rent (scaled 0–100).  
-  A **declining index** signals improving affordability and successful YIMBY outcomes.  
+[^2]: U.S. Census Bureau, *Building Permits Survey*, 2010–2019 Annual Tables. <https://www.census.gov/construction/bps/>
 
-- **Housing-Growth Index:**  
-  Combines housing permits per capita and permits relative to 5-year population growth.  
-  A **higher composite index** indicates that a city’s housing supply is keeping pace with demand.  
+**Co-Sponsor – New York City, NY (New York–Newark–Jersey City Metro Area)**\
+New York City illustrates the reverse case: persistent affordability crises and limited new supply. More than **1 million renter households (≈53 %)** are rent-burdened, spending over 30 % of income on housing[^3]. Construction remains constrained by zoning limits—only **\~25,000 new units** were permitted city-wide in 2023[^4]. A representative from New York could champion this bill as a federal lifeline to modernize outdated zoning and stimulate mid-income housing production.
+
+[^3]: Office of the New York State Comptroller (OSC), *New York City Housing Affordability Update*, Report 17-2024. <https://www.osc.ny.gov/files/reports/osdc/pdf/report-17-2024.pdf>
+
+[^4]: NYC Department of Buildings & NYC Planning Housing Database, 2023 Annual Housing Production Summary.
+
+### Key Metrics for Identifying Target Cities
+
+-   **Rent-Burden Index:**\
+    Measures the share of household income spent on rent (scaled 0–100).\
+    A **declining index** signals improving affordability and successful YIMBY outcomes.
+
+-   **Housing-Growth Index:**\
+    Combines housing permits per capita and permits relative to 5-year population growth.\
+    A **higher composite index** indicates that a city’s housing supply is keeping pace with demand.
 
 Cities scoring high on both metrics demonstrate resilient housing markets and merit performance-based federal rewards. High-burden, low-growth metros would qualify for capacity-building grants and technical assistance.
 
-### Benefiting Occupations and Interest Groups  
+### Benefiting Occupations and Interest Groups
 
-- **Construction & Building Trades Workers**  
-  Increased housing supply sustains employment for electricians, carpenters, and equipment operators. Every **$1 million** in new residential construction supports **8–11 jobs** across the economy[^5]. Federal YIMBY incentives would ensure a stable project pipeline for unionized trades.
+-   **Construction & Building Trades Workers**\
+    Increased housing supply sustains employment for electricians, carpenters, and equipment operators. Every **\$1 million** in new residential construction supports **8–11 jobs** across the economy[^5]. Federal YIMBY incentives would ensure a stable project pipeline for unionized trades.
 
-- **Teachers, Firefighters, and Municipal Employees**  
-  These essential middle-income workers are often priced out of the communities they serve. In metro areas where rent burdens fall by 10 %, **public-sector retention improves by up to 6 %** due to reduced commuting stress[^6].  
+-   **Teachers, Firefighters, and Municipal Employees**\
+    These essential middle-income workers are often priced out of the communities they serve. In metro areas where rent burdens fall by 10 %, **public-sector retention improves by up to 6 %** due to reduced commuting stress[^6].
 
-### Why This Bill Matters  
+[^5]: National Association of Home Builders (NAHB), *Economic Impact of Home Building in a Typical Local Area*, 2021. <https://www.nahb.org/>
 
-Linking **federal funding** to measurable progress on rent burden and housing growth enables Congress to:  
-- Reward local governments that build inclusively;  
-- Expand employment in construction and related sectors;  
-- Increase household disposable income, boosting local economies.  
+[^6]: Urban Institute, *Housing Costs and Public Workforce Retention: Evidence from U.S. Cities*, 2020. <https://www.urban.org/>
+
+### Why This Bill Matters
+
+Linking **federal funding** to measurable progress on rent burden and housing growth enables Congress to:\
+- Reward local governments that build inclusively;\
+- Expand employment in construction and related sectors;\
+- Increase household disposable income, boosting local economies.
 
 The **Federal YIMBY Partnership Program** represents a pragmatic, evidence-based pathway to make housing affordable for working Americans while driving economic vitality.
 
----
+------------------------------------------------------------------------
 
-### **References**  
-[^1]: USAFacts, “How much do households spend on rent? Houston Metro vs. national average,” 2022. [https://usafacts.org](https://usafacts.org/answers/how-much-do-households-spend-on-rent/metro-area/houston-tx/)  
-[^2]: U.S. Census Bureau, *Building Permits Survey*, 2010–2019 Annual Tables. [https://www.census.gov/construction/bps/](https://www.census.gov/construction/bps/)  
-[^3]: Office of the New York State Comptroller (OSC), *New York City Housing Affordability Update*, Report 17-2024. [https://www.osc.ny.gov/files/reports/osdc/pdf/report-17-2024.pdf](https://www.osc.ny.gov/files/reports/osdc/pdf/report-17-2024.pdf)  
-[^4]: NYC Department of Buildings & NYC Planning Housing Database, 2023 Annual Housing Production Summary.  
-[^5]: National Association of Home Builders (NAHB), *Economic Impact of Home Building in a Typical Local Area*, 2021. [https://www.nahb.org/](https://www.nahb.org/)  
-[^6]: Urban Institute, *Housing Costs and Public Workforce Retention: Evidence from U.S. Cities*, 2020. [https://www.urban.org/](https://www.urban.org/)
-
+### **References**

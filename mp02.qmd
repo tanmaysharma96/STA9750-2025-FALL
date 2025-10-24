@@ -32,7 +32,7 @@ This report hopes to quantify how local housing dynamics influence affordability
 
 ------------------------------------------------------------------------
 
-**Step 1:** Data Acquisition
+## **Step 1:** Data Acquisition
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
@@ -94,7 +94,7 @@ HOUSEHOLDS <- get_acs_all_years("B11001_001") |>
     rename(households = B11001_001)
 ```
 
-**Step 2:** Downloading and Preparing Data Regarding Number of New Housing Units Built Each Year
+## **Step 2:** Downloading and Preparing Data Regarding Number of New Housing Units Built Each Year
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -158,7 +158,7 @@ get_building_permits <- function(start_year = 2009, end_year = 2023){
 PERMITS <- get_building_permits()
 ```
 
-**Step 3**: Downloading NAICS Data Schema & Manipulating Into a Format Suitable for Analysis
+## **Step 3**: Downloading NAICS Data Schema & Manipulating Into a Format Suitable for Analysis
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -216,7 +216,7 @@ get_bls_industry_codes <- function(){
 INDUSTRY_CODES <- get_bls_industry_codes()
 ```
 
-**Step 4:** Obtaining BLS Quarterly Census of Employment and Wages
+## **Step 4:** Obtaining BLS Quarterly Census of Employment and Wages
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE, results='hide'}
 #| code-fold: true
@@ -382,11 +382,11 @@ if (!exists("margin_auto", mode = "function")) {
 }
 ```
 
-**Data Integration & Initial Exploration**
+## **Data Integration & Initial Exploration**
 
 *Task 2:* Multi-Table Questions
 
-**1. Which CBSA (by name) permitted the largest number of new housing units in the decade from 2010 to 2019 (inclusive)?**
+## **1. Which CBSA (by name) permitted the largest number of new housing units in the decade from 2010 to 2019 (inclusive)?**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -436,7 +436,7 @@ datatable(
 
 From 2010–2019, Houston-The Woodlands-Sugar Land, and TX Metropolitan Statistical Area (CBSA 26420) permitted the greatest amount of new housing units (approximately 482,075 units).
 
-**2. In what year did Albuquerque, NM (CBSA Number 10740) permit the most new housing units?**
+## **2. In what year did Albuquerque, NM (CBSA Number 10740) permit the most new housing units?**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -483,7 +483,7 @@ peak <- q2_2_tbl |>
 
 Albuquerque's peak year for new housing permits was 2021, with 4,021 units permitted.
 
-**3. Which state (not CBSA) had the highest average individual income in 2015?**
+## **3. Which state (not CBSA) had the highest average individual income in 2015?**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -570,7 +570,7 @@ top_state <- q2_3 |>
 
 In 2015, DC (District of Columbia) had the highest average individual income (approximately \$33,233).
 
-**4.What is the last year in which the NYC CBSA had the most data scientists in the country?**
+## **4.What is the last year in which the NYC CBSA had the most data scientists in the country?**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -638,7 +638,7 @@ datatable(
 
 New York–Newark–Jersey City, NY–NJ–PA (CBSA 35620) last led NAICS 5182 in 2015.
 
-**5. What fraction of total wages in the NYC CBSA was earned by people employed in the finance and insurance industries (NAICS code 52)? In what year did this fraction peak?**
+## **5. What fraction of total wages in the NYC CBSA was earned by people employed in the finance and insurance industries (NAICS code 52)? In what year did this fraction peak?**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -684,9 +684,9 @@ datatable(
 
 In 2014, New York City’s finance and insurance sector reached its peak share of total wages, accounting for approximately 4.6 percent of all wages (around USD 119 billion out of USD 2.6 trillion total).
 
-**Task 3: Initial Visualizations**
+## **Task 3: Initial Visualizations**
 
-**1. The relationship between monthly rent and average household income per CBSA in 2009.**
+## **1. The relationship between monthly rent and average household income per CBSA in 2009.**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -722,7 +722,7 @@ ggplot(rent_income_2009, aes(x = household_income, y = monthly_rent)) +
 
 The relationship between household income and monthly rent in 2009 is strongly positive across CBSAs. Metropolitan areas with higher average incomes (e.g., San Francisco, New York) also have higher rents, reflecting general cost-of-living gradients and housing demand in more affluent regions.
 
-**2. The relationship between total employment and total employment in the health care and social services sector (NAICS 62) across different CBSAs.**
+## **2. The relationship between total employment and total employment in the health care and social services sector (NAICS 62) across different CBSAs.**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -796,7 +796,7 @@ knitr::include_graphics(gif_path)
 
 The visualization above shows us employment in the health care industry is an expanding (and stable) share of total employment in the U.S., with concentrations of growth in the biggest metropolitan areas. This confirms the sector’s pivotal role in population and economic-driven expansion from years 2009-2023.
 
-**3. The evolution of average household size over time. Different lines represent different CBSAs.**
+## **3. The evolution of average household size over time. Different lines represent different CBSAs.**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -889,9 +889,9 @@ ggplot() +
 
 Average household size has been relatively stable across most large CBSAs, with modest shifts to the downside over time. NYC and Los Angeles track slightly above/below the national median (≈2.5–2.7 persons/household), reflecting differences in housing stock and demographics.
 
-**Building Indices of Housing Affordability and Housing Stock Growth**
+## **Building Indices of Housing Affordability and Housing Stock Growth**
 
-**Task 4: Rent Burden Analysis**
+## **Task 4: Rent Burden Analysis**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -960,7 +960,7 @@ datatable(
 
 The rent burden index measures exactly how much of a typical household’s income goes to rent (normalized 0–100). Cities with higher values (e.g., San Francisco, Los Angeles, New York) show consistently high rent pressure, while more affordable CBSAs (e.g., St. Louis, Cleveland) cluster toward the lower end of the scale. For New York, the index has remained among the top quartile nationwide, with only moderate fluctuations over 2009–2023.
 
-**Task 5: Housing Growth**
+## **Task 5: Housing Growth**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -1205,9 +1205,9 @@ hg_rb_summary <- hg_rb_summary %>%
 # ---- END Task 6 PREP --------------------------------------------------------
 ```
 
-**Task 6: Visualization**
+## **Task 6: Visualization**
 
-**Rent Burden Change vs. Population Growth**
+## **Rent Burden Change vs. Population Growth**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
@@ -1276,7 +1276,7 @@ ggplot(df_rb_pop, aes(x = pop_growth_pct, y = rb_change)) +
 ```
 **Each point shows a metro’s change in rent burden versus its population growth since 2009. Blue metros meet all YIMBY criteria: they started with high rent pressure, achieved population growth, and saw rent burdens fall alongside above-average housing growth. Most CBSAs cluster near the origin, suggesting modest shifts in both affordability and population, while the highlighted few demonstrate successful pro-housing outcomes.**
 
-**Housing Growth vs Rent-Burden Decrease (positive = burden falling)**
+## **Housing Growth vs Rent-Burden Decrease (positive = burden falling)**
 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true

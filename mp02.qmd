@@ -1266,6 +1266,7 @@ ggplot(df_rb_pop, aes(x = pop_growth_pct, y = rb_change)) +
     panel.grid.minor = element_blank()
   )
 ```
+**Each point shows a metro’s change in rent burden versus its population growth since 2009. Blue metros meet all YIMBY criteria: they started with high rent pressure, achieved population growth, and saw rent burdens fall alongside above-average housing growth. Most CBSAs cluster near the origin, suggesting modest shifts in both affordability and population, while the highlighted few demonstrate successful pro-housing outcomes.**
 
 **Housing Growth vs Rent-Burden Decrease (positive = burden falling)**
 
@@ -1329,6 +1330,7 @@ ggplot(df_hg_rb, aes(x = comp_growth_index, y = rb_decrease)) +
     panel.grid.minor = element_blank()
   )
 ```
+**This plot compares average housing-growth performance with how much rent burdens have fallen. A positive slope and concentration of blue points in the upper-right quadrant indicate that metros with stronger, sustained housing expansion tend to experience greater improvements in affordability, consistent with YIMBY dynamics.**
 
 ## Policy Brief: Making Backyards Affordable for All
 

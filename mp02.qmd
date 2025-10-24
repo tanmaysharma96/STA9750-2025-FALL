@@ -3,8 +3,8 @@ title: "Making Backyards Affordable for All"
 format:
   html:
     toc: true
-    toc-location: left   # or "right"
-    toc-depth: 3         # include up to ### headings
+    toc-location: left
+    toc-depth: 3
     toc-expand: true
     smooth-scroll: true
     number-sections: false
@@ -289,7 +289,7 @@ get_bls_qcew_annual_averages <- function(start_year=2009, end_year=2023){
 
 WAGES <- get_bls_qcew_annual_averages()
 
-# Build dataset for viz
+# Building a dataset for viz
 employment_health <- WAGES %>%
   dplyr::group_by(FIPS, YEAR) %>%
   dplyr::summarise(
@@ -304,7 +304,7 @@ employment_health <- WAGES %>%
     total_employment = total_emp,
     health_employment = health_emp
   )
-# ---- ANIMATION (GUARDED, NO knit_exit) ----
+# no knit exit for animation
 have_anim <- requireNamespace("gganimate", quietly = TRUE) &&
              requireNamespace("gifski",    quietly = TRUE)
 
@@ -315,7 +315,7 @@ if (!have_anim) {
   library(scales)
   library(gganimate)
 
-  # --- Safety shims for buggy theme helpers ---------------------------------
+  #safety shims inserted here for gg_par error output
 if (!exists("gg_par", mode = "function")) gg_par <- grid::gpar
 
 if (!exists("margin_auto", mode = "function")) {
@@ -399,7 +399,7 @@ q2_1 <- PERMITS |>
   arrange(desc(total_permits)) |>
   left_join(INCOME |> select(GEOID, NAME) |> distinct(), join_by(CBSA == GEOID))
 
-# Interactive, publication-quality table
+# Creating an interactive, publication quality table
 library(DT)
 library(htmltools)
 
@@ -488,10 +488,10 @@ Albuquerque's peak year for new housing permits was 2021, with 4,021 units permi
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
 
-# Helper: principal state abbreviation from CBSA NAME
+#principal state abbreviation from CBSA NAME
 extract_state <- function(name) stringr::str_match(name, ", ([A-Z]{2})")[,2]
 
-# State name lookup
+#Code for state name look-up function
 state_df <- tibble::tibble(
   abb  = c(state.abb, "DC", "PR"),
   name = c(state.name, "District of Columbia", "Puerto Rico")
@@ -520,7 +520,7 @@ q2_3 <- q2_base_2015 |>
 library(DT)
 library(htmltools)
 
-# Clean table for display
+# Creating a clean table for display
 q2_3_tbl <- q2_3 |>
   dplyr::filter(!is.na(state)) |>
   dplyr::transmute(
@@ -562,7 +562,7 @@ datatable(
     digits = 0, interval = 3, mark = ","
   )
 
-# Compute the answer
+# Computing the answer
 top_state <- q2_3 |>
   dplyr::filter(!is.na(state)) |>
   dplyr::slice_max(avg_individual_income, n = 1, with_ties = FALSE)
@@ -575,16 +575,13 @@ In 2015, DC (District of Columbia) had the highest average individual income (ap
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
 
-### Q4 — Data Scientists (NAICS 5182): yearly leader + last year NYC led
-
-# 1) Stable ACS name crosswalk: use a single year to avoid multiple names per GEOID
 acs_key <- INCOME |>
   filter(year == max(year, na.rm = TRUE)) |>
   select(GEOID, NAME) |>
   distinct() |>
   mutate(std_cbsa = paste0("C", GEOID))   # e.g., "C35620" for NYC
 
-# 2) Leaders by year for NAICS 5182 (keep INDUSTRY so it shows in the table)
+# 2) Leaders by year for NAICS 5182
 leaders_5182 <- WAGES |>
   filter(INDUSTRY == 5182) |>
   group_by(FIPS, YEAR, INDUSTRY) |>
@@ -605,7 +602,7 @@ nyc_last_year <- leaders_5182 |>
 library(DT)
 library(htmltools)
 
-# --- Interactive table of yearly leaders for NAICS 5182 ---
+#table of yearly leaders for NAICS 5182
 leaders_5182_tbl <- leaders_5182 |>
   dplyr::transmute(
     Year = YEAR,
@@ -643,7 +640,7 @@ New York–Newark–Jersey City, NY–NJ–PA (CBSA 35620) last led NAICS 5182 i
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
 
-# Filter NYC CBSA (appears as "C3562" in WAGES dataset)
+# Filtering NYC CBSA
 nyc_fin_share <- WAGES |>
   filter(FIPS == "C3562") |>
   group_by(YEAR) |>
@@ -655,7 +652,7 @@ nyc_fin_share <- WAGES |>
   mutate(fin_share = fin_wages / total_wages) |>
   arrange(YEAR)
 
-# Format for readability
+# Formatting for readability
 library(scales)
 library(DT)
 
@@ -672,7 +669,7 @@ nyc_fin_share_pretty <- nyc_fin_share |>
     `Finance Share (%)`
   )
 
-# Display interactive table
+# Displaying interactive table
 datatable(
   nyc_fin_share_pretty,
   options = list(pageLength = 10),
@@ -691,7 +688,7 @@ In 2014, New York City’s finance and insurance sector reached its peak share o
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
 
-# Join rent and income data for 2009
+# Joining rent and income data for 2009
 rent_income_2009 <- RENT |>
   filter(year == 2009) |>
   select(GEOID, NAME, monthly_rent) |>
@@ -700,7 +697,7 @@ rent_income_2009 <- RENT |>
     by = "GEOID"
   )
 
-# Plot rent vs income relationship
+# Plotting rent vs income relationship
 library(ggplot2)
 
 ggplot(rent_income_2009, aes(x = household_income, y = monthly_rent)) +
@@ -727,16 +724,13 @@ The relationship between household income and monthly rent in 2009 is strongly p
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
 
-# ---- FIXED ANIMATION CHUNK (drop-in replacement) ----
-# Requirements
 if (!requireNamespace("gganimate", quietly = TRUE)) install.packages("gganimate")
 if (!requireNamespace("gifski", quietly = TRUE))    install.packages("gifski")
 library(ggplot2)
 library(scales)
 library(gganimate)
 
-# 1) Make a clean df with the columns the plot will use
-# employment_health was created earlier; it has: GEOID, year, total_employment, health_employment
+# 1) Makeing a clean df with the columns the plot will use
 eh <- employment_health |>
   dplyr::transmute(
     GEOID,
@@ -748,7 +742,7 @@ eh <- employment_health |>
 
 stopifnot(nrow(eh) > 0)
 
-# 2) Build the animated plot (note: transition_time(year))
+# 2) Building the animated plot
 p_anim <- ggplot(eh, aes(x = total_emp, y = health_emp, group = GEOID)) +
   geom_point(aes(color = year), alpha = 0.7, size = 1.8) +
   scale_color_viridis_c(option = "plasma") +
@@ -775,7 +769,7 @@ p_anim <- ggplot(eh, aes(x = total_emp, y = health_emp, group = GEOID)) +
   shadow_mark(alpha = 0.15, size = 1) +
   ease_aes("linear")
 
-# 3) Render & save GIF
+# 3) Rendering & saving GIF
 dir.create("docs", showWarnings = FALSE)
 gif_path <- file.path("docs", "img_employment_health.gif")
 
@@ -790,7 +784,7 @@ anim_save(gif_path, animation = anim)
 
 knitr::include_graphics(gif_path)
 
-# 4) Show in the document
+# 4) Showing in the document
 knitr::include_graphics(gif_path)
 ```
 
@@ -801,19 +795,17 @@ The visualization above shows us employment in the health care industry is an ex
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
 
-### Household size over time — stable lines & correct labels (Top 10 CBSAs)
-
 library(dplyr)
 library(ggplot2)
 library(ggrepel)
 library(scales)
 
-# 1) Compute household size by CBSA-year
+# 1) Computing household size by CBSA-year
 hhsize <- POPULATION %>%
   inner_join(HOUSEHOLDS, by = c("GEOID","NAME","year")) %>%
   transmute(GEOID, NAME, year, hh_size = population / households)
 
-# 2) Build a STABLE label per GEOID (use the latest available NAME)
+# 2) Building a STABLE label per GEOID
 latest_names <- hhsize %>%
   group_by(GEOID) %>%
   filter(year == max(year, na.rm = TRUE)) %>%
@@ -821,7 +813,7 @@ latest_names <- hhsize %>%
   ungroup() %>%
   select(GEOID, label_name = NAME)
 
-# 3) Keep top 10 CBSAs by latest population (optional, to reduce clutter)
+# 3) Keeping top 10 CBSAs by latest population
 top10 <- POPULATION %>%
   group_by(GEOID) %>%
   filter(year == max(year, na.rm = TRUE)) %>%
@@ -832,7 +824,7 @@ top10 <- POPULATION %>%
 
 df <- hhsize %>%
   filter(GEOID %in% top10) %>%
-  left_join(latest_names, by = "GEOID") %>%           # attach stable label
+  left_join(latest_names, by = "GEOID") %>%
   mutate(
   highlight = case_when(
     GEOID == "35620" ~ "NYC",          # New York–Newark–Jersey City
@@ -841,7 +833,7 @@ df <- hhsize %>%
   )
 )
 
-# 4) Endpoints for labels (use latest year per GEOID)
+# 4) Endpoints for labels
 end_labels <- df %>%
   group_by(GEOID) %>%
   filter(year == max(year, na.rm = TRUE)) %>%
@@ -850,7 +842,7 @@ end_labels <- df %>%
   distinct(GEOID, .keep_all = TRUE) %>%
   mutate(label = label_name)
 
-# 5) Plot — group by GEOID (stable), color only NYC/LA, others grey
+# 5) Plot — grouped by GEOID (stable), coloring only NYC/LA, others grey
 ggplot() +
   geom_line(
     data = df %>% filter(highlight == "Other"),
@@ -896,12 +888,12 @@ Average household size has been relatively stable across most large CBSAs, with 
 ```{r, echo=TRUE, warning=FALSE, message=FALSE}
 #| code-fold: true
 
-# --- Task 4: Build rent-burden metric and rankings --------------------------
+# Build rent-burden metric and rankings
 
 library(dplyr)
 library(scales)
 
-# 1) Join INCOME + RENT and compute rent-to-income
+# 1) Joining INCOME + RENT and compute rent-to-income
 rent_burden <- RENT %>%
   inner_join(INCOME, by = c("GEOID", "NAME", "year")) %>%
   transmute(
@@ -911,14 +903,14 @@ rent_burden <- RENT %>%
     rent_to_income = (monthly_rent * 12) / household_income      # annual rent / income
   )
 
-# 2) Standardize to a 0–100 index across all CBSA-years (min–max scaling)
+# 2) Standardizing to a 0–100 index across all CBSA-years (min–max scaling)
 rb_range <- range(rent_burden$rent_to_income, na.rm = TRUE)
 rent_burden <- rent_burden %>%
   mutate(
     rent_burden_index = rescale(rent_to_income, to = c(0, 100), from = rb_range)
   )
 
-# 3) Create the latest-year ranking table used later (this is what your code expects)
+# 3) Creating the latest-year ranking table used later (this is what your code expects)
 latest_year <- max(rent_burden$year, na.rm = TRUE)
 
 rent_rank <- rent_burden %>%
@@ -929,8 +921,8 @@ rent_rank <- rent_burden %>%
     latest_rent_burden = rent_burden_index,
     rent_to_income
   )
-# ---------------------------------------------------------------------------
-# Convert text encoding and round values
+
+# Converting text encoding and round values
 rent_rank_clean <- rent_rank %>%
   mutate(
     NAME = enc2utf8(NAME),
@@ -938,7 +930,7 @@ rent_rank_clean <- rent_rank %>%
     rent_to_income = round(rent_to_income, 4)
   )
 
-# Combine top & bottom tables
+# Combining top & bottom tables
 rent_rank_tbl <- bind_rows(
   head(rent_rank_clean, 10) %>% mutate(Category = "Highest Burden"),
   tail(rent_rank_clean, 10) %>% mutate(Category = "Lowest Burden")
@@ -970,13 +962,13 @@ library(scales)
 library(DT)
 library(stringi)
 
-# ---------- 0) Fix join keys (PERMITS has CBSA; POPULATION has GEOID) ----------
-# Make sure both sides use the same type; tidycensus GEOID is typically numeric for CBSA
+# Fixing join keys (PERMITS has CBSA; POPULATION has GEOID)
+# Making sure both sides use the same type; tidycensus GEOID is typically numeric for CBSA
 PERMITS_fixed <- PERMITS %>%
   rename(GEOID = CBSA) %>%
   mutate(GEOID = as.numeric(GEOID))  # if POPULATION$GEOID is character, change to as.character()
 
-# ---------- 1) Join population & permits ----------
+# Join population & permits
 hg <- POPULATION %>%
   mutate(GEOID = as.numeric(GEOID)) %>%            # match type to PERMITS_fixed
   inner_join(PERMITS_fixed, by = c("GEOID", "year")) %>%
@@ -984,7 +976,7 @@ hg <- POPULATION %>%
   mutate(NAME = enc2utf8(NAME)) %>%
   arrange(GEOID, year)
 
-# ---------- 2) 5-year population growth (starts in 2014) ----------
+# 5-year population growth (starts in 2014)
 hg <- hg %>%
   group_by(GEOID) %>%
   mutate(
@@ -994,7 +986,7 @@ hg <- hg %>%
   ) %>%
   ungroup()
 
-# ---------- 3) Two housing-growth metrics ----------
+# Two housing-growth metrics
 # (a) Instantaneous: permits per 1,000 residents this year
 # (b) Rate-based: permits per person of 5-year population growth (only when growth > 0)
 hg <- hg %>%
@@ -1004,20 +996,20 @@ hg <- hg %>%
     rate_growth = new_housing_units_permitted / rate_denom
   )
 
-# ---------- 4) Standardize each metric on 0–100 ----------
+# Standardizing each metric on 0–100
 hg <- hg %>%
   mutate(
     inst_index = rescale(inst_growth, to = c(0, 100), na.rm = TRUE),
     rate_index = rescale(rate_growth, to = c(0, 100), na.rm = TRUE)
   )
 
-# ---------- 5) Composite index (equal-weight average of the two indices) ----------
+# Composite index (equal-weight average of the two indices)
 hg <- hg %>%
   mutate(
     composite_index = rowMeans(cbind(inst_index, rate_index), na.rm = TRUE)
   )
 
-# ---------- 6) Helper formatting for tables ----------
+# Helper formatting for tables
 last_year <- max(hg$year, na.rm = TRUE)
 
 pretty_tbl <- function(df) {
@@ -1047,7 +1039,7 @@ fmt_dt <- function(dtobj) {
                   "Composite Index (0–100)"), digits = 2)
 }
 
-# ---------- 7) Rankings for the latest year ----------
+# 7) Rankings for the latest year
 hg_latest <- hg %>% filter(year == last_year)
 
 # 7a) Instantaneous metric: top/bottom 10
@@ -1063,7 +1055,7 @@ dt_inst <- datatable(
 )
 dt_inst <- fmt_dt(dt_inst)
 
-# 7b) Rate-based metric (drop NAs where 5-yr growth ≤ 0): top/bottom 10
+# 7b) Rate-based metric (dropping NAs where 5-yr growth ≤ 0):
 rate_rank <- hg_latest %>% filter(!is.na(rate_index)) %>% arrange(desc(rate_index))
 dt_rate <- datatable(
   dplyr::bind_rows(
@@ -1089,7 +1081,7 @@ dt_comp <- datatable(
 )
 dt_comp <- fmt_dt(dt_comp)
 
-# Display the three tables
+# Displaying the three tables
 dt_inst
 cat("*Shows the metros issuing the most (and least) new housing permits per 1,000 residents in the latest year—an indicator of near-term construction intensity.*")
 dt_rate
@@ -1097,12 +1089,11 @@ cat("*Ranks metros by permits relative to five-year population growth, highlight
 dt_comp
 cat("*Combines both measures into a single 0–100 index, identifying metros with the strongest overall housing-growth performance.*")
 
-# ---- Task 6 PREP: build rb_change and hg_rb_summary -------------------------
+# building rb_change and hg_rb_summary
 library(dplyr)
 library(scales)
 library(stringi)
 
-# 0) Clean a safe metro name once
 name_clean <- function(x) enc2utf8(x)
 
 # 1) Rent burden by CBSA-year (global 0–100 index)
@@ -1134,8 +1125,8 @@ rb_summary <- rb_by_year %>%
     .groups = "drop"
   ) %>%
   mutate(
-    rb_change   = latest_rb - early_rb,   # (latest – early); negative = burden fell
-    rb_decrease = early_rb - latest_rb    # positive = burden fell (nice for upward Y)
+    rb_change   = latest_rb - early_rb,
+    rb_decrease = early_rb - latest_rb
   )
 
 # 3) Population growth over the study window per CBSA
@@ -1151,8 +1142,7 @@ pop_summary <- POPULATION %>%
     .groups = "drop"
   )
 
-# 4) Average (across years) composite housing-growth index from Task 5's `hg`
-#    (If `hg` contains 2020, it’s fine; else we filter as above.)
+# 4) Average (across years) composite housing-growth index from Task 5
 comp_hg <- hg %>%
   filter(!is.na(composite_index)) %>%
   group_by(GEOID, NAME) %>%
@@ -1162,7 +1152,7 @@ comp_hg <- hg %>%
   ) %>%
   mutate(NAME = name_clean(NAME))
 
-# 5) Join pieces together
+# 5) Joining these pieces together
 rb_base <- rb_summary %>%
   left_join(pop_summary %>% select(GEOID, pop_growth_pct), by = "GEOID")
 
@@ -1196,13 +1186,12 @@ yimby_flag_df <- rb_summary %>%
                  (comp_growth_index >= hg_avg)
   )
 
-# Attach the user-friendly factor to both data frames the plots use
+# Attaching user friendly factor to both data frames the plots use
 rb_change <- rb_change %>%
   left_join(yimby_flag_df %>% select(GEOID, yimby_flag), by = "GEOID")
 
 hg_rb_summary <- hg_rb_summary %>%
   left_join(yimby_flag_df %>% select(GEOID, yimby_flag), by = "GEOID")
-# ---- END Task 6 PREP --------------------------------------------------------
 ```
 
 **Task 6: Visualization**
@@ -1344,45 +1333,45 @@ ggplot(df_hg_rb, aes(x = comp_growth_index, y = rb_decrease)) +
 
 **Overview**
 
-Across the United States, housing affordability remains one of the most urgent economic and social challenges. While some metropolitan areas have successfully expanded housing supply and reduced rent burdens, others remain constrained by restrictive policies and chronic under-supply.
+All around the United States, affordability in the housing sector continues to be one of the most important economic and social challenges. Although various metropolitan regions have reduced rent burdens and increased housing supply successfully, other regions continue to be limited through restrictive policies as well as chronic under-supply.
 
-We propose establishing a **Federal YIMBY Partnership Program** to provide **grants and incentives** for local governments that adopt housing-friendly zoning, streamline permitting, and increase new housing production.
+This Policy Brief proposes to establish a **Federal YIMBY Partnership Program** in order to supply **grants and incentives** for local governments that choose to streamline permitting, increase new housing production, and protect housing-friendly zoning.
 
 **Proposed Congressional Sponsors**
 
 **Primary Sponsor – Houston, TX (Houston–The Woodlands–Sugar Land Metro Area)**\
-Houston’s flexible land-use and low zoning barriers have long kept rents more affordable than other major metros. As of 2022, the median renter household spent **\~30.9 %** of income on rent and utilities, compared with nearly 40 % in New York City[^1]. Houston issued over **480,000 residential building permits from 2010-2019**, among the highest in the nation[^2]. A representative from Houston could credibly highlight how market-driven supply expansion sustains affordability and economic growth.
+The low zoning barriers coupled with flexible land-use in Houston have maintained rent pricing to be more cost-effective than other major metropolitan areas. As of 2022, the median household renter spent approximately **\30.9 %** of their annual income on utilities and rent, almost as surprising when compared to the staggering figure of nearly 40 % in New York City[^1]. Houston, from years 2010-2019, issued over **480,000 residential building permits**, which ranks to be among the highest in the country[^2]. A representative from Houston would be able to highlight (credibly) how supply expansion driven by market sentiment sustains both economic growth and affordability.
 
 [^1]: USAFacts, “How much do households spend on rent? Houston Metro vs. national average,” 2022. [https://usafacts.org](https://usafacts.org/answers/how-much-do-households-spend-on-rent/metro-area/houston-tx/)
 
 [^2]: U.S. Census Bureau, *Building Permits Survey*, 2010–2019 Annual Tables. <https://www.census.gov/construction/bps/>
 
 **Co-Sponsor – New York City, NY (New York–Newark–Jersey City Metro Area)**\
-New York City illustrates the reverse case: persistent affordability crises and limited new supply. More than **1 million renter households (≈53 %)** are rent-burdened, spending over 30 % of income on housing[^3]. Construction remains constrained by zoning limits—only **\~25,000 new units** were permitted city-wide in 2023[^4]. A representative from New York could champion this bill as a federal lifeline to modernize outdated zoning and stimulate mid-income housing production.
+NYC shows us the opposite case: limited new supply and continuous affordability crises. Over **1 million renter households (≈53 %)** are burdened by rent. This metric is present as renter households are spending over 30 % of income on housing[^3]. Limitations to new construction are exacerbated by zoning limits—only approximately **\25,000 new units** were permitted in the city in the year 2023[^4]. A representative from New York could help to promote this bill as a federal lifeline to modernize old and outdated zoning, and to promote more housing production for mid-income families.
 
 [^3]: Office of the New York State Comptroller (OSC), *New York City Housing Affordability Update*, Report 17-2024. <https://www.osc.ny.gov/files/reports/osdc/pdf/report-17-2024.pdf>
 
 [^4]: NYC Department of Buildings & NYC Planning Housing Database, 2023 Annual Housing Production Summary.
 
-**Key Metrics for Identifying Target Cities**
+**Important Metrics in Identifying Target Cities**
 
 -   **Rent-Burden Index:**\
-    Measures the share of household income spent on rent (scaled 0–100).\
-    A **declining index** signals improving affordability and successful YIMBY outcomes.
+    This index measures the share of household income that is spent on rent (this is scaled 0–100).\
+    Note that a **declining index** shows us improvements in affordability as well as successful YIMBY outcomes.
 
 -   **Housing-Growth Index:**\
-    Combines housing permits per capita and permits relative to 5-year population growth.\
-    A **higher composite index** indicates that a city’s housing supply is keeping pace with demand.
+    This index combines housing permits per capita and permits in relation to 5 year population growth.\
+    A **higher composite index** shows us that a city’s supply of housing is keeping up with it's demand.
 
-Cities scoring high on both metrics demonstrate resilient housing markets and merit performance-based federal rewards. High-burden, low-growth metros would qualify for capacity-building grants and technical assistance.
+Note that cities scoring high on both metrics showcase a resilient housing market and deserve federal rewards based on their performance. Low growth and high burden metropolitan areas should qualify for technical assistance as well as capacity building grants.
 
 **Benefiting Occupations and Interest Groups**
 
 -   **Construction & Building Trades Workers**\
-    Increased housing supply sustains employment for electricians, carpenters, and equipment operators. Every **\$1 million** in new residential construction supports **8–11 jobs** across the economy[^5]. Federal YIMBY incentives would ensure a stable project pipeline for unionized trades.
+    An increase in housing supply protects employment for carpenters, equipment operators, and electricians. Across the economy, every **\$1 million** in new residential construction supports **8–11 jobs**[^5]. Federal YIMBY incentives would be able to ensure a robust project framework for trades that are unionized.
 
 -   **Teachers, Firefighters, and Municipal Employees**\
-    These essential middle-income workers are often priced out of the communities they serve. In metro areas where rent burdens fall by 10 %, **public-sector retention improves by up to 6 %** due to reduced commuting stress[^6].
+    It is unfortunate that teachers, firefighters, and municipal employees (essential middle-income workers) are often "priced out" of the communities that they serve. Due to reduced commuting stress, **public-sector retention improves by up to 6 %** in metropolitan areas where rent burdens fall by 10%[^6].
 
 [^5]: National Association of Home Builders (NAHB), *Economic Impact of Home Building in a Typical Local Area*, 2021. <https://www.nahb.org/>
 
@@ -1390,12 +1379,12 @@ Cities scoring high on both metrics demonstrate resilient housing markets and me
 
 **Why This Bill Matters**
 
-Linking **federal funding** to measurable progress on rent burden and housing growth enables Congress to:\
-- Reward local governments that build inclusively;\
-- Expand employment in construction and related sectors;\
-- Increase household disposable income, boosting local economies.
+Establishing a link between **federal funding** to quantifiable progress on housing growth and rent burden allows Congress to:\
+- Provide rewards to local governments that inclusively support new construction;\
+- Increase employment trade related sectors such as construction;\
+- Raise disposable income of households, stimulating local economies.
 
-The **Federal YIMBY Partnership Program** represents a pragmatic, evidence-based pathway to make housing affordable for working Americans while driving economic vitality.
+The **Federal YIMBY Partnership Program** showcases a logical and evidence based roadmap to making housing affordable for working Americans, while also enhancing economic vitality.
 
 ------------------------------------------------------------------------
 

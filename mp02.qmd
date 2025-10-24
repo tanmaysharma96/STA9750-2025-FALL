@@ -1,9 +1,35 @@
 ---
 title: "Making Backyards Affordable for All"
 ---
+
+## Introduction  
+
+Housing affordability is considered to be one of the biggest economic challenges in the 21st century.  
+Stagnant wages, increasing rent, and obstacles to enable newer construction have put an increasing strain on many households all around the United States. Although various metropolitan areas have responded by 
+encouraging development initiatives through means such as flexible zoning and streamlining processes relating to permitting  (often described as **“Yes In My Backyard” – YIMBY – policies**), others still face obstacles through less friendly land-use laws as well as limited growth in the housing sector. (**“Not In My Backyard” – NIMBY – policies**).
+
+The objective of this report is to examine various divergent trajectories using data that is available publicly from the **American Community Survey (ACS)**, the **U.S. Census Bureau’s Building Permits Survey**, and the **Bureau of Labor Statistics (BLS) Quarterly Census of Employment and Wages (QCEW)**.  
+We can evaluate the evolution of housing markets from 2009-2023 across various different U.S. metropolitan areas by combining housing construction data, socioeconomic indicators, and employment metrics.  
+
+The analysis is conducted in 5 different stages:
+
+1. **Data Collection & Cleaning** – combining both BLS & ACS data-sets on different metrics such as income, rent, households, employment, and population.
+2. **Exploratory Analysis** – seeing if there are any evident relationships between income, rent burden and sectoral employment.  
+3. **Index Construction** – creating two indicators:  
+   - A *Rent-Burden Index* (the share of income allocated for rent)  
+   - A *Housing-Growth Index* (studies the rate of new construction relative to population growth)  
+4. **Visualization & Interpretation** – creating visuals and conducting interpretation of how these metrics can help to reveal “YIMBY” versus “NIMBY” patterns across different regions.  
+5. **Policy Brief** – recommending a federal framework that aims to incentivize supply of housing, using data to draw on insights from both high-growth and high burden metro areas.drawing on data-driven insights from both high-growth (Houston) and high-burden (New York City) metro areas.
+
+This report hopes to quantify how local housing dynamics influence affordability, and to be able to translate these findings into actionable recommendations to federal policy. Furthermore, the goal is to combine both **policy advocacy and quantitative analysis**, demonstration how evidence-based 
+metrics can help to inform housing reform efforts on a national level.
+
+---
+
 **Step 1:** Data Acquisition
 
-```{r}
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 if(!dir.exists(file.path("data", "mp02"))){
     dir.create(file.path("data", "mp02"), showWarnings=FALSE, recursive=TRUE)
 }
@@ -64,7 +90,8 @@ HOUSEHOLDS <- get_acs_all_years("B11001_001") |>
     
 **Step 2:** Downloading and Preparing Data Regarding Number of New Housing Units Built Each Year
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
 get_building_permits <- function(start_year = 2009, end_year = 2023){
     fname <- glue("housing_units_{start_year}_{end_year}.csv")
     fname <- file.path("data", "mp02", fname)
@@ -126,7 +153,8 @@ PERMITS <- get_building_permits()
 ```
 **Step 3**: Downloading NAICS Data Schema & Manipulating Into a Format Suitable for Analysis
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
 # --- Safety shim: some themes accidentally call gg_par() instead of grid::gpar() ---
 if (!exists("gg_par", mode = "function")) {
   gg_par <- grid::gpar
@@ -183,7 +211,8 @@ INDUSTRY_CODES <- get_bls_industry_codes()
 
 **Step 4:** Obtaining BLS Quarterly Census of Employment and Wages
 
-```{r}
+```{r, echo=TRUE, warning=FALSE, message=FALSE}
+#| code-fold: true
 library(httr2)
 library(rvest)
 get_bls_qcew_annual_averages <- function(start_year=2009, end_year=2023){

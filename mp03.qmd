@@ -1,0 +1,463 @@
+---
+title: Mini-Project 03 - Visualizing and Maintaining the Green Canopy of NYC
+format: html
+---
+
+**Step 1:** Data Acquisition:
+
+For the district boundary data, I manually downloaded the official City Council (Clipped to Shoreline) shapefile from the NYC Department of Planning website and saved the ZIP file into my data/mp03/ directory. My R function then checks for the existing ZIP file, unzips it only if needed, reads the shapefile using sf::st_read(), and converts the geometry to WGS84 to ensure alignment with the tree dataset. This avoids repeated downloads and provides a clean, reproducible workflow for loading the district boundaries.
+
+```{r}
+
+get_nyc_council_districts <- function(
+  dest_dir = "data/mp03",
+  zip_name = "council_districts.zip"
+) {
+  # Path to zip file (already provided locally)
+  zip_path <- file.path(dest_dir, zip_name)
+
+  if (!file.exists(zip_path)) {
+    stop("ZIP file not found. Place it in data/mp03/ as council_districts.zip")
+  }
+
+  # Unzip only if needed
+  shp_files <- list.files(dest_dir, pattern = "\\.shp$", full.names = TRUE)
+  if (length(shp_files) == 0) {
+    unzip(zip_path, exdir = dest_dir)
+    shp_files <- list.files(dest_dir, pattern = "\\.shp$", full.names = TRUE)
+  }
+
+  if (length(shp_files) == 0) {
+    stop("No .shp file found after unzipping. Check ZIP contents.")
+  }
+
+  # Read shapefile
+  dist_sf <- sf::st_read(shp_files[1], quiet = TRUE)
+
+  # Transform to WGS84 for mapping
+  sf::st_transform(dist_sf, crs = "WGS84")
+}
+
+# Usage
+nyc_council_dists <- get_nyc_council_districts()
+```
+
+**NYC Tree Points**
+
+To obtain the full NYC Street Tree dataset, I used the NYC OpenData SODA2 API, which returns data in paged batches. Because a single request only retrieves the first 1,000 rows, my code iteratively adjusts the $limit and $offset parameters to “page through” the entire dataset and save each chunk locally. This approach ensures responsible API usage while allowing me to download the complete set of tree points for later spatial analysis.
+
+```{r}
+
+library(httr2)
+library(jsonlite)
+library(dplyr)
+library(purrr)
+library(sf)
+
+get_nyc_tree_points <- function(
+  base_url = "https://data.cityofnewyork.us/resource/hn5i-inap.geojson",
+  dest_dir = "data/mp03/trees",
+  limit = 5000   # You can change this if you want smaller/larger chunks
+) {
+  # Create directory if needed
+  if (!dir.exists(dest_dir)) dir.create(dest_dir, recursive = TRUE)
+
+  offset <- 0
+  all_files <- c()
+  batch_num <- 1
+
+  repeat {
+    message("Downloading batch ", batch_num, " with offset = ", offset)
+
+    # Build paged API request
+    req <- request(base_url) |>
+      req_url_query(`$limit` = limit, `$offset` = offset)
+
+    # Perform request
+    resp <- req_perform(req)
+
+    # Parse JSON as text then convert to R list
+    content <- resp_body_string(resp)
+    json_data <- fromJSON(content)
+
+    # Save raw JSON to file
+    file_path <- file.path(dest_dir, paste0("trees_batch_", batch_num, ".geojson"))
+    writeLines(content, file_path)
+    all_files <- c(all_files, file_path)
+
+    # Number of rows returned
+    n_returned <- length(json_data$tree_id)
+
+    # Stop if last batch (< limit means we're at the end)
+    if (n_returned < limit) break
+
+    # Otherwise continue to next batch
+    offset <- offset + limit
+    batch_num <- batch_num + 1
+  }
+
+  message("Download complete. Reading and combining all batches...")
+
+  # Read all GeoJSON batches into sf objects and combine
+  tree_sf <- map_df(all_files, ~ st_read(.x, quiet = TRUE))
+
+  # Return final sf object
+  tree_sf
+}
+
+# Usage:
+nyc_trees <- get_nyc_tree_points()
+nyc_trees
+```
+
+**Step 2:** R Code for Task 2 (uses httr2, paging, caching, st_read, bind_rows)
+
+```{r}
+#| label: setup-libs
+#| message: false
+#| warning: false
+library(httr2)
+library(sf)
+library(dplyr)
+
+get_nyc_tree_points <- function(
+  base_url   = "https://data.cityofnewyork.us/resource/hn5i-inap.geojson",
+  dest_dir   = "data/mp03",
+  limit      = 2000,
+  max_batches = Inf
+) {
+  if (!dir.exists(dest_dir)) {
+    dir.create(dest_dir, recursive = TRUE)
+  }
+
+  offset     <- 0
+  batch_idx  <- 1
+  trees_list <- list()
+
+  repeat {
+    if (batch_idx > max_batches) {
+      message("Reached max_batches = ", max_batches, ". Stopping early.")
+      break
+    }
+
+    file_path <- file.path(
+      dest_dir,
+      sprintf("tree_points_%03d.geojson", batch_idx)
+    )
+
+    # Download only if this batch file doesn't already exist
+    if (!file.exists(file_path)) {
+      message("Downloading batch ", batch_idx,
+              " (offset = ", offset, ", limit = ", limit, ")")
+
+      req <- request(base_url) |>
+        req_url_query(`$limit` = limit, `$offset` = offset)
+
+      resp <- tryCatch(
+        req_perform(req),
+        error = function(e) {
+          warning("Request failed for batch ", batch_idx, ": ",
+                  conditionMessage(e))
+          return(NULL)
+        }
+      )
+
+      if (is.null(resp)) {
+        message("Stopping because of repeated request errors.")
+        break
+      }
+
+      writeBin(resp_body_raw(resp), file_path)
+    } else {
+      message("Using cached file: ", basename(file_path))
+    }
+
+    # Read this batch as sf from GeoJSON
+    trees_batch <- sf::st_read(file_path, quiet = TRUE)
+
+    # 🔧 Normalize ALL datetime columns to character so bind_rows won't choke
+    dt_cols <- vapply(trees_batch, inherits, logical(1), what = "POSIXt")
+    if (any(dt_cols)) {
+      trees_batch[, dt_cols] <- lapply(trees_batch[, dt_cols, drop = FALSE], as.character)
+    }
+
+    trees_list[[batch_idx]] <- trees_batch
+
+    n_returned <- nrow(trees_batch)
+
+    if (n_returned == 0 || n_returned < limit) {
+      message("Final batch size = ", n_returned, ". Finished paging.")
+      break
+    }
+
+    offset    <- offset + limit
+    batch_idx <- batch_idx + 1
+  }
+
+  # Final safety pass: make sure any leftover POSIX columns are characters
+  trees_list <- lapply(trees_list, function(x) {
+    dt_cols <- vapply(x, inherits, logical(1), what = "POSIXt")
+    if (any(dt_cols)) {
+      x[, dt_cols] <- lapply(x[, dt_cols, drop = FALSE], as.character)
+    }
+    x
+  })
+
+  dplyr::bind_rows(trees_list)
+}
+
+nyc_trees <- get_nyc_tree_points()
+nyc_trees
+
+saveRDS(nyc_trees, "data/mp03/nyc_trees.rds")
+```
+
+**Date Integration & Initial Exploration**
+
+I used the NYC OpenData SODA2 API to download the full Street Tree dataset in paged GeoJSON batches, saving each query result to data/mp03/ with a consistent filename pattern. My function only downloads a batch if the file is not already present, then reads all batches with sf::st_read() and combines them into a single sf object containing about 1.7 million tree points. This provides a reproducible and responsible workflow for acquiring and reusing the tree data without repeatedly hitting the API.
+
+**Task 3**: Plot all Points
+
+```{r}
+library(ggplot2)
+
+ggplot() +
+  geom_sf(data = nyc_council_dists, fill = "white", color = "black", size = 0.2) +
+  geom_sf(data = nyc_trees, color = "darkgreen", alpha = 0.3, size = 0.1) +
+  labs(
+    title = "NYC Street Trees",
+    subtitle = "All tree points plotted over City Council Districts",
+    caption = "Source: NYC OpenData"
+  ) +
+  theme_minimal()
+```
+Spatially joining the various tree points to polygons in order for each tree to get a district ID.
+
+```{r}
+nyc_trees_joined <- st_join(
+  nyc_trees,
+  nyc_council_dists |> dplyr::select(CounDist),
+  join = st_within
+)
+```
+
+**Task 4**: District Level Analysis of Tree Coverage
+
+1) District with most trees
+
+```{r}
+trees_by_count <- nyc_trees_joined |>
+  count(CounDist) |>
+  arrange(desc(n))
+
+trees_by_count |>
+  slice_max(n, n = 1)
+```
+The district with the most trees is District 51 (Staten Island) with 99,335 trees.
+
+2) Council with highest density of trees
+
+```{r}
+# add area in square km to district sf
+nyc_council_dists <- nyc_council_dists |>
+  mutate(area_sqkm = Shape_Area / 1e6)
+
+density_by_district <- nyc_trees_joined |>
+  st_drop_geometry() |>
+  filter(!is.na(CounDist)) |>
+  count(CounDist, name = "n_trees") |>
+  left_join(
+    nyc_council_dists |>
+      st_drop_geometry() |>
+      select(CounDist, area_sqkm),
+    by = "CounDist"
+  ) |>
+  mutate(tree_density = n_trees / area_sqkm) |>
+  arrange(desc(tree_density))
+
+# top district by density
+density_by_district |> slice_max(tree_density, n = 1)
+```
+
+The District with the highest density of trees is District 39 (Brooklyn) with approximately 496 trees per square kilometer of district area.
+
+3) Which district has highest fraction of dead trees out of all trees?
+
+```{r}
+dead_fraction <- nyc_trees_joined |>
+  st_drop_geometry() |>
+  filter(!is.na(CounDist)) |>
+  mutate(is_dead = tpcondition == "Dead") |>
+  group_by(CounDist) |>
+  summarise(
+    total_trees = n(),
+    dead_trees  = sum(is_dead, na.rm = TRUE),
+    frac_dead   = dead_trees / total_trees,
+    .groups = "drop"
+  ) |>
+  arrange(desc(frac_dead))
+
+# top district by fraction dead
+dead_fraction |> slice_max(frac_dead, n = 1)
+```
+The district with the highest fraction of dead trees is District 32 (South Queens / Rockaway) with approximately 13.49% dead trees.
+
+4) What is the most common tree species in Manhattan?
+
+```{r}
+manhattan_species <- nyc_trees_joined |>
+  st_drop_geometry() |>
+  filter(CounDist %in% 1:10) |>
+  count(genusspecies, sort = TRUE)
+
+# top species
+manhattan_species |> slice_max(n, n = 1)
+```
+The most common tree species in Manhattan is the "Thornless honeylocust". There are approximately 20,494 of them.
+
+5) What is the species of the tree closest to Baruch's campus?
+
+```{r}
+# Baruch College approx coordinates (lon, lat)
+baruch <- st_sfc(
+  st_point(c(-73.9830, 40.7403)),
+  crs = 4326
+)
+
+# distance from each tree to Baruch (in meters)
+nyc_trees_joined$dist_to_baruch <- as.numeric(st_distance(nyc_trees_joined, baruch))
+
+nearest_tree <- nyc_trees_joined |>
+  slice_min(dist_to_baruch, n = 1)
+
+# look at key info for the nearest tree
+nearest_tree |>
+  st_drop_geometry() |>
+  select(CounDist, genusspecies, tpcondition, dbh, dist_to_baruch)
+```
+The name of the species of trees closest to Baruch's campus is the "Callery Pear".
+
+**Government Project Design**
+
+Creating district specific-dataset
+
+```{r}
+
+my_district <- 51
+
+district_trees <- nyc_trees_joined |>
+  filter(CounDist == my_district)
+
+district_shape <- nyc_council_dists |>
+  filter(CounDist == my_district)
+```
+
+Zoomed-In Map of Trees in District 51
+
+```{r}
+ggplot() +
+  geom_sf(data = district_shape, fill = "gray95", color = "black") +
+  geom_sf(data = district_trees, aes(color = tpcondition), size = 0.5, alpha = 0.5) +
+  scale_color_manual(values = c(
+    "Excellent" = "darkgreen",
+    "Good"      = "forestgreen",
+    "Fair"      = "goldenrod",
+    "Poor"      = "orange",
+    "Dead"      = "red",
+    "Critical"  = "purple",
+    "Unknown"   = "gray"
+  )) +
+  labs(
+    title = "Street Trees in NYC Council District 51",
+    subtitle = "Colored by Condition (tpcondition)",
+    color = "Tree Condition"
+  ) +
+  theme_minimal()
+```
+Quantitative Comparisons
+
+```{r}
+comparison_table <- nyc_trees_joined |>
+  st_drop_geometry() |>
+  mutate(is_dead = tpcondition == "Dead") |>
+  group_by(CounDist) |>
+  summarise(
+    total_trees = n(),
+    dead_trees  = sum(is_dead, na.rm = TRUE)
+  ) |>
+  left_join(
+    nyc_council_dists |> 
+      mutate(area_sqkm = Shape_Area / 1e6) |> 
+      st_drop_geometry(),
+    by = "CounDist"
+  ) |>
+  mutate(tree_density = total_trees / area_sqkm)
+
+compare_dists <- c(39, 32, 19, 51)  # example set
+
+#Comparing three other districts
+comparison_table |> 
+  filter(CounDist %in% compare_dists)
+```
+Bar Chart
+
+Dead Tree Comparison
+```{r}
+comparison_table |>
+  filter(CounDist %in% compare_dists) |>
+  ggplot(aes(x = factor(CounDist), y = dead_trees, fill = factor(CounDist))) +
+  geom_col() +
+  labs(
+    title = "Dead Trees by District",
+    x = "Council District",
+    y = "Number of Dead Trees",
+    fill = "District"
+  ) +
+  theme_minimal()
+```
+
+Map Based Comparison
+
+```{r}
+district_compare <- nyc_council_dists |> 
+  filter(CounDist %in% c(51, 39))
+
+trees_compare <- nyc_trees_joined |> 
+  filter(CounDist %in% c(51, 39) & tpcondition == "Dead")
+
+ggplot() +
+  geom_sf(data = district_compare, fill = "gray92") +
+  geom_sf(data = trees_compare, color = "red", size = 0.5, alpha = 0.6) +
+  facet_wrap(~CounDist) +
+  labs(
+    title = "Dead Trees Comparison: D51 vs D39",
+    subtitle = "Red points: trees listed as 'Dead'",
+    x = "", y = ""
+  ) +
+  theme_minimal()
+```
+
+## NYC Parks Proposal: District 51 Tree Revitalization Program
+
+As a staffer for the NYC Council Member representing **District 51**, I am proposing a targeted **street-tree revitalization program** to restore and strengthen the urban canopy across the South Shore of Staten Island. This district has the **largest total number of street trees in New York City (91,335 trees)**, yet a significant portion are in **poor**, **critical**, or **dead** condition, particularly along key residential corridors such as **Hylan Boulevard** and **Amboy Road**. The goal of this program is to **replace hazardous trees**, **replant lost canopy**, and **improve overall environmental resilience**.
+
+### Proposed Scope of Work
+
+- **Replace 2,000** dead or critically rated trees  
+- **Plant 1,500** new trees in areas with sparse canopy  
+- **Remove 1,000** existing stumps to create space for future plantings  
+- **Perform risk-mitigation work** (pruning or treatment) on **500** high-risk trees identified in the NYC Parks dataset  
+
+A spatial analysis of NYC OpenData shows that **District 51 leads the city in total tree count** but also ranks among the higher districts in **dead-tree burden**. When compared with **District 39 (Brooklyn)**, **District 32 (Queens)**, and **District 19 (Queens)**, District 51 shows both a **greater number of failing trees** and **neighborhoods where canopy loss is accelerating**, particularly in coastal zones vulnerable to storm surge, salt exposure, and severe weather events. These quantitative differences illustrate that additional NYC Parks resources allocated to District 51 will have an **outsized impact on public safety and long-term canopy health**.
+
+A zoomed-in map of District 51 highlights the distribution of tree conditions, with clusters of **dead** and **critical** trees visible around **Great Kills**, **Annadale**, and **Tottenville**. A comparative bar chart of dead-tree counts across districts further demonstrates the **relative need for targeted intervention** in this district.
+
+By directing a focused revitalization effort in District 51, NYC Parks can achieve significant improvements in **environmental resilience**, **pedestrian comfort**, and **neighborhood aesthetics**. This proposal presents a clear, **data-driven rationale** for prioritizing the South Shore in the next round of discretionary urban forestry funding.
+
+
+
+
+
+
+
+

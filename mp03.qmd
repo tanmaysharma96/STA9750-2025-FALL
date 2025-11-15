@@ -453,11 +453,3 @@ A spatial analysis of NYC OpenData shows that **District 51 leads the city in to
 A zoomed-in map of District 51 highlights the distribution of tree conditions, with clusters of **dead** and **critical** trees visible around **Great Kills**, **Annadale**, and **Tottenville**. A comparative bar chart of dead-tree counts across districts further demonstrates the **relative need for targeted intervention** in this district.
 
 By directing a focused revitalization effort in District 51, NYC Parks can achieve significant improvements in **environmental resilience**, **pedestrian comfort**, and **neighborhood aesthetics**. This proposal presents a clear, **data-driven rationale** for prioritizing the South Shore in the next round of discretionary urban forestry funding.
-
-
-
-
-
-
-
-

@@ -1,0 +1,300 @@
+---
+title: "mp04"
+---
+
+**Data Acquisition**
+
+```{r}
+needed_pkgs <- c(
+  "tidyverse",
+  "httr2",
+  "rvest",
+  "lubridate",
+  "infer",
+  "janitor"
+)
+
+to_install <- setdiff(needed_pkgs, rownames(installed.packages()))
+if (length(to_install) > 0) {
+  install.packages(to_install)
+}
+
+invisible(lapply(needed_pkgs, library, character.only = TRUE))
+```
+
+*Downloading CES Total Nonfarm Payroll**
+
+```{r task1_ces_download, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(httr2)
+library(rvest)
+library(lubridate)
+library(janitor)
+
+# --- 1. Build the HTTP request to the PDQ page ---
+
+ces_base <- "https://data.bls.gov/pdq/SurveyOutputServlet"
+
+ces_req <- request(ces_base) |>
+  req_method("POST") |>
+  req_body_form(
+    # IMPORTANT:
+    # These fields MUST match what you see in your browser's
+    # Network -> Request Payload when you:
+    #   - go to Data Finder top picks for CES
+    #   - select "Total Nonfarm, Seasonally Adjusted"
+    #   - set start year = 1979
+    #
+    # What I expect (you can adjust if your browser shows slightly different names):
+    survey    = "ce",
+    from_year = "1979",
+    to_year   = "2025",
+    # This is the CES series ID for All Employees, Total Nonfarm, SA
+    series_id = "CES0000000001"
+    # If your browser shows additional form fields (periods, output_type, etc.),
+    # add them here exactly as shown.
+  )
+
+# Perform request and get HTML
+ces_html <- ces_req |>
+  req_perform() |>
+  resp_body_html()
+
+# --- 2. Grab the main data table from the HTML ---
+
+ces_raw_tbl <- ces_html |>
+  html_element("table") |>
+  html_table(fill = TRUE) |>
+  clean_names()
+
+# Peek at the raw table structure
+head(ces_raw_tbl)
+
+all_tables <- ces_html |> html_elements("table")
+length(all_tables)
+
+all_tables[[2]] |> html_table(fill = TRUE) |> head()
+
+# Get ALL tables from the HTML
+all_tables <- ces_html |> html_elements("table")
+
+# Extract the SECOND table, which you confirmed is the Year–Month table
+ces_data_raw <- all_tables[[2]] |>
+  html_table(fill = TRUE) |>
+  clean_names()
+
+# Check it
+head(ces_data_raw)
+```
+Cleaning code from this chunk
+
+```{r task1_ces_clean, message=FALSE, warning=FALSE}
+ces_levels <- ces_data_raw |>
+  clean_names() |>
+  pivot_longer(
+    cols = -year,
+    names_to  = "month",
+    values_to = "level"
+  ) |>
+  mutate(
+    month = str_to_title(month),
+    date_str = paste(year, month),
+    date = lubridate::ym(date_str),
+    level = as.numeric(level)
+  ) |>
+  drop_na(date, level) |>
+  filter(date <= as.Date("2025-06-01")) |>
+  arrange(date) |>
+  select(date, level)
+
+head(ces_levels)
+```
+**Task 2: Download CES Revision Tables**
+
+```{r task2_fetch_html, message=FALSE, warning=FALSE}
+url_rev <- "https://www.bls.gov/web/empsit/cesnaicsrev.htm"
+
+rev_html <- request(url_rev) |>
+  req_user_agent("Mozilla/5.0 (Windows NT 10.0)") |>  # Avoids 403
+  req_perform() |>
+  resp_body_html()
+
+rev_html
+```
+
+```{r task2_inspect_tables, message=FALSE, warning=FALSE}
+library(rvest)
+library(tidyverse)
+library(lubridate)
+
+# All tables on the revisions page
+rev_tables <- rev_html |> html_elements("table")
+
+length(rev_tables)
+
+# Look at the first few table IDs to see the pattern
+head(html_attr(rev_tables, "id"), 20)
+```
+Fixing extraction function to use this pattern
+
+```{r task2_extract_year_function_fixed, message=FALSE, warning=FALSE}
+extract_ces_revisions_year <- function(year) {
+  
+  table_id <- as.character(year)
+  
+  tbl <- rev_html |>
+    html_element(paste0("table#", table_id)) |>
+    html_table(header = FALSE, fill = TRUE) |>
+    janitor::clean_names()
+  
+  # Drop the first 3 header rows, then keep the 12 months
+  tbl <- tbl |>
+    slice(-(1:3)) |>
+    slice(1:12) |>
+    select(
+      month    = 1,  # month name (Jan, Feb, ...)
+      original = 3,  # first estimate
+      final    = 4   # final (third) estimate
+    ) |>
+    mutate(
+      month    = stringr::str_to_title(month),
+      date_str = paste(year, month),
+      date     = lubridate::ym(date_str),
+      original = as.numeric(original),
+      final    = as.numeric(final),
+      revision = final - original
+    ) |>
+    select(date, original, final, revision) |>
+    arrange(date)
+  
+  tbl
+}
+
+# Test again on 2024
+extract_ces_revisions_year(2024)
+```
+Now building the full revisions dataset
+
+```{r task2_build_full_revisions, message=FALSE, warning=FALSE}
+library(purrr)
+library(dplyr)
+
+# All years with published revisions
+years <- 1979:2025
+
+ces_revisions <- map_dfr(years, extract_ces_revisions_year) |>
+  # Only keep months through June 2025 as per instructions
+  filter(date <= as.Date("2025-06-01")) |>
+  arrange(date)
+
+# Quick check
+ces_revisions |> dplyr::slice_head(n = 12)
+ces_revisions |> dplyr::slice_tail(n = 12)
+```
+Joining levels and revisions into one table
+
+```{r task3_join_levels_revisions, message=FALSE, warning=FALSE}
+library(dplyr)
+library(lubridate)
+
+ces_full <- ces_levels |>          # from Task 1
+  left_join(ces_revisions, by = "date") |>
+  mutate(
+    year       = year(date),
+    month_num  = month(date),
+    month_name = month(date, label = TRUE, abbr = TRUE),
+    abs_revision     = abs(revision),
+    rel_revision     = revision / level,
+    abs_rel_revision = abs(revision) / level
+  )
+
+ces_full |> slice_head(n = 12)
+```
+
+**Task 3: Data Exploration and Visualization**
+
+Computing 6 statistics about CES over the past 45 years
+```{r task3_stats, message=FALSE, warning=FALSE}
+library(dplyr)
+
+ces_summary <- ces_full |>
+  summarise(
+    n_months                 = n(),
+    avg_level                = mean(level, na.rm = TRUE),
+    sd_level                 = sd(level, na.rm = TRUE),
+    avg_revision             = mean(revision, na.rm = TRUE),
+    sd_revision              = sd(revision, na.rm = TRUE),
+    avg_abs_revision         = mean(abs_revision, na.rm = TRUE),
+    avg_rel_revision_pct     = mean(rel_revision, na.rm = TRUE) * 100,
+    pct_negative_revisions   = mean(revision < 0, na.rm = TRUE) * 100
+  )
+
+ces_summary
+```
+Constructing 4 visualizations of CES estimates over the past 45 years
+1st Visualization: Revisions over Time (Line Plot)
+```{r task3_plot1_revisions_ts, message=FALSE, warning=FALSE}
+library(ggplot2)
+
+ggplot(ces_full, aes(date, revision)) +
+  geom_line() +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  labs(
+    title = "CES Revisions Over Time (1979–2025)",
+    subtitle = "Final minus original sector-level employment change",
+    x = "Date",
+    y = "Revision (thousands of jobs)"
+  )
+```
+2nd Visualization: Absolute Revision Over Time
+```{r task3_plot2_absrev_ts, message=FALSE, warning=FALSE}
+ggplot(ces_full, aes(date, abs_revision)) +
+  geom_line(color = "steelblue") +
+  labs(
+    title = "Absolute CES Revisions Over Time",
+    x = "Date",
+    y = "Absolute Revision (|final - original|)"
+  )
+```
+3rd Visualization: Revisions as % of Employment Level
+```{r task3_plot3_relrev_ts, message=FALSE, warning=FALSE}
+ggplot(ces_full, aes(date, rel_revision * 100)) +
+  geom_line(color = "firebrick") +
+  labs(
+    title = "Revisions Relative to Employment Level (%)",
+    x = "Date",
+    y = "Revision as % of Level"
+  )
+```
+4th Visualization: Distribution of Revisions
+```{r task3_plot4_revision_hist, message=FALSE, warning=FALSE}
+ggplot(ces_full, aes(revision)) +
+  geom_histogram(bins = 40, color = "white", fill = "darkblue") +
+  labs(
+    title = "Distribution of CES Revisions (1979–2025)",
+    x = "Revision (thousands of jobs)",
+    y = "Count"
+  )
+```
+
+**Task 4: Statistical Inference**
+
+##Test 1 - Has the Fraction of Negative Revisions Increased Post 2000
+```{r task4_prop_test_negative, message=FALSE, warning=FALSE}
+library(infer)
+library(dplyr)
+
+ces_full <- ces_full |>
+  mutate(
+    negative_revision = revision < 0,
+    post_2000         = year >= 2000
+  )
+
+prop_neg_test <- ces_full |>
+  prop_test(
+    negative_revision ~ post_2000,
+    order = c("FALSE", "TRUE")   # pre-2000 vs post-2000
+  )
+
+prop_neg_test
+```

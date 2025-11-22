@@ -7,8 +7,7 @@ format: html
 
 For the data relating to district boundary, I downloaded the official City Counci shapefile manually from the NYC Department of Planning website and saved it as a ZIP file into my data/mp03/ directory. Then, on R, I checked for the existing ZIP file for unzipping if needed. I then read the shapefile using sf::st_read() command, which converts the geometry of the file to a format called "WGS84" in order to ensure alignment with the tree data. This helps to provide a clean and reproducible workflow for loading district boundaries without the need for duplicated files.
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 get_nyc_council_districts <- function(
@@ -48,8 +47,7 @@ nyc_council_dists <- get_nyc_council_districts()
 
 In order to obtain the entire NYC Street Tree dataset, I used the NYC OpenData SODA2 API in order to return data in paged batches. Since a single request only helps to retrieve the first 1,000 rows, my code adjust for the $limit and $offset parameters to 'page through' the entire dataset in order to save each chunk locally in my root data folder. Responsible API usage is ensured in this process and also allows me to obtain the entire set of tree points for spatial analysis in the subsequent sections.
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 library(httr2)
@@ -115,12 +113,9 @@ nyc_trees
 
 **Step 2:** R Code for Task 2 (uses httr2, paging, caching, st_read, bind_rows)
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
-#| label: setup-libs
-#| message: false
-#| warning: false
+
 library(httr2)
 library(sf)
 library(dplyr)
@@ -223,8 +218,7 @@ I made use of the NYC OpenData SODA2 API in order to download the full Street Tr
 
 **Task 3**: Plot all Points
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 library(ggplot2)
@@ -241,8 +235,7 @@ ggplot() +
 ```
 Spatially joining the various tree points to polygons in order for each tree to get a district ID.
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 nyc_trees_joined <- st_join(
@@ -256,10 +249,8 @@ nyc_trees_joined <- st_join(
 
 1) District with most trees
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
-#| 
 trees_by_count <- nyc_trees_joined |>
   count(CounDist) |>
   arrange(desc(n))
@@ -271,8 +262,7 @@ The district with the most trees is District 51 (Staten Island) with 99,335 tree
 
 2) Council with highest density of trees
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 # add area in square km to district sf
@@ -300,8 +290,7 @@ The District with the highest density of trees is District 39 (Brooklyn) with ap
 
 3) Which district has highest fraction of dead trees out of all trees?
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 dead_fraction <- nyc_trees_joined |>
@@ -324,8 +313,7 @@ The district with the highest fraction of dead trees is District 32 (South Queen
 
 4) What is the most common tree species in Manhattan?
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 manhattan_species <- nyc_trees_joined |>
   st_drop_geometry() |>
@@ -339,8 +327,7 @@ The most common tree species in Manhattan is the "Thornless honeylocust". There 
 
 5) What is the species of the tree closest to Baruch's campus?
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 # Baruch College approx coordinates (lon, lat)
@@ -366,8 +353,7 @@ The name of the species of trees closest to Baruch's campus is the "Callery Pear
 
 Creating district specific-dataset
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 my_district <- 51
@@ -381,8 +367,7 @@ district_shape <- nyc_council_dists |>
 
 Zoomed-In Map of Trees in District 51
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 ggplot() +
@@ -406,8 +391,7 @@ ggplot() +
 ```
 Quantitative Comparisons
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 comparison_table <- nyc_trees_joined |>
@@ -435,8 +419,7 @@ comparison_table |>
 Bar Chart
 
 Dead Tree Comparison
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 comparison_table |>
@@ -454,8 +437,7 @@ comparison_table |>
 
 Map Based Comparison
 
-```{r, echo=TRUE}
-
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
 
 district_compare <- nyc_council_dists |> 

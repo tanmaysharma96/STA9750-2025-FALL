@@ -279,22 +279,96 @@ ggplot(ces_full, aes(revision)) +
 
 **Task 4: Statistical Inference**
 
-##Test 1 - Has the Fraction of Negative Revisions Increased Post 2000
-```{r task4_prop_test_negative, message=FALSE, warning=FALSE}
-library(infer)
+```{r task4_setup, message=FALSE, warning=FALSE}
 library(dplyr)
+library(infer)
+library(lubridate)
 
+# Add all needed variables to ces_full
 ces_full <- ces_full |>
+  arrange(date) |>
   mutate(
+    year              = year(date),
     negative_revision = revision < 0,
-    post_2000         = year >= 2000
+    post_2000         = year >= 2000,
+    abs_revision      = abs(revision),
+    rel_revision      = revision / level,
+    abs_rel_revision  = abs(revision) / level,
+    big_1pct          = abs_rel_revision > 0.01,      # >1% of level
+    post_2020         = year >= 2020,
+    change            = level - lag(level),
+    abs_change        = abs(change)
+  )
+```
+4.1 Has the fraction of negative revisions increased post-2000?
+```{r task4_q1_prop_negative_post2000, message=FALSE, warning=FALSE}
+# Count negative vs total before/after 2000
+neg_tab <- ces_full |>
+  filter(!is.na(negative_revision), !is.na(post_2000)) |>
+  group_by(post_2000) |>
+  summarise(
+    neg = sum(negative_revision),
+    n   = n(),
+    .groups = "drop"
   )
 
-prop_neg_test <- ces_full |>
-  prop_test(
-    negative_revision ~ post_2000,
-    order = c("FALSE", "TRUE")   # pre-2000 vs post-2000
+neg_tab
+
+# Order: FALSE = pre-2000, TRUE = post-2000
+x_neg <- neg_tab$neg[order(neg_tab$post_2000)]
+n_neg <- neg_tab$n[order(neg_tab$post_2000)]
+
+prop_neg_post2000 <- prop.test(x = x_neg, n = n_neg)
+prop_neg_post2000
+```
+4.2 Has the fraction of >1% revisions increased post-2020?
+```{r task4_q2_prop_big1pct_post2020, message=FALSE, warning=FALSE}
+big_tab <- ces_full |>
+  filter(!is.na(big_1pct), !is.na(post_2020)) |>
+  group_by(post_2020) |>
+  summarise(
+    big = sum(big_1pct),
+    n   = n(),
+    .groups = "drop"
   )
 
-prop_neg_test
+big_tab
+
+# Order: FALSE = pre-2020, TRUE = post-2020
+x_big <- big_tab$big[order(big_tab$post_2020)]
+n_big <- big_tab$n[order(big_tab$post_2020)]
+
+prop_big_post2020 <- prop.test(x = x_big, n = n_big)
+prop_big_post2020
+```
+4.3 Is the average revision significantly different from zero?
+```{r task4_q3_mean_revision_zero, message=FALSE, warning=FALSE}
+# One-sample t-test using base R: H0: mean revision = 0
+rev_vec <- ces_full$revision
+rev_vec <- rev_vec[!is.na(rev_vec)]
+
+ttest_mean_rev <- t.test(rev_vec, mu = 0)
+
+ttest_mean_rev
+```
+
+4.4 Has the average revision increased post-2020?
+```{r task4_q4_mean_revision_post2020, message=FALSE, warning=FALSE}
+ttest_mean_rev_post2020 <- ces_full |>
+  drop_na(revision, post_2020) |>
+  t_test(
+    revision ~ post_2020,
+    order = c("FALSE", "TRUE")   # estimate = post-2020 − pre-2020
+  )
+
+ttest_mean_rev_post2020
+```
+4.5 Are revisions larger when the underlying change is larger?
+```{r task4_q5_cor_abschange_absrevision, message=FALSE, warning=FALSE}
+ces_cor <- ces_full |>
+  drop_na(abs_change, abs_revision)
+
+cor_abs <- cor.test(ces_cor$abs_change, ces_cor$abs_revision)
+
+cor_abs
 ```

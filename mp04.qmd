@@ -1,10 +1,39 @@
 ---
-title: "mp04"
+title: "Mini-Project 04: Just the Fact(-Check)s, Ma'am!"
+author: "Tanmay Sharma"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    theme: cosmo
+    df-print: paged
 ---
 
-**Data Acquisition**
+## Introduction
 
-```{r}
+In this mini-project, I construct a reproducible pipeline to obtain and analyze
+the U.S. Bureau of Labor Statistics (BLS) **Current Employment Statistics (CES)**
+data for total nonfarm payrolls and their subsequent revisions (January 1979–
+June 2025). Using web scraping with `httr2` and `rvest`, I download:
+
+- The final seasonally-adjusted CES employment levels, and  
+- The month-to-month revisions from the CES revisions page.
+
+I then join these datasets into a single table for statistical exploration,
+formal hypothesis testing, and fact-checking recent political claims about
+BLS revisions and the firing of Commissioner Erika McEntarfer.
+
+---
+
+## Data Acquisition
+
+We obtain monthly **Total Nonfarm Payroll Employment** (seasonally adjusted) from the U.S. Bureau of Labor Statistics (BLS) using their PDQ interface, covering **January 1979 – June 2025**.
+
+### Load Required Libraries
+
+```{r, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 needed_pkgs <- c(
   "tidyverse",
   "httr2",
@@ -22,9 +51,14 @@ if (length(to_install) > 0) {
 invisible(lapply(needed_pkgs, library, character.only = TRUE))
 ```
 
-*Downloading CES Total Nonfarm Payroll**
+**Task 1: Downloading CES Total Nonfarm Payroll**
 
-```{r task1_ces_download, message=FALSE, warning=FALSE}
+We begin by loading the R packages required for downloading, cleaning, and analyzing the Current Employment Statistics (CES) dataset.  
+If any packages are missing, they are installed automatically to ensure full reproducibility.
+
+```{r task1_ces_download, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 library(tidyverse)
 library(httr2)
 library(rvest)
@@ -86,9 +120,15 @@ ces_data_raw <- all_tables[[2]] |>
 # Check it
 head(ces_data_raw)
 ```
-Cleaning code from this chunk
 
-```{r task1_ces_clean, message=FALSE, warning=FALSE}
+### Clean and Reshape CES Data
+
+Once the raw table is extracted, we convert it into a tidy monthly time-series structure.  
+This includes standardizing column names, reshaping year–month columns into a single date variable, converting values to numeric format, and filtering to match the project time window (Jan 1979 – Jun 2025).
+
+```{r task1_ces_clean, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 ces_levels <- ces_data_raw |>
   clean_names() |>
   pivot_longer(
@@ -109,9 +149,17 @@ ces_levels <- ces_data_raw |>
 
 head(ces_levels)
 ```
-**Task 2: Download CES Revision Tables**
 
-```{r task2_fetch_html, message=FALSE, warning=FALSE}
+## Task 2 — Download CES Revision Tables
+
+In addition to monthly payroll employment estimates, the BLS provides revision tables comparing the **initial** estimate with the **final** benchmarked value.  
+We download these tables directly from the BLS website for the full period (1979–2025).
+
+### Retrieve Revisions Page HTML
+
+```{r task2_fetch_html, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 url_rev <- "https://www.bls.gov/web/empsit/cesnaicsrev.htm"
 
 rev_html <- request(url_rev) |>
@@ -122,7 +170,15 @@ rev_html <- request(url_rev) |>
 rev_html
 ```
 
-```{r task2_inspect_tables, message=FALSE, warning=FALSE}
+### Inspect Revision Table Structure
+
+The revision page contains multiple separate HTML tables — one per year.  
+Here, I verify the number of tables and inspect their ID patterns to confirm  
+that each corresponds to a specific year of CES revisions.
+
+```{r task2_inspect_tables, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 library(rvest)
 library(tidyverse)
 library(lubridate)
@@ -135,9 +191,16 @@ length(rev_tables)
 # Look at the first few table IDs to see the pattern
 head(html_attr(rev_tables, "id"), 20)
 ```
-Fixing extraction function to use this pattern
 
-```{r task2_extract_year_function_fixed, message=FALSE, warning=FALSE}
+### Extract Revisions for a Single Year
+
+BLS publishes a separate revision table for each year.  
+This helper function automatically locates the correct table by its HTML `id`,  
+cleans the rows, and returns a tidy month-level dataset of original vs. final values.
+
+```{r task2_extract_year_function_fixed, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 extract_ces_revisions_year <- function(year) {
   
   table_id <- as.character(year)
@@ -173,9 +236,15 @@ extract_ces_revisions_year <- function(year) {
 # Test again on 2024
 extract_ces_revisions_year(2024)
 ```
-Now building the full revisions dataset
 
-```{r task2_build_full_revisions, message=FALSE, warning=FALSE}
+### Build Full CES Revisions Dataset
+
+Using the helper function above, I loop through all available years (1979–2025)  
+to compile a single tidy dataset of monthly revision values, filtered through June 2025.
+
+```{r task2_build_full_revisions, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 library(purrr)
 library(dplyr)
 
@@ -191,9 +260,15 @@ ces_revisions <- map_dfr(years, extract_ces_revisions_year) |>
 ces_revisions |> dplyr::slice_head(n = 12)
 ces_revisions |> dplyr::slice_tail(n = 12)
 ```
-Joining levels and revisions into one table
 
-```{r task3_join_levels_revisions, message=FALSE, warning=FALSE}
+### Join Employment Levels with Revision Data
+
+Here, I merge the employment levels (Task 1) with revision data (Task 2)  
+into a unified monthly dataset and create additional features for analysis.
+
+```{r task3_join_levels_revisions, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 library(dplyr)
 library(lubridate)
 
@@ -211,10 +286,14 @@ ces_full <- ces_levels |>          # from Task 1
 ces_full |> slice_head(n = 12)
 ```
 
-**Task 3: Data Exploration and Visualization**
+### Task 3 — Data Exploration & Visualization
 
-Computing 6 statistics about CES over the past 45 years
-```{r task3_stats, message=FALSE, warning=FALSE}
+To understand the overall behavior of CES employment and revisions over the long run,  
+I compute six key descriptive statistics across the full sample (1979–2025).
+
+```{r task3_stats, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 library(dplyr)
 
 ces_summary <- ces_full |>
@@ -231,9 +310,17 @@ ces_summary <- ces_full |>
 
 ces_summary
 ```
-Constructing 4 visualizations of CES estimates over the past 45 years
-1st Visualization: Revisions over Time (Line Plot)
-```{r task3_plot1_revisions_ts, message=FALSE, warning=FALSE}
+
+### Visualization 1 — CES Revisions Over Time
+
+This plot tracks monthly revisions (final − original estimate) from 1979–2025,  
+showing how updates fluctuate above and below zero across economic cycles.
+
+```{r task3_plot1_revisions_ts, echo=TRUE, message=FALSE, warning=FALSE}
+#| fig-width: 7
+#| fig-height: 4
+#| code-fold: true
+
 library(ggplot2)
 
 ggplot(ces_full, aes(date, revision)) +
@@ -246,8 +333,17 @@ ggplot(ces_full, aes(date, revision)) +
     y = "Revision (thousands of jobs)"
   )
 ```
-2nd Visualization: Absolute Revision Over Time
-```{r task3_plot2_absrev_ts, message=FALSE, warning=FALSE}
+
+### Visualization 2 — Absolute Revisions Over Time
+
+This view focuses on the *magnitude* of revisions — how large the corrections are,  
+regardless of whether they increased or decreased employment levels.
+
+```{r task3_plot2_absrev_ts, echo=TRUE, message=FALSE, warning=FALSE}
+#| fig-width: 7
+#| fig-height: 4
+#| code-fold: true
+
 ggplot(ces_full, aes(date, abs_revision)) +
   geom_line(color = "steelblue") +
   labs(
@@ -256,8 +352,19 @@ ggplot(ces_full, aes(date, abs_revision)) +
     y = "Absolute Revision (|final - original|)"
   )
 ```
-3rd Visualization: Revisions as % of Employment Level
-```{r task3_plot3_relrev_ts, message=FALSE, warning=FALSE}
+
+### Visualization 3 — Revisions as % of Employment Level
+
+This visualization scales revisions relative to total employment,  
+showing how **significant** changes are in context — even large job changes  
+often represent **very small percentages** of the labor market.
+
+
+```{r task3_plot3_relrev_ts, echo=TRUE, message=FALSE, warning=FALSE}
+#| fig-width: 7
+#| fig-height: 4
+#| code-fold: true
+
 ggplot(ces_full, aes(date, rel_revision * 100)) +
   geom_line(color = "firebrick") +
   labs(
@@ -266,8 +373,18 @@ ggplot(ces_full, aes(date, rel_revision * 100)) +
     y = "Revision as % of Level"
   )
 ```
-4th Visualization: Distribution of Revisions
-```{r task3_plot4_revision_hist, message=FALSE, warning=FALSE}
+
+### Visualization 4 — Distribution of CES Revisions
+
+This histogram displays how revisions are distributed over the entire sample period.  
+Most revisions cluster close to **zero**, with a relatively small number of  
+**large upward or downward adjustments**, consistent with typical survey variability.
+
+```{r task3_plot4_revision_hist, message=FALSE, echo=TRUE, warning=FALSE}
+#| fig-width: 7
+#| fig-height: 4
+#| code-fold: true
+
 ggplot(ces_full, aes(revision)) +
   geom_histogram(bins = 40, color = "white", fill = "darkblue") +
   labs(
@@ -277,9 +394,17 @@ ggplot(ces_full, aes(revision)) +
   )
 ```
 
-**Task 4: Statistical Inference**
+## Task 4 — Statistical Inference Setup
 
-```{r task4_setup, message=FALSE, warning=FALSE}
+Before running formal hypothesis tests, I create several helper variables on the  
+joined CES dataset. These include indicators for **negative revisions**,  
+**post-2000** and **post-2020** periods, the **absolute** and **relative** size  
+of revisions, and the **monthly change in employment levels**. These derived  
+variables are used throughout the tests in Task 4.
+
+```{r task4_setup, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
 library(dplyr)
 library(infer)
 library(lubridate)
@@ -300,8 +425,16 @@ ces_full <- ces_full |>
     abs_change        = abs(change)
   )
 ```
-4.1 Has the fraction of negative revisions increased post-2000?
-```{r task4_q1_prop_negative_post2000, message=FALSE, warning=FALSE}
+
+### 4.1 — Has the fraction of negative revisions increased post-2000?
+
+To evaluate whether CES revisions have become **more negative** in the modern era,  
+I compare the proportion of downward revisions **before vs. after 2000**.  
+A **two-sample proportion test** determines whether these differences are  
+statistically significant.
+
+```{r task4_q1_prop_negative_post2000, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 # Count negative vs total before/after 2000
 neg_tab <- ces_full |>
   filter(!is.na(negative_revision), !is.na(post_2000)) |>
@@ -321,8 +454,17 @@ n_neg <- neg_tab$n[order(neg_tab$post_2000)]
 prop_neg_post2000 <- prop.test(x = x_neg, n = n_neg)
 prop_neg_post2000
 ```
-4.2 Has the fraction of >1% revisions increased post-2020?
-```{r task4_q2_prop_big1pct_post2020, message=FALSE, warning=FALSE}
+
+### 4.2 — Has the fraction of large (>1%) revisions increased post-2020?
+
+To check whether revisions have become **unusually large** in recent years,  
+I flag months where the **revision was greater than 1% of employment** — a level  
+that may indicate meaningful measurement challenges.  
+A **two-sample proportion test** compares the rate of these large revisions  
+**before vs. after 2020**.
+
+```{r task4_q2_prop_big1pct_post2020, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 big_tab <- ces_full |>
   filter(!is.na(big_1pct), !is.na(post_2020)) |>
   group_by(post_2020) |>
@@ -341,8 +483,19 @@ n_big <- big_tab$n[order(big_tab$post_2020)]
 prop_big_post2020 <- prop.test(x = x_big, n = n_big)
 prop_big_post2020
 ```
-4.3 Is the average revision significantly different from zero?
-```{r task4_q3_mean_revision_zero, message=FALSE, warning=FALSE}
+
+### 4.3 — Is the average revision significantly different from zero?
+
+Because revisions represent corrections to initially reported employment figures,  
+we expect them to **average out near zero** over time if the BLS estimates are  
+unbiased.  
+A **one-sample t-test** formally evaluates the null hypothesis:  
+
+> **H₀:** Mean revision = 0  
+> (no systematic upward or downward bias)
+
+```{r task4_q3_mean_revision_zero, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 # One-sample t-test using base R: H0: mean revision = 0
 rev_vec <- ces_full$revision
 rev_vec <- rev_vec[!is.na(rev_vec)]
@@ -352,8 +505,21 @@ ttest_mean_rev <- t.test(rev_vec, mu = 0)
 ttest_mean_rev
 ```
 
-4.4 Has the average revision increased post-2020?
-```{r task4_q4_mean_revision_post2020, message=FALSE, warning=FALSE}
+### 4.4 — Has the average revision increased post-2020?
+
+The pandemic era brought heightened labor market volatility and lower survey response rates.  
+To assess whether this led to **systematically larger revisions**, we compare the mean revision:
+
+- **Before 2020**
+- **After 2020**
+
+A **two-sample t-test** evaluates whether the post-2020 average revision is significantly higher:
+
+> **H₀:** Mean revision (post-2020) = Mean revision (pre-2020)  
+> **H₁:** Mean revision (post-2020) > Mean revision (pre-2020)
+
+```{r task4_q4_mean_revision_post2020, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 ttest_mean_rev_post2020 <- ces_full |>
   drop_na(revision, post_2020) |>
   t_test(
@@ -363,8 +529,22 @@ ttest_mean_rev_post2020 <- ces_full |>
 
 ttest_mean_rev_post2020
 ```
-4.5 Are revisions larger when the underlying change is larger?
-```{r task4_q5_cor_abschange_absrevision, message=FALSE, warning=FALSE}
+
+### 4.5 — Are revisions larger when the underlying change is larger?
+
+Revisions may grow when the labor market is more volatile — for example,  
+during recessions or sudden employment shocks.  
+To examine this relationship, we measure the **correlation** between:
+
+- Absolute change in employment level (`|Δ level|`)
+- Absolute revision (`|final − original|`)
+
+A positive and significant correlation would suggest that  
+**larger real movements** lead to **larger revisions**, indicating  
+measurement noise rather than systemic manipulation.
+
+```{r task4_q5_cor_abschange_absrevision, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
 ces_cor <- ces_full |>
   drop_na(abs_change, abs_revision)
 
@@ -372,3 +552,580 @@ cor_abs <- cor.test(ces_cor$abs_change, ces_cor$abs_revision)
 
 cor_abs
 ```
+
+## Task 5 — Fact-Checking Public Claims About CES Revisions
+
+This final section applies the results from Tasks 3 and 4 to evaluate **two real-world claims** made about employment revisions in the U.S. Current Employment Statistics (CES) program — particularly regarding the accuracy and transparency of the BLS during the period surrounding the firing of Commissioner Erika McEntarfer.
+
+Each fact-check includes:
+
+- Relevant **summary statistics** from the CES dataset  
+- At least **two visualizations** from Task 3  
+- Appropriate **hypothesis testing** (with parallels to Task 4)  
+- A final judgment using a **Politifact-style Truth Scale**  
+  (ranging from **True** to **Pants on Fire**)
+
+The CES dataset used here spans **January 1979 – June 2025**, providing a long-run perspective on revision behavior across economic cycles and presidential administrations.
+
+```{r task5_setup, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+library(dplyr)
+library(lubridate)
+```
+
+### Basic Summary Statistics for CES Levels and Revisions
+
+```{r task5_stats_basic, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+ces_summary_5 <- ces_full |>
+summarise(
+n_months = n(),
+avg_level = mean(level, na.rm = TRUE),
+sd_level = sd(level, na.rm = TRUE),
+avg_revision = mean(revision, na.rm = TRUE),
+sd_revision = sd(revision, na.rm = TRUE),
+avg_abs_revision = mean(abs(revision), na.rm = TRUE),
+avg_rel_revision_pct = mean(revision / level, na.rm = TRUE) * 100,
+pct_negative_revisions = mean(revision < 0, na.rm = TRUE) * 100
+)
+
+ces_summary_5
+```
+
+### Largest and Smallest Revisions in the Sample
+
+```{r task5_stats_extremes, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+max_rev_5 <- ces_full |>
+summarise(
+max_revision = max(revision, na.rm = TRUE),
+min_revision = min(revision, na.rm = TRUE),
+max_abs_revision = max(abs(revision), na.rm = TRUE)
+)
+
+max_rev_5
+```
+
+### Pre-2000 vs Post-2000 Share of Negative Revisions (Proportion Test)
+
+```{r task5_prop_neg_prepost2000, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+ces_neg_tmp <- ces_full |>
+mutate(
+year = year(date),
+post_2000 = year >= 2000,
+negative_revision = revision < 0
+)
+
+neg_tab_5 <- ces_neg_tmp |>
+filter(!is.na(negative_revision), !is.na(post_2000)) |>
+group_by(post_2000) |>
+summarise(
+neg = sum(negative_revision),
+n = n(),
+.groups = "drop"
+)
+
+neg_tab_5
+
+x_neg_5 <- neg_tab_5$neg[order(neg_tab_5$post_2000)]
+n_neg_5 <- neg_tab_5$n[order(neg_tab_5$post_2000)]
+
+prop_neg_test_5 <- prop.test(x = x_neg_5, n = n_neg_5)
+prop_neg_test_5
+```
+
+### One-Sample t-Test: Is the Mean Revision Different from Zero?
+
+```{r task5_ttest_mean_revision, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
+rev_vec_5 <- ces_full$revision
+rev_vec_5 <- rev_vec_5[!is.na(rev_vec_5)]
+
+t_mean_5 <- t.test(rev_vec_5, mu = 0)
+t_mean_5
+```
+
+### Big Revisions (>1% of Level) — Pre- vs Post-2020 (Proportion Test)
+
+```{r task5_prop_big1pct_prepost2020, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+ces_big_tmp <- ces_full |>
+mutate(
+abs_rel_revision = abs(revision / level),
+big1pct = abs_rel_revision > 0.01,
+year = year(date),
+post_2020 = year >= 2020
+)
+
+big_tab_5 <- ces_big_tmp |>
+filter(!is.na(big1pct), !is.na(post_2020)) |>
+group_by(post_2020) |>
+summarise(
+big = sum(big1pct),
+n = n(),
+.groups = "drop"
+)
+
+big_tab_5
+
+x_big_5 <- big_tab_5$big[order(big_tab_5$post_2020)]
+n_big_5 <- big_tab_5$n[order(big_tab_5$post_2020)]
+
+big1pct_test_5 <- prop.test(x = x_big_5, n = n_big_5)
+big1pct_test_5
+```
+
+### Relationship Between Absolute Level Change and Absolute Revision (Correlation Test)
+
+```{r task5_abschange_absrev_cor, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+ces_cor_5 <- ces_full |>
+arrange(date) |>
+mutate(
+change = level - lag(level),
+abs_change = abs(change),
+abs_revision = abs(revision)
+) |>
+filter(!is.na(abs_change), !is.na(abs_revision))
+
+cor_test_result_5 <- cor.test(ces_cor_5$abs_change, ces_cor_5$abs_revision)
+cor_test_result_5
+```
+
+### Do Large-Change Months Have Larger Revisions? (Two-Sample t-Test)
+
+```{r task5_largechange_ttest, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+q75_change_5 <- quantile(ces_cor_5$abs_change, 0.75, na.rm = TRUE)
+
+ces_cor2_5 <- ces_cor_5 |>
+mutate(
+large_change = abs_change >= q75_change_5
+)
+
+large_change_test_5 <- t.test(abs_revision ~ large_change, data = ces_cor2_5)
+large_change_test_5
+```
+
+### Fact Check 1 – Trump: “The numbers were rigged” and revised down by ~900,000
+
+In early August 2025, President Donald Trump publicly claimed that BLS jobs numbers were **“rigged”** and that they had been revised **“down by almost 900,000 jobs”** after the 2024 election, describing this as the “biggest revision in history” and a justification for firing BLS Commissioner Erika McEntarfer.
+
+This claim has two parts:
+
+1. That recent CES revisions are extraordinarily large and one-sided  
+2. That these revisions are politically manipulated (“rigged”).
+
+#### What do revisions look like in the CES data?
+
+Across my full sample (January 1979–June 2025) there are `r ces_summary_5$n_months` monthly observations. The **average CES employment level** is about `r round(ces_summary_5$avg_level, 0)` thousand jobs, with a standard deviation of roughly `r round(ces_summary_5$sd_level, 0)` thousand. This is a very large labor market.
+
+For revisions (final – original):
+
+- The **average revision** is `r round(ces_summary_5$avg_revision, 1)` thousand jobs, with standard deviation `r round(ces_summary_5$sd_revision, 1)` thousand.
+- The **average absolute revision** is `r round(ces_summary_5$avg_abs_revision, 1)` thousand jobs.
+- As a **percentage of employment**, the average revision is only about `r round(ces_summary_5$avg_rel_revision_pct, 3)`% of the level.
+- About `r round(ces_summary_5$pct_negative_revisions, 1)`% of revisions are negative; downward revisions are common, but not overwhelmingly dominant.
+
+Figure 1 from Task 3 (**“CES Revisions Over Time (1979–2025)”**) shows that revisions fluctuate both above and below zero across many administrations. Figure 4 (**“Distribution of CES Revisions (1979–2025)”**) shows a roughly symmetric distribution around zero, with most revisions fairly close to zero and a relatively small number of extreme outliers.
+
+### Largest Monthly Revision in the Sample
+
+```{r task5_print_maxrev, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+max_rev_5
+```
+
+This is large in absolute terms, but it happens in the context of a very large labor market and is not unique to one president or one year.
+
+### Are Revisions Systematically More Negative Post-2000?
+
+This provides context for political claims that BLS revisions intentionally push job numbers downward in recent years.  
+We compare the **share of negative revisions** before vs after 2000.
+
+```{r task5_neg_post2000_test, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+neg_tab_5
+prop_neg_test_5
+```
+
+The table neg_tab_5 shows the fraction of months with negative revisions before and after 2000, and prop_neg_test_5 is a formal two-sample proportion test. While there may be some difference across periods, the results do not show a dramatic shift to predominantly negative revisions that would match the idea of “rigged” numbers under a particular administration.
+
+### Is the Average Revision Far From Zero? (One-Sample t-Test)
+
+This test checks whether revisions are systematically biased upward or downward across the full sample — a core part of the “rigged numbers” narrative.
+
+```{r task5_mean_rev_zero_test, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+t_mean_5
+```
+This one-sample t-test shows that the average revision is small in magnitude relative to both its own standard deviation and the level of employment. The confidence interval for the mean revision is narrow relative to total employment and close to zero in percentage terms. This
+is consistent with revisions being noise around an unbiased estimate, not clear evidence of systemic manipulation in one direction.
+
+Rating: Trump’s “rigged and revised down by 900,000” claim
+
+The “almost 900,000” figure refers to an annual benchmark revision spread over many months, publicly documented in advance and not hidden. My month-by-month CES dataset shows:
+
+Revisions are small on average relative to the overall employment
+level. They are not consistently negative after 2000. Formal tests do not support a story of a large, one-sided shift in revisions that coincides with Trump’s political narrative. Given the data and the statistics above, the idea that the BLS jobs numbers were “rigged” to hurt Trump is not supported by the CES revisions.
+
+Politifact-style rating for Claim 1: Pants on Fire
+
+The claim significantly misrepresents both the size and the pattern of
+CES revisions.
+
+### Fact Check 2 — Wilcox / PIIE: “Challenges? Yes. Rigged data? No.”
+
+Economist David Wilcox at the Peterson Institute for International Economics reviewed CES revisions and concluded that while measurement challenges exist — especially declining survey response rates — **there is no evidence of manipulation or “rigged” data**.
+
+We evaluate a simplified version of his claim:
+
+> **Claim:** CES revisions are not systematically biased or unusually large.  
+> They represent normal measurement noise in a large labor market.
+
+---
+
+### How Large Are Revisions Relative to Total Employment?
+
+From the summary statistics above:
+
+- **Mean absolute revision:**  
+  `r round(ces_summary_5$avg_abs_revision, 1)` thousand jobs  
+- **Average employment level:**  
+  `r round(ces_summary_5$avg_level, 0)` thousand jobs  
+- **Mean revision as share of employment:**  
+  `r round(ces_summary_5$avg_rel_revision_pct, 3)`%
+
+These figures are very small relative to the overall labor market, indicating that typical revisions reflect **modest measurement updates**, not suspicious adjustments.
+
+### Are Large Revisions More Common in Recent Years?
+
+Figures 2 and 3 illustrate that while revisions spike during major economic disruptions — such as recessions or the COVID period — they generally remain **well under 1%** of total employment.
+
+To formally identify “big” revisions, I flagged any month where:
+
+> \| revision / level \| > 1%
+
+Then compared their frequency **before vs. after 2020**:
+
+```{r task5_big_revision_freq, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+big_tab_5
+big1pct_test_5
+```
+Even during recent volatility, **large revisions remain rare**, offering no statistical support for claims of unusually manipulated data in the current era.
+
+The table `big_tab_5` shows the frequency of >1% revisions before and after 2020, and  
+`big1pct_test_5` provides a two-sample proportion test.  
+While slightly more common post-2020, **large revisions remain rare overall** — consistent with normal measurement variation, not manipulation.
+
+---
+
+### Do Larger Employment Swings Lead to Larger Revisions?
+
+A natural question:  
+Are large revisions occurring because the labor market itself is moving more dramatically?
+
+To test this, I examined the relationship between:
+
+- |Change in employment (level − lag(level))|  
+- |Revision (final − original)|
+
+```{r task5_cor_change_revision, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+cor_test_result_5
+```
+
+The statistically significant **positive correlation** confirms that CES revisions tend to be larger when the labor market itself is more volatile — such as during recessions or the COVID period. This behavior is consistent with **normal survey noise**, not political tampering.
+
+---
+
+### Do Large Employment Shifts Cause Larger Revisions?
+
+To further check this idea, I separated months into:
+
+- **Large-change months** → top 25% of absolute employment changes  
+- **Typical months** → the remaining 75%
+
+Then I tested whether large-change months have bigger revisions:
+
+```{r task5_large_change_ttest, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+large_change_test_5
+```
+
+This two-sample t-test shows that **large-change months** have significantly larger revisions, reinforcing the interpretation that revisions scale with true labor-market volatility — not with politics.
+
+---
+
+### Rating: Wilcox’s “Challenges? Yes. Rigged Data? No.” Claim
+
+Putting all statistical evidence together:
+
+- **Revisions are small** compared to the overall employment level  
+- They remain **balanced around zero**, not consistently negative  
+- Larger revisions appear **when the labor market is more volatile**  
+- **Big (>1%) revisions remain rare**, even after 2020  
+
+These findings support Wilcox’s position: there are **measurement challenges**, but no clear signs of political manipulation in the CES revisions.
+
+**Politifact-style Rating:** 🟢 **Mostly True**
+
+CES revisions behave like **normal measurement noise** in a large, dynamic labor market — not rigged data.
+
+### Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference
+
+Traditional inference uses mathematical formulas to decide whether a result is statistically significant — for example, whether the **average revision differs from zero**. These formulas rely on assumptions about the data (like normality).
+
+**Computationally intensive inference** flips the process:
+
+- Instead of relying on formulas…
+- We let the **computer simulate** many alternative versions of the data.
+
+How it works:
+
+- Use the real CES data as a **template**
+- Repeatedly **resample** from it (bootstrap) or **shuffle group labels** (permutation test)
+- Recalculate the statistic of interest each time
+- Compare our real result to this **simulated distribution**
+
+Why this is useful:
+
+- Works even when theory-based assumptions might be shaky
+- Provides **visual and intuitive** evidence about what is “extreme”
+- Reflects the real structure and quirks of the observed data
+
+In the context of this mini-project, these methods help us check:
+
+> Are the revision patterns we see **unusual enough** to suggest rigging —
+> or are they simply **within the normal range of sampling variation**?
+
+Computers let us evaluate that question directly — **without** relying exclusively on theoretical formulas.
+
+---
+
+### 2. Schematic visualization of a computational workflow
+
+Below is a simple flowchart-style visualization of a bootstrap /
+permutation workflow. It is **not** a sampling distribution plot; it is
+a conceptual “how-to” diagram.
+
+```{r extra_flowchart, message=FALSE, warning=FALSE}
+#| code-fold: true
+library(ggplot2)
+library(dplyr)
+
+flow_steps <- tibble::tibble(
+  step = c(
+    "1. Pose question\n(e.g., mean revision = 0?)",
+    "2. Choose null model\n(no effect / no difference)",
+    "3. Resample data\n(bootstrap or permute labels)",
+    "4. Compute statistic\nfor each resample",
+    "5. Build null or\nbootstrap distribution",
+    "6. Compare observed\nstatistic to distribution"
+  ),
+  x = c(1, 2, 3, 4, 5, 6),
+  y = 1
+)
+
+ggplot(flow_steps, aes(x = x, y = y, label = step)) +
+  geom_label(size = 3) +
+  geom_segment(aes(x = x, xend = x + 0.8, y = y, yend = y),
+               data = flow_steps |> filter(x < max(x)),
+               arrow = arrow(length = unit(0.15, "inches"))) +
+  scale_x_continuous(NULL, breaks = NULL) +
+  scale_y_continuous(NULL, breaks = NULL) +
+  ggtitle("Schematic: Computationally Intensive Inference Workflow") +
+  theme_minimal()
+```
+
+This diagram summarizes the main idea:
+
+1. Start with a real question and a null hypothesis.
+2. Use resampling (bootstrap) or permutation to generate many “what if” datasets.
+3. Compute the statistic each time and then compare our real statistic to that reference distribution.
+
+### 🔬 Computational Tests for CES Revisions
+
+We apply three resampling-based tests (bootstrap & permutation) using **infer** to evaluate:  
+1️⃣ Mean revision (bootstrap mean)  
+2️⃣ Median revision (bootstrap median)  
+3️⃣ Difference in probability of positive revisions pre- vs post-2000 (permutation test)
+
+```{r extra_comp_tests_setup, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+library(infer)
+library(dplyr)
+library(lubridate)
+```
+
+### 🧹 Prepare Clean Revision Data
+
+We subset and clean the revision data to ensure it is ready for resampling-based inference.
+
+```{r extra_clean_rev, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+
+ces_rev <- ces_full |>
+select(date, level, revision) |>
+filter(!is.na(revision), !is.na(level))
+```
+
+### 📊 3.1 Bootstrap CI for the Mean Revision (Mean Analogue of a t-Test)
+
+We first compute the mean revision observed in the actual CES sample.
+
+```{r extra_obs_mean_revision, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+obs_mean_rev <- ces_rev |>
+summarise(mean_rev = mean(revision)) |>
+pull(mean_rev)
+
+obs_mean_rev
+```
+
+#### 🔁 Bootstrap Distribution of the Mean Revision
+
+We use bootstrap resampling to generate a simulated distribution of mean revisions under the assumption that the observed data reflect normal sampling variation.
+
+```{r extra_boot_mean_revision, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+boot_mean_rev <- ces_rev |>
+specify(response = revision) |>
+generate(reps = 2000, type = "bootstrap") |>
+calculate(stat = "mean")
+```
+
+#### 📏 95% Percentile Bootstrap Confidence Interval — Mean Revision
+
+A bootstrap CI provides a **distribution-free** estimate of uncertainty around the mean revision.
+
+```{r extra_boot_ci_mean, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+boot_ci_mean <- boot_mean_rev |>
+get_confidence_interval(level = 0.95, type = "percentile")
+
+boot_ci_mean
+```
+
+#### 🔹 Observed Median Revision (Bootstrap Median CI Setup)
+
+We compute the median revision as a more **robust** measure (less sensitive to outliers than the mean).
+
+```{r extra_obs_median_rev, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+obs_median_rev <- ces_rev |>
+summarise(median_rev = median(revision)) |>
+pull(median_rev)
+
+obs_median_rev
+```
+
+#### 🔹 Bootstrap Distribution of the Median Revision
+
+We resample from the observed data **2,000 times** to approximate the typical range of median revisions.
+
+```{r extra_boot_median_rev, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+boot_median_rev <- ces_rev |>
+specify(response = revision) |>
+generate(reps = 2000, type = "bootstrap") |>
+calculate(stat = "median")
+```
+
+#### 🔹 95% Percentile Bootstrap CI for Median Revision
+
+This interval provides a robust estimate of the “typical” revision size, less influenced by extreme values than the mean.
+
+```{r extra_boot_ci_median, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+boot_ci_median <- boot_median_rev |>
+get_confidence_interval(level = 0.95, type = "percentile")
+
+boot_ci_median
+```
+
+#### 🔹 Prepare Data for Permutation Test — Positive Revisions (Pre vs Post-2000)
+
+We classify each month as having a **positive revision or not**, and divide the sample into **pre-2000 vs post-2000** periods.
+
+```{r extra_perm_data_setup, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+ces_pos <- ces_full |>
+  mutate(
+    year          = year(date),
+    post_2000     = year >= 2000,
+    positive_rev  = revision > 0
+  ) |>
+  filter(!is.na(post_2000), !is.na(positive_rev))
+```
+
+#### 🔹 Observed Difference in Positive Revision Rates  
+*(Post-2000 − Pre-2000)*
+
+We compute the observed change in the probability of positive revisions across the two time periods.
+
+```{r extra_perm_obs_diff, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+obs_diff_pos <- ces_pos |>
+  specify(positive_rev ~ post_2000, success = "TRUE") |>
+  calculate(stat = "diff in props", order = c("FALSE", "TRUE")) |>
+  dplyr::pull(stat)
+
+obs_diff_pos
+```
+
+#### 🔹 Null Distribution via Permutation  
+*(Assuming no relationship between revisions and time period)*
+
+We randomly shuffle the **post-2000** labels to simulate what differences would look like **if timing didn’t matter**.
+
+```{r extra_perm_null_dist, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+null_dist_pos <- ces_pos |>
+  specify(positive_rev ~ post_2000, success = "TRUE") |>
+  hypothesize(null = "independence") |>
+  generate(reps = 2000, type = "permute") |>
+  calculate(stat = "diff in props", order = c("FALSE", "TRUE"))
+```
+
+#### 🔹 Two-Sided p-Value  
+How extreme is our **observed difference in positive revisions** if **timing had no effect**?
+
+```{r extra_perm_pvalue, echo=TRUE, message=FALSE, warning=FALSE}
+#| code-fold: true
+p_value_pos <- null_dist_pos |>
+  get_p_value(obs_stat = obs_diff_pos, direction = "two-sided")
+
+p_value_pos
+```
+
+### 🔍 Interpretation of Computational Results
+
+**📌 What do the bootstrap and permutation tests tell us?**
+
+- **Mean Revision (Bootstrap CI):**  
+  The 95% bootstrap confidence interval for the mean revision (see `boot_ci_mean`) is very narrow and centered near  
+  `r round(obs_mean_rev, 1)` thousand jobs.  
+  ➜ This indicates revisions are tiny relative to overall employment — not evidence of major bias.
+
+- **Median Revision (Bootstrap CI):**  
+  The bootstrap CI for the median (see `boot_ci_median`) is also close to zero.  
+  ➜ Typical revisions are modest and balanced, with extreme outliers not driving the results.
+
+- **Probability of Positive Revisions (Permutation Test):**  
+  The permutation test comparing pre- vs post-2000 positive revision rates (`obs_diff_pos` vs. `p_value_pos`) shows no strong statistical shift.  
+  ➜ Any differences are easily explained by normal sampling variation, not structural “rigging.”
+
+---
+
+### 🧠 Overall Conclusion from Computational Inference
+
+✔ Revisions remain **small** relative to national employment levels  
+✔ Centered around **zero** in both mean and median  
+✔ Slight differences over time are **statistically weak**  
+✔ Variability aligns with **economic volatility**, not political manipulation
+
+➡ These computational approaches strongly reinforce the findings from earlier statistical tests and fact-checks.

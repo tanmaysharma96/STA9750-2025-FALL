@@ -51,7 +51,7 @@ if (length(to_install) > 0) {
 invisible(lapply(needed_pkgs, library, character.only = TRUE))
 ```
 
-**Task 1: Downloading CES Total Nonfarm Payroll**
+## Task 1: Downloading CES Total Nonfarm Payroll**
 
 We begin by loading the R packages required for downloading, cleaning, and analyzing the Current Employment Statistics (CES) dataset.  
 If any packages are missing, they are installed automatically to ensure full reproducibility.
@@ -65,43 +65,33 @@ library(rvest)
 library(lubridate)
 library(janitor)
 
-# --- 1. Build the HTTP request to the PDQ page ---
+# --- 1. Building the HTTP request to the PDQ page ---
 
 ces_base <- "https://data.bls.gov/pdq/SurveyOutputServlet"
 
 ces_req <- request(ces_base) |>
   req_method("POST") |>
   req_body_form(
-    # IMPORTANT:
-    # These fields MUST match what you see in your browser's
-    # Network -> Request Payload when you:
-    #   - go to Data Finder top picks for CES
-    #   - select "Total Nonfarm, Seasonally Adjusted"
-    #   - set start year = 1979
-    #
-    # What I expect (you can adjust if your browser shows slightly different names):
     survey    = "ce",
     from_year = "1979",
     to_year   = "2025",
     # This is the CES series ID for All Employees, Total Nonfarm, SA
     series_id = "CES0000000001"
-    # If your browser shows additional form fields (periods, output_type, etc.),
-    # add them here exactly as shown.
   )
 
-# Perform request and get HTML
+# Performing request and getting HTML
 ces_html <- ces_req |>
   req_perform() |>
   resp_body_html()
 
-# --- 2. Grab the main data table from the HTML ---
+# --- 2. Grabbing the main data table from the HTML ---
 
 ces_raw_tbl <- ces_html |>
   html_element("table") |>
   html_table(fill = TRUE) |>
   clean_names()
 
-# Peek at the raw table structure
+# Peeking at the raw table structure
 head(ces_raw_tbl)
 
 all_tables <- ces_html |> html_elements("table")
@@ -109,15 +99,15 @@ length(all_tables)
 
 all_tables[[2]] |> html_table(fill = TRUE) |> head()
 
-# Get ALL tables from the HTML
+# Getting ALL tables from the HTML
 all_tables <- ces_html |> html_elements("table")
 
-# Extract the SECOND table, which you confirmed is the Year–Month table
+# Extracting the SECOND table, (Year–Month table)
 ces_data_raw <- all_tables[[2]] |>
   html_table(fill = TRUE) |>
   clean_names()
 
-# Check it
+# Checking it
 head(ces_data_raw)
 ```
 
@@ -162,10 +152,8 @@ We download these tables directly from the BLS website for the full period (1979
 
 url_rev <- "https://www.bls.gov/web/empsit/cesnaicsrev.htm"
 
-rev_html <- request(url_rev) |>
-  req_user_agent("Mozilla/5.0 (Windows NT 10.0)") |>  # Avoids 403
-  req_perform() |>
-  resp_body_html()
+# Simpler: let rvest handle the download directly
+rev_html <- rvest::read_html(url_rev)
 
 rev_html
 ```
@@ -188,7 +176,7 @@ rev_tables <- rev_html |> html_elements("table")
 
 length(rev_tables)
 
-# Look at the first few table IDs to see the pattern
+# Looking at the first few table IDs to see the pattern
 head(html_attr(rev_tables, "id"), 20)
 ```
 
@@ -210,7 +198,7 @@ extract_ces_revisions_year <- function(year) {
     html_table(header = FALSE, fill = TRUE) |>
     janitor::clean_names()
   
-  # Drop the first 3 header rows, then keep the 12 months
+  # Dropping the first 3 header rows, then keeping the 12 months
   tbl <- tbl |>
     slice(-(1:3)) |>
     slice(1:12) |>
@@ -233,7 +221,7 @@ extract_ces_revisions_year <- function(year) {
   tbl
 }
 
-# Test again on 2024
+# Testing again on 2024
 extract_ces_revisions_year(2024)
 ```
 
@@ -252,7 +240,7 @@ library(dplyr)
 years <- 1979:2025
 
 ces_revisions <- map_dfr(years, extract_ces_revisions_year) |>
-  # Only keep months through June 2025 as per instructions
+  # Only keeping months through June 2025 as per instructions
   filter(date <= as.Date("2025-06-01")) |>
   arrange(date)
 
@@ -286,7 +274,7 @@ ces_full <- ces_levels |>          # from Task 1
 ces_full |> slice_head(n = 12)
 ```
 
-### Task 3 — Data Exploration & Visualization
+## Task 3 — Data Exploration & Visualization
 
 To understand the overall behavior of CES employment and revisions over the long run,  
 I compute six key descriptive statistics across the full sample (1979–2025).
@@ -409,7 +397,7 @@ library(dplyr)
 library(infer)
 library(lubridate)
 
-# Add all needed variables to ces_full
+# Adding all needed variables to ces_full
 ces_full <- ces_full |>
   arrange(date) |>
   mutate(
@@ -435,7 +423,7 @@ statistically significant.
 
 ```{r task4_q1_prop_negative_post2000, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
-# Count negative vs total before/after 2000
+# Counting negative vs total before/after 2000
 neg_tab <- ces_full |>
   filter(!is.na(negative_revision), !is.na(post_2000)) |>
   group_by(post_2000) |>
@@ -455,13 +443,22 @@ prop_neg_post2000 <- prop.test(x = x_neg, n = n_neg)
 prop_neg_post2000
 ```
 
-### 4.2 — Has the fraction of large (>1%) revisions increased post-2020?
+#### 4.2 — Has the fraction of large (>1%) revisions increased post-2020?
 
-To check whether revisions have become **unusually large** in recent years,  
-I flag months where the **revision was greater than 1% of employment** — a level  
-that may indicate meaningful measurement challenges.  
-A **two-sample proportion test** compares the rate of these large revisions  
-**before vs. after 2020**.
+To check whether revisions have become *unusually large* in recent years,  
+I flag months where the revision is more than 1% of employment:
+
+- `big = 1` if `|revision / level| > 0.01`
+- `big = 0` otherwise
+
+In my CES sample (Jan 1979–Jun 2025), **no months** exceed this 1% threshold in either
+the pre-2020 or post-2020 period. As a result, the two-sample proportion test has
+`prop 1 = 0`, `prop 2 = 0` and returns `NaN` for the test statistic and p-value.
+
+Substantively, this means that revisions larger than 1% of total employment are
+**essentially non-existent** in the data, even during the volatile post-2020 period.
+So while revisions can occasionally look large in absolute job counts,
+they almost never reach the “>1% of employment” threshold.
 
 ```{r task4_q2_prop_big1pct_post2020, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
@@ -720,7 +717,10 @@ This claim has two parts:
 
 #### What do revisions look like in the CES data?
 
-Across my full sample (January 1979–June 2025) there are `r ces_summary_5$n_months` monthly observations. The **average CES employment level** is about `r round(ces_summary_5$avg_level, 0)` thousand jobs, with a standard deviation of roughly `r round(ces_summary_5$sd_level, 0)` thousand. This is a very large labor market.
+Across my full sample (January 1979–June 2025) there are 558 monthly observations.
+The **average CES employment level** is about **124,707 thousand jobs**  
+(roughly **125 million jobs**), with a standard deviation of about **19,994 thousand**.
+This is a very large labor market.
 
 For revisions (final – original):
 
@@ -800,15 +800,27 @@ From the summary statistics above:
 
 These figures are very small relative to the overall labor market, indicating that typical revisions reflect **modest measurement updates**, not suspicious adjustments.
 
-### Are Large Revisions More Common in Recent Years?
+#### Are Large Revisions More Common in Recent Years?
 
-Figures 2 and 3 illustrate that while revisions spike during major economic disruptions — such as recessions or the COVID period — they generally remain **well under 1%** of total employment.
+Figures 2 and 3 show that revisions can spike during major economic disruptions —
+such as recessions or the COVID period — but they generally remain well under 1% of
+total employment.
 
-To formally identify “big” revisions, I flagged any month where:
+To formally identify “big” revisions, I flagged any month where
 
-> \| revision / level \| > 1%
+\[
+\left|\frac{\text{revision}}{\text{level}}\right| > 0.01
+\]
 
-Then compared their frequency **before vs. after 2020**:
+In practice, **no months** in my sample exceed this 1% threshold, either before or
+after 2020. The table `big_tab_5` therefore has `big = 0` in both periods, and the
+two-sample proportion test in `big1pct_test_5` returns `NaN` (there is no variation
+to compare).
+
+Interpretation: revisions that are larger than 1% of total employment are
+**extremely rare to non-existent** in the CES data, even in the post-2020 era.
+This is consistent with normal measurement updates in a huge labor market,
+not with unusually manipulated data.
 
 ```{r task5_big_revision_freq, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
@@ -864,18 +876,19 @@ This two-sample t-test shows that **large-change months** have significantly lar
 
 Putting all statistical evidence together:
 
-- **Revisions are small** compared to the overall employment level  
-- They remain **balanced around zero**, not consistently negative  
-- Larger revisions appear **when the labor market is more volatile**  
-- **Big (>1%) revisions remain rare**, even after 2020  
+- Revisions are **small** compared to the overall employment level.
+- They remain **balanced around zero**, not consistently negative.
+- Larger revisions appear when the **labor market is more volatile**, not when politics change.
+- Revisions larger than **1% of employment essentially never occur** in the sample.
 
-These findings support Wilcox’s position: there are **measurement challenges**, but no clear signs of political manipulation in the CES revisions.
+These findings support Wilcox’s position: there are measurement challenges,
+but no clear signs of political manipulation in the CES revisions.
 
-**Politifact-style Rating:** 🟢 **Mostly True**
+**Politifact-style Rating:** 🟢 *Mostly True*
 
 CES revisions behave like **normal measurement noise** in a large, dynamic labor market — not rigged data.
 
-### Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference
+## Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference
 
 Traditional inference uses mathematical formulas to decide whether a result is statistically significant — for example, whether the **average revision differs from zero**. These formulas rely on assumptions about the data (like normality).
 
@@ -906,39 +919,41 @@ Computers let us evaluate that question directly — **without** relying exclusi
 
 ---
 
-### 2. Schematic visualization of a computational workflow
+### 🔁 Schematic Workflow for Computational Inference
 
-Below is a simple flowchart-style visualization of a bootstrap /
-permutation workflow. It is **not** a sampling distribution plot; it is
-a conceptual “how-to” diagram.
-
-```{r extra_flowchart, message=FALSE, warning=FALSE}
+```{r extra_flowchart, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
+
 library(ggplot2)
 library(dplyr)
 
 flow_steps <- tibble::tibble(
   step = c(
-    "1. Pose question\n(e.g., mean revision = 0?)",
-    "2. Choose null model\n(no effect / no difference)",
-    "3. Resample data\n(bootstrap or permute labels)",
-    "4. Compute statistic\nfor each resample",
-    "5. Build null or\nbootstrap distribution",
-    "6. Compare observed\nstatistic to distribution"
+    "1. Pose a question\n(e.g., Is mean revision = 0?)",
+    "2. Specify a null model\n(no effect / no difference)",
+    "3. Resample the data\n(bootstrap or permute labels)",
+    "4. Compute the statistic\nfor each resample",
+    "5. Build simulated distribution\n(null or bootstrap)",
+    "6. Compare observed statistic\nwith simulated distribution"
   ),
-  x = c(1, 2, 3, 4, 5, 6),
-  y = 1
+  x = 1,
+  y = seq(6, 1, by = -1)
 )
 
 ggplot(flow_steps, aes(x = x, y = y, label = step)) +
-  geom_label(size = 3) +
-  geom_segment(aes(x = x, xend = x + 0.8, y = y, yend = y),
-               data = flow_steps |> filter(x < max(x)),
-               arrow = arrow(length = unit(0.15, "inches"))) +
-  scale_x_continuous(NULL, breaks = NULL) +
-  scale_y_continuous(NULL, breaks = NULL) +
-  ggtitle("Schematic: Computationally Intensive Inference Workflow") +
-  theme_minimal()
+  # drawing arrows first (behind boxes)
+  geom_segment(
+    aes(x = 1, xend = 1, y = y - 0.4, yend = y - 0.9),
+    data = flow_steps |> filter(y > min(y)),
+    arrow = arrow(length = unit(0.12, "inches")),
+    linewidth = 0.4
+  ) +
+  # then drawing the boxes on top
+  geom_label(size = 4.2, label.size = 0.4, fill = "white") +
+  scale_x_continuous(NULL, breaks = NULL, limits = c(0.8, 1.2)) +
+  scale_y_continuous(NULL, breaks = NULL, limits = c(0.2, 6.8)) +
+  theme_minimal(base_size = 13) +
+  ggtitle("Schematic: Computationally Intensive Inference Workflow")
 ```
 
 This diagram summarizes the main idea:

@@ -141,9 +141,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
   <li><a href="#data-acquisition" id="toc-data-acquisition" class="nav-link" data-scroll-target="#data-acquisition">Data Acquisition</a></li>
+  <li><a href="#task-1-downloading-ces-total-nonfarm-payroll" id="toc-task-1-downloading-ces-total-nonfarm-payroll" class="nav-link" data-scroll-target="#task-1-downloading-ces-total-nonfarm-payroll">Task 1: Downloading CES Total Nonfarm Payroll**</a></li>
   <li><a href="#task-2-download-ces-revision-tables" id="toc-task-2-download-ces-revision-tables" class="nav-link" data-scroll-target="#task-2-download-ces-revision-tables">Task 2 — Download CES Revision Tables</a></li>
+  <li><a href="#task-3-data-exploration-visualization" id="toc-task-3-data-exploration-visualization" class="nav-link" data-scroll-target="#task-3-data-exploration-visualization">Task 3 — Data Exploration &amp; Visualization</a></li>
   <li><a href="#task-4-statistical-inference-setup" id="toc-task-4-statistical-inference-setup" class="nav-link" data-scroll-target="#task-4-statistical-inference-setup">Task 4 — Statistical Inference Setup</a></li>
   <li><a href="#task-5-fact-checking-public-claims-about-ces-revisions" id="toc-task-5-fact-checking-public-claims-about-ces-revisions" class="nav-link" data-scroll-target="#task-5-fact-checking-public-claims-about-ces-revisions">Task 5 — Fact-Checking Public Claims About CES Revisions</a></li>
+  <li><a href="#extra-credit-1-non-technical-explanation-of-computational-inference" id="toc-extra-credit-1-non-technical-explanation-of-computational-inference" class="nav-link" data-scroll-target="#extra-credit-1-non-technical-explanation-of-computational-inference">Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference</a></li>
   </ul>
 </nav>
     </div>
@@ -211,7 +214,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">invisible</span>(<span class="fu">lapply</span>(needed_pkgs, library, <span class="at">character.only =</span> <span class="cn">TRUE</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<p><strong>Task 1: Downloading CES Total Nonfarm Payroll</strong></p>
+</section>
+</section>
+<section id="task-1-downloading-ces-total-nonfarm-payroll" class="level2">
+<h2 class="anchored" data-anchor-id="task-1-downloading-ces-total-nonfarm-payroll">Task 1: Downloading CES Total Nonfarm Payroll**</h2>
 <p>We begin by loading the R packages required for downloading, cleaning, and analyzing the Current Employment Statistics (CES) dataset.<br>
 If any packages are missing, they are installed automatically to ensure full reproducibility.</p>
 <div class="cell">
@@ -223,44 +229,34 @@ If any packages are missing, they are installed automatically to ensure full rep
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 1. Build the HTTP request to the PDQ page ---</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 1. Building the HTTP request to the PDQ page ---</span></span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>ces_base <span class="ot">&lt;-</span> <span class="st">"https://data.bls.gov/pdq/SurveyOutputServlet"</span></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>ces_req <span class="ot">&lt;-</span> <span class="fu">request</span>(ces_base) <span class="sc">|&gt;</span></span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_method</span>(<span class="st">"POST"</span>) <span class="sc">|&gt;</span></span>
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_body_form</span>(</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># IMPORTANT:</span></span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># These fields MUST match what you see in your browser's</span></span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Network -&gt; Request Payload when you:</span></span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="co">#   - go to Data Finder top picks for CES</span></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="co">#   - select "Total Nonfarm, Seasonally Adjusted"</span></span>
-<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>    <span class="co">#   - set start year = 1979</span></span>
-<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    <span class="co">#</span></span>
-<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># What I expect (you can adjust if your browser shows slightly different names):</span></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">survey    =</span> <span class="st">"ce"</span>,</span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">from_year =</span> <span class="st">"1979"</span>,</span>
-<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">to_year   =</span> <span class="st">"2025"</span>,</span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># This is the CES series ID for All Employees, Total Nonfarm, SA</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">series_id =</span> <span class="st">"CES0000000001"</span></span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># If your browser shows additional form fields (periods, output_type, etc.),</span></span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>    <span class="co"># add them here exactly as shown.</span></span>
-<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Perform request and get HTML</span></span>
-<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>ces_html <span class="ot">&lt;-</span> ces_req <span class="sc">|&gt;</span></span>
-<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_perform</span>() <span class="sc">|&gt;</span></span>
-<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">resp_body_html</span>()</span>
-<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 2. Grab the main data table from the HTML ---</span></span>
-<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>ces_raw_tbl <span class="ot">&lt;-</span> ces_html <span class="sc">|&gt;</span></span>
-<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_element</span>(<span class="st">"table"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_table</span>(<span class="at">fill =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
-<span id="cb2-41"><a href="#cb2-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
-<span id="cb2-42"><a href="#cb2-42" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-43"><a href="#cb2-43" aria-hidden="true" tabindex="-1"></a><span class="co"># Peek at the raw table structure</span></span>
-<span id="cb2-44"><a href="#cb2-44" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ces_raw_tbl)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">survey    =</span> <span class="st">"ce"</span>,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">from_year =</span> <span class="st">"1979"</span>,</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">to_year   =</span> <span class="st">"2025"</span>,</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># This is the CES series ID for All Employees, Total Nonfarm, SA</span></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">series_id =</span> <span class="st">"CES0000000001"</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Performing request and getting HTML</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>ces_html <span class="ot">&lt;-</span> ces_req <span class="sc">|&gt;</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_perform</span>() <span class="sc">|&gt;</span></span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">resp_body_html</span>()</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="co"># --- 2. Grabbing the main data table from the HTML ---</span></span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>ces_raw_tbl <span class="ot">&lt;-</span> ces_html <span class="sc">|&gt;</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_element</span>(<span class="st">"table"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_table</span>(<span class="at">fill =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Peeking at the raw table structure</span></span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ces_raw_tbl)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div data-pagedtable="false">
@@ -290,15 +286,15 @@ If any packages are missing, they are installed automatically to ensure full rep
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get ALL tables from the HTML</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Getting ALL tables from the HTML</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>all_tables <span class="ot">&lt;-</span> ces_html <span class="sc">|&gt;</span> <span class="fu">html_elements</span>(<span class="st">"table"</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract the SECOND table, which you confirmed is the Year–Month table</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Extracting the SECOND table, (Year–Month table)</span></span>
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>ces_data_raw <span class="ot">&lt;-</span> all_tables[[<span class="dv">2</span>]] <span class="sc">|&gt;</span></span>
 <span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">html_table</span>(<span class="at">fill =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Check it</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Checking it</span></span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(ces_data_raw)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
@@ -309,7 +305,6 @@ If any packages are missing, they are installed automatically to ensure full rep
 </div>
 </div>
 </div>
-</section>
 <section id="clean-and-reshape-ces-data" class="level3">
 <h3 class="anchored" data-anchor-id="clean-and-reshape-ces-data">Clean and Reshape CES Data</h3>
 <p>Once the raw table is extracted, we convert it into a tidy monthly time-series structure.<br>
@@ -358,12 +353,10 @@ We download these tables directly from the BLS website for the full period (1979
 <summary>Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>url_rev <span class="ot">&lt;-</span> <span class="st">"https://www.bls.gov/web/empsit/cesnaicsrev.htm"</span></span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>rev_html <span class="ot">&lt;-</span> <span class="fu">request</span>(url_rev) <span class="sc">|&gt;</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_user_agent</span>(<span class="st">"Mozilla/5.0 (Windows NT 10.0)"</span>) <span class="sc">|&gt;</span>  <span class="co"># Avoids 403</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_perform</span>() <span class="sc">|&gt;</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">resp_body_html</span>()</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>rev_html</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Simpler: let rvest handle the download directly</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>rev_html <span class="ot">&lt;-</span> rvest<span class="sc">::</span><span class="fu">read_html</span>(url_rev)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>rev_html</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>{html_document}
@@ -395,7 +388,7 @@ that each corresponds to a specific year of CES revisions.</p>
 </div>
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Look at the first few table IDs to see the pattern</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Looking at the first few table IDs to see the pattern</span></span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(<span class="fu">html_attr</span>(rev_tables, <span class="st">"id"</span>), <span class="dv">20</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
@@ -422,7 +415,7 @@ cleans the rows, and returns a tidy month-level dataset of original vs.&nbsp;fin
 <span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">html_table</span>(<span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">fill =</span> <span class="cn">TRUE</span>) <span class="sc">|&gt;</span></span>
 <span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>    janitor<span class="sc">::</span><span class="fu">clean_names</span>()</span>
 <span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Drop the first 3 header rows, then keep the 12 months</span></span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Dropping the first 3 header rows, then keeping the 12 months</span></span>
 <span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>  tbl <span class="ot">&lt;-</span> tbl <span class="sc">|&gt;</span></span>
 <span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">slice</span>(<span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>)) <span class="sc">|&gt;</span></span>
 <span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>) <span class="sc">|&gt;</span></span>
@@ -445,7 +438,7 @@ cleans the rows, and returns a tidy month-level dataset of original vs.&nbsp;fin
 <span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>  tbl</span>
 <span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Test again on 2024</span></span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a><span class="co"># Testing again on 2024</span></span>
 <span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a><span class="fu">extract_ces_revisions_year</span>(<span class="dv">2024</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
@@ -471,7 +464,7 @@ to compile a single tidy dataset of monthly revision values, filtered through Ju
 <span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>years <span class="ot">&lt;-</span> <span class="dv">1979</span><span class="sc">:</span><span class="dv">2025</span></span>
 <span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>ces_revisions <span class="ot">&lt;-</span> <span class="fu">map_dfr</span>(years, extract_ces_revisions_year) <span class="sc">|&gt;</span></span>
-<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Only keep months through June 2025 as per instructions</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Only keeping months through June 2025 as per instructions</span></span>
 <span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(date <span class="sc">&lt;=</span> <span class="fu">as.Date</span>(<span class="st">"2025-06-01"</span>)) <span class="sc">|&gt;</span></span>
 <span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(date)</span>
 <span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a></span>
@@ -530,8 +523,9 @@ into a unified monthly dataset and create additional features for analysis.</p>
 </div>
 </div>
 </section>
-<section id="task-3-data-exploration-visualization" class="level3">
-<h3 class="anchored" data-anchor-id="task-3-data-exploration-visualization">Task 3 — Data Exploration &amp; Visualization</h3>
+</section>
+<section id="task-3-data-exploration-visualization" class="level2">
+<h2 class="anchored" data-anchor-id="task-3-data-exploration-visualization">Task 3 — Data Exploration &amp; Visualization</h2>
 <p>To understand the overall behavior of CES employment and revisions over the long run,<br>
 I compute six key descriptive statistics across the full sample (1979–2025).</p>
 <div class="cell">
@@ -561,7 +555,6 @@ I compute six key descriptive statistics across the full sample (1979–2025).</
 </div>
 </div>
 </div>
-</section>
 <section id="visualization-1-ces-revisions-over-time" class="level3">
 <h3 class="anchored" data-anchor-id="visualization-1-ces-revisions-over-time">Visualization 1 — CES Revisions Over Time</h3>
 <p>This plot tracks monthly revisions (final − original estimate) from 1979–2025,<br>
@@ -679,7 +672,7 @@ variables are used throughout the tests in Task 4.</p>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(infer)</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
 <span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Add all needed variables to ces_full</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Adding all needed variables to ces_full</span></span>
 <span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>ces_full <span class="ot">&lt;-</span> ces_full <span class="sc">|&gt;</span></span>
 <span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(date) <span class="sc">|&gt;</span></span>
 <span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
@@ -705,7 +698,7 @@ statistically significant.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count negative vs total before/after 2000</span></span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Counting negative vs total before/after 2000</span></span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>neg_tab <span class="ot">&lt;-</span> ces_full <span class="sc">|&gt;</span></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(negative_revision), <span class="sc">!</span><span class="fu">is.na</span>(post_2000)) <span class="sc">|&gt;</span></span>
 <span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(post_2000) <span class="sc">|&gt;</span></span>
@@ -747,14 +740,16 @@ sample estimates:
 0.5317460 0.4379085 </code></pre>
 </div>
 </div>
-</section>
-<section id="has-the-fraction-of-large-1-revisions-increased-post-2020" class="level3">
-<h3 class="anchored" data-anchor-id="has-the-fraction-of-large-1-revisions-increased-post-2020">4.2 — Has the fraction of large (&gt;1%) revisions increased post-2020?</h3>
-<p>To check whether revisions have become <strong>unusually large</strong> in recent years,<br>
-I flag months where the <strong>revision was greater than 1% of employment</strong> — a level<br>
-that may indicate meaningful measurement challenges.<br>
-A <strong>two-sample proportion test</strong> compares the rate of these large revisions<br>
-<strong>before vs.&nbsp;after 2020</strong>.</p>
+<section id="has-the-fraction-of-large-1-revisions-increased-post-2020" class="level4">
+<h4 class="anchored" data-anchor-id="has-the-fraction-of-large-1-revisions-increased-post-2020">4.2 — Has the fraction of large (&gt;1%) revisions increased post-2020?</h4>
+<p>To check whether revisions have become <em>unusually large</em> in recent years,<br>
+I flag months where the revision is more than 1% of employment:</p>
+<ul>
+<li><code>big = 1</code> if <code>|revision / level| &gt; 0.01</code></li>
+<li><code>big = 0</code> otherwise</li>
+</ul>
+<p>In my CES sample (Jan 1979–Jun 2025), <strong>no months</strong> exceed this 1% threshold in either the pre-2020 or post-2020 period. As a result, the two-sample proportion test has <code>prop 1 = 0</code>, <code>prop 2 = 0</code> and returns <code>NaN</code> for the test statistic and p-value.</p>
+<p>Substantively, this means that revisions larger than 1% of total employment are <strong>essentially non-existent</strong> in the data, even during the volatile post-2020 period. So while revisions can occasionally look large in absolute job counts, they almost never reach the “&gt;1% of employment” threshold.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -799,6 +794,7 @@ prop 1 prop 2
      0      0 </code></pre>
 </div>
 </div>
+</section>
 </section>
 <section id="is-the-average-revision-significantly-different-from-zero" class="level3">
 <h3 class="anchored" data-anchor-id="is-the-average-revision-significantly-different-from-zero">4.3 — Is the average revision significantly different from zero?</h3>
@@ -1187,7 +1183,8 @@ mean in group FALSE  mean in group TRUE
 </ol>
 <section id="what-do-revisions-look-like-in-the-ces-data" class="level4">
 <h4 class="anchored" data-anchor-id="what-do-revisions-look-like-in-the-ces-data">What do revisions look like in the CES data?</h4>
-<p>Across my full sample (January 1979–June 2025) there are 558 monthly observations. The <strong>average CES employment level</strong> is about 1.24707^{5} thousand jobs, with a standard deviation of roughly 1.9994^{4} thousand. This is a very large labor market.</p>
+<p>Across my full sample (January 1979–June 2025) there are 558 monthly observations. The <strong>average CES employment level</strong> is about <strong>124,707 thousand jobs</strong><br>
+(roughly <strong>125 million jobs</strong>), with a standard deviation of about <strong>19,994 thousand</strong>. This is a very large labor market.</p>
 <p>For revisions (final – original):</p>
 <ul>
 <li>The <strong>average revision</strong> is 1.9 thousand jobs, with standard deviation 57.9 thousand.</li>
@@ -1304,15 +1301,13 @@ They represent normal measurement noise in a large labor market.</p>
 0.001%</li>
 </ul>
 <p>These figures are very small relative to the overall labor market, indicating that typical revisions reflect <strong>modest measurement updates</strong>, not suspicious adjustments.</p>
-</section>
-<section id="are-large-revisions-more-common-in-recent-years" class="level3">
-<h3 class="anchored" data-anchor-id="are-large-revisions-more-common-in-recent-years">Are Large Revisions More Common in Recent Years?</h3>
-<p>Figures 2 and 3 illustrate that while revisions spike during major economic disruptions — such as recessions or the COVID period — they generally remain <strong>well under 1%</strong> of total employment.</p>
-<p>To formally identify “big” revisions, I flagged any month where:</p>
-<blockquote class="blockquote">
-<p>| revision / level | &gt; 1%</p>
-</blockquote>
-<p>Then compared their frequency <strong>before vs.&nbsp;after 2020</strong>:</p>
+<section id="are-large-revisions-more-common-in-recent-years" class="level4">
+<h4 class="anchored" data-anchor-id="are-large-revisions-more-common-in-recent-years">Are Large Revisions More Common in Recent Years?</h4>
+<p>Figures 2 and 3 show that revisions can spike during major economic disruptions — such as recessions or the COVID period — but they generally remain well under 1% of total employment.</p>
+<p>To formally identify “big” revisions, I flagged any month where</p>
+<p>[ || &gt; 0.01 ]</p>
+<p>In practice, <strong>no months</strong> in my sample exceed this 1% threshold, either before or after 2020. The table <code>big_tab_5</code> therefore has <code>big = 0</code> in both periods, and the two-sample proportion test in <code>big1pct_test_5</code> returns <code>NaN</code> (there is no variation to compare).</p>
+<p>Interpretation: revisions that are larger than 1% of total employment are <strong>extremely rare to non-existent</strong> in the CES data, even in the post-2020 era. This is consistent with normal measurement updates in a huge labor market, not with unusually manipulated data.</p>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1348,6 +1343,7 @@ prop 1 prop 2
 <code>big1pct_test_5</code> provides a two-sample proportion test.<br>
 While slightly more common post-2020, <strong>large revisions remain rare overall</strong> — consistent with normal measurement variation, not manipulation.</p>
 <hr>
+</section>
 </section>
 <section id="do-larger-employment-swings-lead-to-larger-revisions" class="level3">
 <h3 class="anchored" data-anchor-id="do-larger-employment-swings-lead-to-larger-revisions">Do Larger Employment Swings Lead to Larger Revisions?</h3>
@@ -1416,20 +1412,18 @@ mean in group FALSE  mean in group TRUE
 <h3 class="anchored" data-anchor-id="rating-wilcoxs-challenges-yes.-rigged-data-no.-claim">Rating: Wilcox’s “Challenges? Yes. Rigged Data? No.” Claim</h3>
 <p>Putting all statistical evidence together:</p>
 <ul>
-<li><strong>Revisions are small</strong> compared to the overall employment level<br>
-</li>
-<li>They remain <strong>balanced around zero</strong>, not consistently negative<br>
-</li>
-<li>Larger revisions appear <strong>when the labor market is more volatile</strong><br>
-</li>
-<li><strong>Big (&gt;1%) revisions remain rare</strong>, even after 2020</li>
+<li>Revisions are <strong>small</strong> compared to the overall employment level.</li>
+<li>They remain <strong>balanced around zero</strong>, not consistently negative.</li>
+<li>Larger revisions appear when the <strong>labor market is more volatile</strong>, not when politics change.</li>
+<li>Revisions larger than <strong>1% of employment essentially never occur</strong> in the sample.</li>
 </ul>
-<p>These findings support Wilcox’s position: there are <strong>measurement challenges</strong>, but no clear signs of political manipulation in the CES revisions.</p>
-<p><strong>Politifact-style Rating:</strong> 🟢 <strong>Mostly True</strong></p>
+<p>These findings support Wilcox’s position: there are measurement challenges, but no clear signs of political manipulation in the CES revisions.</p>
+<p><strong>Politifact-style Rating:</strong> 🟢 <em>Mostly True</em></p>
 <p>CES revisions behave like <strong>normal measurement noise</strong> in a large, dynamic labor market — not rigged data.</p>
 </section>
-<section id="extra-credit-1-non-technical-explanation-of-computational-inference" class="level3">
-<h3 class="anchored" data-anchor-id="extra-credit-1-non-technical-explanation-of-computational-inference">Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference</h3>
+</section>
+<section id="extra-credit-1-non-technical-explanation-of-computational-inference" class="level2">
+<h2 class="anchored" data-anchor-id="extra-credit-1-non-technical-explanation-of-computational-inference">Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference</h2>
 <p>Traditional inference uses mathematical formulas to decide whether a result is statistically significant — for example, whether the <strong>average revision differs from zero</strong>. These formulas rely on assumptions about the data (like normality).</p>
 <p><strong>Computationally intensive inference</strong> flips the process:</p>
 <ul>
@@ -1455,10 +1449,8 @@ mean in group FALSE  mean in group TRUE
 </blockquote>
 <p>Computers let us evaluate that question directly — <strong>without</strong> relying exclusively on theoretical formulas.</p>
 <hr>
-</section>
-<section id="schematic-visualization-of-a-computational-workflow" class="level3">
-<h3 class="anchored" data-anchor-id="schematic-visualization-of-a-computational-workflow">2. Schematic visualization of a computational workflow</h3>
-<p>Below is a simple flowchart-style visualization of a bootstrap / permutation workflow. It is <strong>not</strong> a sampling distribution plot; it is a conceptual “how-to” diagram.</p>
+<section id="schematic-workflow-for-computational-inference" class="level3">
+<h3 class="anchored" data-anchor-id="schematic-workflow-for-computational-inference">🔁 Schematic Workflow for Computational Inference</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1467,26 +1459,31 @@ mean in group FALSE  mean in group TRUE
 <span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>flow_steps <span class="ot">&lt;-</span> tibble<span class="sc">::</span><span class="fu">tibble</span>(</span>
 <span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">step =</span> <span class="fu">c</span>(</span>
-<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"1. Pose question</span><span class="sc">\n</span><span class="st">(e.g., mean revision = 0?)"</span>,</span>
-<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2. Choose null model</span><span class="sc">\n</span><span class="st">(no effect / no difference)"</span>,</span>
-<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"3. Resample data</span><span class="sc">\n</span><span class="st">(bootstrap or permute labels)"</span>,</span>
-<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"4. Compute statistic</span><span class="sc">\n</span><span class="st">for each resample"</span>,</span>
-<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"5. Build null or</span><span class="sc">\n</span><span class="st">bootstrap distribution"</span>,</span>
-<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"6. Compare observed</span><span class="sc">\n</span><span class="st">statistic to distribution"</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"1. Pose a question</span><span class="sc">\n</span><span class="st">(e.g., Is mean revision = 0?)"</span>,</span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2. Specify a null model</span><span class="sc">\n</span><span class="st">(no effect / no difference)"</span>,</span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"3. Resample the data</span><span class="sc">\n</span><span class="st">(bootstrap or permute labels)"</span>,</span>
+<span id="cb63-9"><a href="#cb63-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"4. Compute the statistic</span><span class="sc">\n</span><span class="st">for each resample"</span>,</span>
+<span id="cb63-10"><a href="#cb63-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"5. Build simulated distribution</span><span class="sc">\n</span><span class="st">(null or bootstrap)"</span>,</span>
+<span id="cb63-11"><a href="#cb63-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"6. Compare observed statistic</span><span class="sc">\n</span><span class="st">with simulated distribution"</span></span>
 <span id="cb63-12"><a href="#cb63-12" aria-hidden="true" tabindex="-1"></a>  ),</span>
-<span id="cb63-13"><a href="#cb63-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>, <span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>),</span>
-<span id="cb63-14"><a href="#cb63-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> <span class="dv">1</span></span>
+<span id="cb63-13"><a href="#cb63-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="dv">1</span>,</span>
+<span id="cb63-14"><a href="#cb63-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">seq</span>(<span class="dv">6</span>, <span class="dv">1</span>, <span class="at">by =</span> <span class="sc">-</span><span class="dv">1</span>)</span>
 <span id="cb63-15"><a href="#cb63-15" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb63-16"><a href="#cb63-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb63-17"><a href="#cb63-17" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(flow_steps, <span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">y =</span> y, <span class="at">label =</span> step)) <span class="sc">+</span></span>
-<span id="cb63-18"><a href="#cb63-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label</span>(<span class="at">size =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
-<span id="cb63-19"><a href="#cb63-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_segment</span>(<span class="fu">aes</span>(<span class="at">x =</span> x, <span class="at">xend =</span> x <span class="sc">+</span> <span class="fl">0.8</span>, <span class="at">y =</span> y, <span class="at">yend =</span> y),</span>
-<span id="cb63-20"><a href="#cb63-20" aria-hidden="true" tabindex="-1"></a>               <span class="at">data =</span> flow_steps <span class="sc">|&gt;</span> <span class="fu">filter</span>(x <span class="sc">&lt;</span> <span class="fu">max</span>(x)),</span>
-<span id="cb63-21"><a href="#cb63-21" aria-hidden="true" tabindex="-1"></a>               <span class="at">arrow =</span> <span class="fu">arrow</span>(<span class="at">length =</span> <span class="fu">unit</span>(<span class="fl">0.15</span>, <span class="st">"inches"</span>))) <span class="sc">+</span></span>
-<span id="cb63-22"><a href="#cb63-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="cn">NULL</span>, <span class="at">breaks =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb63-23"><a href="#cb63-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="cn">NULL</span>, <span class="at">breaks =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
-<span id="cb63-24"><a href="#cb63-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Schematic: Computationally Intensive Inference Workflow"</span>) <span class="sc">+</span></span>
-<span id="cb63-25"><a href="#cb63-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb63-18"><a href="#cb63-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># drawing arrows first (behind boxes)</span></span>
+<span id="cb63-19"><a href="#cb63-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_segment</span>(</span>
+<span id="cb63-20"><a href="#cb63-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">aes</span>(<span class="at">x =</span> <span class="dv">1</span>, <span class="at">xend =</span> <span class="dv">1</span>, <span class="at">y =</span> y <span class="sc">-</span> <span class="fl">0.4</span>, <span class="at">yend =</span> y <span class="sc">-</span> <span class="fl">0.9</span>),</span>
+<span id="cb63-21"><a href="#cb63-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">data =</span> flow_steps <span class="sc">|&gt;</span> <span class="fu">filter</span>(y <span class="sc">&gt;</span> <span class="fu">min</span>(y)),</span>
+<span id="cb63-22"><a href="#cb63-22" aria-hidden="true" tabindex="-1"></a>    <span class="at">arrow =</span> <span class="fu">arrow</span>(<span class="at">length =</span> <span class="fu">unit</span>(<span class="fl">0.12</span>, <span class="st">"inches"</span>)),</span>
+<span id="cb63-23"><a href="#cb63-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.4</span></span>
+<span id="cb63-24"><a href="#cb63-24" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb63-25"><a href="#cb63-25" aria-hidden="true" tabindex="-1"></a>  <span class="co"># then drawing the boxes on top</span></span>
+<span id="cb63-26"><a href="#cb63-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_label</span>(<span class="at">size =</span> <span class="fl">4.2</span>, <span class="at">label.size =</span> <span class="fl">0.4</span>, <span class="at">fill =</span> <span class="st">"white"</span>) <span class="sc">+</span></span>
+<span id="cb63-27"><a href="#cb63-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="cn">NULL</span>, <span class="at">breaks =</span> <span class="cn">NULL</span>, <span class="at">limits =</span> <span class="fu">c</span>(<span class="fl">0.8</span>, <span class="fl">1.2</span>)) <span class="sc">+</span></span>
+<span id="cb63-28"><a href="#cb63-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="cn">NULL</span>, <span class="at">breaks =</span> <span class="cn">NULL</span>, <span class="at">limits =</span> <span class="fu">c</span>(<span class="fl">0.2</span>, <span class="fl">6.8</span>)) <span class="sc">+</span></span>
+<span id="cb63-29"><a href="#cb63-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
+<span id="cb63-30"><a href="#cb63-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggtitle</span>(<span class="st">"Schematic: Computationally Intensive Inference Workflow"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output-display">
 <div>
@@ -1573,7 +1570,7 @@ mean in group FALSE  mean in group TRUE
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["lower_ci"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["upper_ci"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"-2.829749","2":"6.690815"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["lower_ci"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["upper_ci"],"name":[2],"type":["dbl"],"align":["right"]}],"data":[{"1":"-2.779167","2":"6.697401"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>
@@ -1693,7 +1690,7 @@ mean in group FALSE  mean in group TRUE
 <div class="cell-output-display">
 <div data-pagedtable="false">
   <script data-pagedtable-source="" type="application/json">
-{"columns":[{"label":["p_value"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"0.075"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+{"columns":[{"label":["p_value"],"name":[1],"type":["dbl"],"align":["right"]}],"data":[{"1":"0.076"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
   </script>
 </div>
 </div>

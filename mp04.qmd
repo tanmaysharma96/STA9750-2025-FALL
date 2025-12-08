@@ -423,6 +423,7 @@ statistically significant.
 
 ```{r task4_q1_prop_negative_post2000, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
+
 # Counting negative vs total before/after 2000
 neg_tab <- ces_full |>
   filter(!is.na(negative_revision), !is.na(post_2000)) |>
@@ -439,7 +440,14 @@ neg_tab
 x_neg <- neg_tab$neg[order(neg_tab$post_2000)]
 n_neg <- neg_tab$n[order(neg_tab$post_2000)]
 
-prop_neg_post2000 <- prop.test(x = x_neg, n = n_neg)
+# Base R two-sample test for equality of proportions
+prop_neg_post2000 <- prop.test(
+  x = x_neg,
+  n = n_neg,
+  alternative = "two.sided",
+  correct = FALSE
+)
+
 prop_neg_post2000
 ```
 
@@ -493,11 +501,12 @@ A **one-sample t-test** formally evaluates the null hypothesis:
 
 ```{r task4_q3_mean_revision_zero, echo=TRUE, message=FALSE, warning=FALSE}
 #| code-fold: true
-# One-sample t-test using base R: H0: mean revision = 0
-rev_vec <- ces_full$revision
-rev_vec <- rev_vec[!is.na(rev_vec)]
 
-ttest_mean_rev <- t.test(rev_vec, mu = 0)
+# One-sample t-test using infer::t_test: H0: mean revision = 0
+
+ttest_mean_rev <- ces_full |>
+  drop_na(revision) |>
+  t_test(revision ~ NULL, mu = 0)
 
 ttest_mean_rev
 ```
@@ -1070,11 +1079,15 @@ We classify each month as having a **positive revision or not**, and divide the 
 #| code-fold: true
 ces_pos <- ces_full |>
   mutate(
-    year          = year(date),
-    post_2000     = year >= 2000,
-    positive_rev  = revision > 0
+    year         = year(date),
+    post_2000    = year >= 2000,
+    positive_rev = revision > 0
   ) |>
-  filter(!is.na(post_2000), !is.na(positive_rev))
+  filter(!is.na(post_2000), !is.na(positive_rev)) |>
+  mutate(
+    post_2000    = factor(post_2000, levels = c(FALSE, TRUE)),
+    positive_rev = factor(positive_rev, levels = c(FALSE, TRUE))
+  )
 ```
 
 #### 🔹 Observed Difference in Positive Revision Rates  

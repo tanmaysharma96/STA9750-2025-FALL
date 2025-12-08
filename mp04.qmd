@@ -5,8 +5,15 @@ format:
   html:
     toc: true
     toc-depth: 2
+    toc-location: left
     theme: cosmo
     df-print: paged
+    number-sections: true
+    smooth-scroll: true
+    code-fold: true
+    code-overflow: wrap
+    fig-cap-location: bottom
+    tbl-cap-location: top
 ---
 
 ## Introduction
@@ -22,6 +29,18 @@ June 2025). Using web scraping with `httr2` and `rvest`, I download:
 I then join these datasets into a single table for statistical exploration,
 formal hypothesis testing, and fact-checking recent political claims about
 BLS revisions and the firing of Commissioner Erika McEntarfer.
+
+---
+
+## Executive Summary
+
+- **Data:** Monthly CES total nonfarm payroll levels and corresponding revisions, January 1979 – June 2025.  
+- **Big picture:** Revisions are **tiny relative to total employment**, centered near zero, and do **not** show a clear partisan or post-2020 “rigging” pattern.  
+- **Key tests:**  
+  - One-sample t-tests and bootstrap CIs show average revisions are **not meaningfully different from zero**.  
+  - Proportion tests and permutation tests show **only weak differences** in positive/negative revision rates over time.  
+  - Revisions are **larger when the labor market is more volatile**, not when the political party changes.
+- **Bottom line:** Claims that CES revisions were “rigged” to hurt Trump are **inconsistent** with the long-run data; revisions behave like **normal measurement noise** in a very large labor market.
 
 ---
 
@@ -296,7 +315,11 @@ ces_summary <- ces_full |>
     pct_negative_revisions   = mean(revision < 0, na.rm = TRUE) * 100
   )
 
-ces_summary
+knitr::kable(
+  ces_summary,
+  caption = "Summary statistics for CES levels and revisions, 1979–2025.",
+  digits = 2
+)
 ```
 
 ### Visualization 1 — CES Revisions Over Time
@@ -595,7 +618,11 @@ avg_rel_revision_pct = mean(revision / level, na.rm = TRUE) * 100,
 pct_negative_revisions = mean(revision < 0, na.rm = TRUE) * 100
 )
 
-ces_summary_5
+knitr::kable(
+  ces_summary_5,
+  caption = "Summary statistics for CES levels and revisions used in fact-checking.",
+  digits = 2
+)
 ```
 
 ### Largest and Smallest Revisions in the Sample
@@ -633,6 +660,10 @@ n = n(),
 )
 
 neg_tab_5
+knitr::kable(
+  neg_tab_5,
+  caption = "Share of negative revisions before and after 2000."
+)
 
 x_neg_5 <- neg_tab_5$neg[order(neg_tab_5$post_2000)]
 n_neg_5 <- neg_tab_5$n[order(neg_tab_5$post_2000)]

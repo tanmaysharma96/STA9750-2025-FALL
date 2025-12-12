@@ -76,7 +76,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-cd7454b418030687c631a6a7286fbe16.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-029b10fc0dc652dab2ec1ac156c1a037.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-3a108049398baddbe3fc4475d0b09d93.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -104,6 +104,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<style>html{ scroll-behavior: smooth; }</style>
 <link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
 
 <script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
@@ -112,7 +113,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </head>
 
-<body class="nav-fixed quarto-light">
+<body class="floating nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -133,23 +134,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <!-- content -->
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
-<!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <nav id="TOC" role="doc-toc" class="toc-active">
     <h2 id="toc-title">On this page</h2>
    
   <ul class="collapse">
-  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
-  <li><a href="#executive-summary" id="toc-executive-summary" class="nav-link" data-scroll-target="#executive-summary">Executive Summary</a></li>
-  <li><a href="#data-acquisition" id="toc-data-acquisition" class="nav-link" data-scroll-target="#data-acquisition">Data Acquisition</a></li>
-  <li><a href="#task-1-downloading-ces-total-nonfarm-payroll" id="toc-task-1-downloading-ces-total-nonfarm-payroll" class="nav-link" data-scroll-target="#task-1-downloading-ces-total-nonfarm-payroll">Task 1: Downloading CES Total Nonfarm Payroll**</a></li>
-  <li><a href="#task-2-download-ces-revision-tables" id="toc-task-2-download-ces-revision-tables" class="nav-link" data-scroll-target="#task-2-download-ces-revision-tables">Task 2 — Download CES Revision Tables</a></li>
-  <li><a href="#task-3-data-exploration-visualization" id="toc-task-3-data-exploration-visualization" class="nav-link" data-scroll-target="#task-3-data-exploration-visualization">Task 3 — Data Exploration &amp; Visualization</a></li>
-  <li><a href="#task-4-statistical-inference-setup" id="toc-task-4-statistical-inference-setup" class="nav-link" data-scroll-target="#task-4-statistical-inference-setup">Task 4 — Statistical Inference Setup</a></li>
-  <li><a href="#task-5-fact-checking-public-claims-about-ces-revisions" id="toc-task-5-fact-checking-public-claims-about-ces-revisions" class="nav-link" data-scroll-target="#task-5-fact-checking-public-claims-about-ces-revisions">Task 5 — Fact-Checking Public Claims About CES Revisions</a></li>
-  <li><a href="#extra-credit-1-non-technical-explanation-of-computational-inference" id="toc-extra-credit-1-non-technical-explanation-of-computational-inference" class="nav-link" data-scroll-target="#extra-credit-1-non-technical-explanation-of-computational-inference">Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#executive-summary" id="toc-executive-summary" class="nav-link" data-scroll-target="#executive-summary"><span class="header-section-number">2</span> Executive Summary</a></li>
+  <li><a href="#data-acquisition" id="toc-data-acquisition" class="nav-link" data-scroll-target="#data-acquisition"><span class="header-section-number">3</span> Data Acquisition</a></li>
+  <li><a href="#task-1-downloading-ces-total-nonfarm-payroll" id="toc-task-1-downloading-ces-total-nonfarm-payroll" class="nav-link" data-scroll-target="#task-1-downloading-ces-total-nonfarm-payroll"><span class="header-section-number">4</span> Task 1: Downloading CES Total Nonfarm Payroll**</a></li>
+  <li><a href="#task-2-download-ces-revision-tables" id="toc-task-2-download-ces-revision-tables" class="nav-link" data-scroll-target="#task-2-download-ces-revision-tables"><span class="header-section-number">5</span> Task 2 — Download CES Revision Tables</a></li>
+  <li><a href="#task-3-data-exploration-visualization" id="toc-task-3-data-exploration-visualization" class="nav-link" data-scroll-target="#task-3-data-exploration-visualization"><span class="header-section-number">6</span> Task 3 — Data Exploration &amp; Visualization</a></li>
+  <li><a href="#task-4-statistical-inference-setup" id="toc-task-4-statistical-inference-setup" class="nav-link" data-scroll-target="#task-4-statistical-inference-setup"><span class="header-section-number">7</span> Task 4 — Statistical Inference Setup</a></li>
+  <li><a href="#task-5-fact-checking-public-claims-about-ces-revisions" id="toc-task-5-fact-checking-public-claims-about-ces-revisions" class="nav-link" data-scroll-target="#task-5-fact-checking-public-claims-about-ces-revisions"><span class="header-section-number">8</span> Task 5 — Fact-Checking Public Claims About CES Revisions</a></li>
+  <li><a href="#extra-credit-1-non-technical-explanation-of-computational-inference" id="toc-extra-credit-1-non-technical-explanation-of-computational-inference" class="nav-link" data-scroll-target="#extra-credit-1-non-technical-explanation-of-computational-inference"><span class="header-section-number">9</span> Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference</a></li>
   </ul>
 </nav>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -179,8 +183,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<section id="introduction" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="introduction"><span class="header-section-number">1</span> Introduction</h2>
 <p>In this mini-project, I construct a reproducible pipeline to obtain and analyze the U.S. Bureau of Labor Statistics (BLS) <strong>Current Employment Statistics (CES)</strong> data for total nonfarm payrolls and their subsequent revisions (January 1979– June 2025). Using web scraping with <code>httr2</code> and <code>rvest</code>, I download:</p>
 <ul>
 <li>The final seasonally-adjusted CES employment levels, and<br>
@@ -190,8 +194,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>I then join these datasets into a single table for statistical exploration, formal hypothesis testing, and fact-checking recent political claims about BLS revisions and the firing of Commissioner Erika McEntarfer.</p>
 <hr>
 </section>
-<section id="executive-summary" class="level2">
-<h2 class="anchored" data-anchor-id="executive-summary">Executive Summary</h2>
+<section id="executive-summary" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="executive-summary"><span class="header-section-number">2</span> Executive Summary</h2>
 <ul>
 <li><strong>Data:</strong> Monthly CES total nonfarm payroll levels and corresponding revisions, January 1979 – June 2025.<br>
 </li>
@@ -209,11 +213,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <hr>
 </section>
-<section id="data-acquisition" class="level2">
-<h2 class="anchored" data-anchor-id="data-acquisition">Data Acquisition</h2>
+<section id="data-acquisition" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="data-acquisition"><span class="header-section-number">3</span> Data Acquisition</h2>
 <p>We obtain monthly <strong>Total Nonfarm Payroll Employment</strong> (seasonally adjusted) from the U.S. Bureau of Labor Statistics (BLS) using their PDQ interface, covering <strong>January 1979 – June 2025</strong>.</p>
-<section id="load-required-libraries" class="level3">
-<h3 class="anchored" data-anchor-id="load-required-libraries">Load Required Libraries</h3>
+<section id="load-required-libraries" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="load-required-libraries"><span class="header-section-number">3.1</span> Load Required Libraries</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -236,8 +240,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 </section>
-<section id="task-1-downloading-ces-total-nonfarm-payroll" class="level2">
-<h2 class="anchored" data-anchor-id="task-1-downloading-ces-total-nonfarm-payroll">Task 1: Downloading CES Total Nonfarm Payroll**</h2>
+<section id="task-1-downloading-ces-total-nonfarm-payroll" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="task-1-downloading-ces-total-nonfarm-payroll"><span class="header-section-number">4</span> Task 1: Downloading CES Total Nonfarm Payroll**</h2>
 <p>We begin by loading the R packages required for downloading, cleaning, and analyzing the Current Employment Statistics (CES) dataset.<br>
 If any packages are missing, they are installed automatically to ensure full reproducibility.</p>
 <div class="cell">
@@ -325,8 +329,8 @@ If any packages are missing, they are installed automatically to ensure full rep
 </div>
 </div>
 </div>
-<section id="clean-and-reshape-ces-data" class="level3">
-<h3 class="anchored" data-anchor-id="clean-and-reshape-ces-data">Clean and Reshape CES Data</h3>
+<section id="clean-and-reshape-ces-data" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="clean-and-reshape-ces-data"><span class="header-section-number">4.1</span> Clean and Reshape CES Data</h3>
 <p>Once the raw table is extracted, we convert it into a tidy monthly time-series structure.<br>
 This includes standardizing column names, reshaping year–month columns into a single date variable, converting values to numeric format, and filtering to match the project time window (Jan 1979 – Jun 2025).</p>
 <div class="cell">
@@ -362,12 +366,12 @@ This includes standardizing column names, reshaping year–month columns into a 
 </div>
 </section>
 </section>
-<section id="task-2-download-ces-revision-tables" class="level2">
-<h2 class="anchored" data-anchor-id="task-2-download-ces-revision-tables">Task 2 — Download CES Revision Tables</h2>
+<section id="task-2-download-ces-revision-tables" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="task-2-download-ces-revision-tables"><span class="header-section-number">5</span> Task 2 — Download CES Revision Tables</h2>
 <p>In addition to monthly payroll employment estimates, the BLS provides revision tables comparing the <strong>initial</strong> estimate with the <strong>final</strong> benchmarked value.<br>
 We download these tables directly from the BLS website for the full period (1979–2025).</p>
-<section id="retrieve-revisions-page-html" class="level3">
-<h3 class="anchored" data-anchor-id="retrieve-revisions-page-html">Retrieve Revisions Page HTML</h3>
+<section id="retrieve-revisions-page-html" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="retrieve-revisions-page-html"><span class="header-section-number">5.1</span> Retrieve Revisions Page HTML</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -386,8 +390,8 @@ We download these tables directly from the BLS website for the full period (1979
 </div>
 </div>
 </section>
-<section id="inspect-revision-table-structure" class="level3">
-<h3 class="anchored" data-anchor-id="inspect-revision-table-structure">Inspect Revision Table Structure</h3>
+<section id="inspect-revision-table-structure" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="inspect-revision-table-structure"><span class="header-section-number">5.2</span> Inspect Revision Table Structure</h3>
 <p>The revision page contains multiple separate HTML tables — one per year.<br>
 Here, I verify the number of tables and inspect their ID patterns to confirm<br>
 that each corresponds to a specific year of CES revisions.</p>
@@ -418,8 +422,8 @@ that each corresponds to a specific year of CES revisions.</p>
 </div>
 </div>
 </section>
-<section id="extract-revisions-for-a-single-year" class="level3">
-<h3 class="anchored" data-anchor-id="extract-revisions-for-a-single-year">Extract Revisions for a Single Year</h3>
+<section id="extract-revisions-for-a-single-year" class="level3" data-number="5.3">
+<h3 data-number="5.3" class="anchored" data-anchor-id="extract-revisions-for-a-single-year"><span class="header-section-number">5.3</span> Extract Revisions for a Single Year</h3>
 <p>BLS publishes a separate revision table for each year.<br>
 This helper function automatically locates the correct table by its HTML <code>id</code>,<br>
 cleans the rows, and returns a tidy month-level dataset of original vs.&nbsp;final values.</p>
@@ -470,8 +474,8 @@ cleans the rows, and returns a tidy month-level dataset of original vs.&nbsp;fin
 </div>
 </div>
 </section>
-<section id="build-full-ces-revisions-dataset" class="level3">
-<h3 class="anchored" data-anchor-id="build-full-ces-revisions-dataset">Build Full CES Revisions Dataset</h3>
+<section id="build-full-ces-revisions-dataset" class="level3" data-number="5.4">
+<h3 data-number="5.4" class="anchored" data-anchor-id="build-full-ces-revisions-dataset"><span class="header-section-number">5.4</span> Build Full CES Revisions Dataset</h3>
 <p>Using the helper function above, I loop through all available years (1979–2025)<br>
 to compile a single tidy dataset of monthly revision values, filtered through June 2025.</p>
 <div class="cell">
@@ -511,8 +515,8 @@ to compile a single tidy dataset of monthly revision values, filtered through Ju
 </div>
 </div>
 </section>
-<section id="join-employment-levels-with-revision-data" class="level3">
-<h3 class="anchored" data-anchor-id="join-employment-levels-with-revision-data">Join Employment Levels with Revision Data</h3>
+<section id="join-employment-levels-with-revision-data" class="level3" data-number="5.5">
+<h3 data-number="5.5" class="anchored" data-anchor-id="join-employment-levels-with-revision-data"><span class="header-section-number">5.5</span> Join Employment Levels with Revision Data</h3>
 <p>Here, I merge the employment levels (Task 1) with revision data (Task 2)<br>
 into a unified monthly dataset and create additional features for analysis.</p>
 <div class="cell">
@@ -544,8 +548,8 @@ into a unified monthly dataset and create additional features for analysis.</p>
 </div>
 </section>
 </section>
-<section id="task-3-data-exploration-visualization" class="level2">
-<h2 class="anchored" data-anchor-id="task-3-data-exploration-visualization">Task 3 — Data Exploration &amp; Visualization</h2>
+<section id="task-3-data-exploration-visualization" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="task-3-data-exploration-visualization"><span class="header-section-number">6</span> Task 3 — Data Exploration &amp; Visualization</h2>
 <p>To understand the overall behavior of CES employment and revisions over the long run,<br>
 I compute six key descriptive statistics across the full sample (1979–2025).</p>
 <div class="cell">
@@ -611,8 +615,8 @@ I compute six key descriptive statistics across the full sample (1979–2025).</
 </table>
 </div>
 </div>
-<section id="visualization-1-ces-revisions-over-time" class="level3">
-<h3 class="anchored" data-anchor-id="visualization-1-ces-revisions-over-time">Visualization 1 — CES Revisions Over Time</h3>
+<section id="visualization-1-ces-revisions-over-time" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="visualization-1-ces-revisions-over-time"><span class="header-section-number">6.1</span> Visualization 1 — CES Revisions Over Time</h3>
 <p>This plot tracks monthly revisions (final − original estimate) from 1979–2025,<br>
 showing how updates fluctuate above and below zero across economic cycles.</p>
 <div class="cell">
@@ -639,8 +643,8 @@ showing how updates fluctuate above and below zero across economic cycles.</p>
 </div>
 </div>
 </section>
-<section id="visualization-2-absolute-revisions-over-time" class="level3">
-<h3 class="anchored" data-anchor-id="visualization-2-absolute-revisions-over-time">Visualization 2 — Absolute Revisions Over Time</h3>
+<section id="visualization-2-absolute-revisions-over-time" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="visualization-2-absolute-revisions-over-time"><span class="header-section-number">6.2</span> Visualization 2 — Absolute Revisions Over Time</h3>
 <p>This view focuses on the <em>magnitude</em> of revisions — how large the corrections are,<br>
 regardless of whether they increased or decreased employment levels.</p>
 <div class="cell">
@@ -663,8 +667,8 @@ regardless of whether they increased or decreased employment levels.</p>
 </div>
 </div>
 </section>
-<section id="visualization-3-revisions-as-of-employment-level" class="level3">
-<h3 class="anchored" data-anchor-id="visualization-3-revisions-as-of-employment-level">Visualization 3 — Revisions as % of Employment Level</h3>
+<section id="visualization-3-revisions-as-of-employment-level" class="level3" data-number="6.3">
+<h3 data-number="6.3" class="anchored" data-anchor-id="visualization-3-revisions-as-of-employment-level"><span class="header-section-number">6.3</span> Visualization 3 — Revisions as % of Employment Level</h3>
 <p>This visualization scales revisions relative to total employment,<br>
 showing how <strong>significant</strong> changes are in context — even large job changes<br>
 often represent <strong>very small percentages</strong> of the labor market.</p>
@@ -688,8 +692,8 @@ often represent <strong>very small percentages</strong> of the labor market.</p>
 </div>
 </div>
 </section>
-<section id="visualization-4-distribution-of-ces-revisions" class="level3">
-<h3 class="anchored" data-anchor-id="visualization-4-distribution-of-ces-revisions">Visualization 4 — Distribution of CES Revisions</h3>
+<section id="visualization-4-distribution-of-ces-revisions" class="level3" data-number="6.4">
+<h3 data-number="6.4" class="anchored" data-anchor-id="visualization-4-distribution-of-ces-revisions"><span class="header-section-number">6.4</span> Visualization 4 — Distribution of CES Revisions</h3>
 <p>This histogram displays how revisions are distributed over the entire sample period.<br>
 Most revisions cluster close to <strong>zero</strong>, with a relatively small number of<br>
 <strong>large upward or downward adjustments</strong>, consistent with typical survey variability.</p>
@@ -714,8 +718,8 @@ Most revisions cluster close to <strong>zero</strong>, with a relatively small n
 </div>
 </section>
 </section>
-<section id="task-4-statistical-inference-setup" class="level2">
-<h2 class="anchored" data-anchor-id="task-4-statistical-inference-setup">Task 4 — Statistical Inference Setup</h2>
+<section id="task-4-statistical-inference-setup" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="task-4-statistical-inference-setup"><span class="header-section-number">7</span> Task 4 — Statistical Inference Setup</h2>
 <p>Before running formal hypothesis tests, I create several helper variables on the<br>
 joined CES dataset. These include indicators for <strong>negative revisions</strong>,<br>
 <strong>post-2000</strong> and <strong>post-2020</strong> periods, the <strong>absolute</strong> and <strong>relative</strong> size<br>
@@ -745,8 +749,8 @@ variables are used throughout the tests in Task 4.</p>
 <span id="cb23-19"><a href="#cb23-19" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<section id="has-the-fraction-of-negative-revisions-increased-post-2000" class="level3">
-<h3 class="anchored" data-anchor-id="has-the-fraction-of-negative-revisions-increased-post-2000">4.1 — Has the fraction of negative revisions increased post-2000?</h3>
+<section id="has-the-fraction-of-negative-revisions-increased-post-2000" class="level3" data-number="7.1">
+<h3 data-number="7.1" class="anchored" data-anchor-id="has-the-fraction-of-negative-revisions-increased-post-2000"><span class="header-section-number">7.1</span> 4.1 — Has the fraction of negative revisions increased post-2000?</h3>
 <p>To evaluate whether CES revisions have become <strong>more negative</strong> in the modern era,<br>
 I compare the proportion of downward revisions <strong>before vs.&nbsp;after 2000</strong>.<br>
 A <strong>two-sample proportion test</strong> determines whether these differences are<br>
@@ -803,8 +807,8 @@ sample estimates:
 0.5317460 0.4379085 </code></pre>
 </div>
 </div>
-<section id="has-the-fraction-of-large-1-revisions-increased-post-2020" class="level4">
-<h4 class="anchored" data-anchor-id="has-the-fraction-of-large-1-revisions-increased-post-2020">4.2 — Has the fraction of large (&gt;1%) revisions increased post-2020?</h4>
+<section id="has-the-fraction-of-large-1-revisions-increased-post-2020" class="level4" data-number="7.1.1">
+<h4 data-number="7.1.1" class="anchored" data-anchor-id="has-the-fraction-of-large-1-revisions-increased-post-2020"><span class="header-section-number">7.1.1</span> 4.2 — Has the fraction of large (&gt;1%) revisions increased post-2020?</h4>
 <p>To check whether revisions have become <em>unusually large</em> in recent years,<br>
 I flag months where the revision is more than 1% of employment:</p>
 <ul>
@@ -859,8 +863,8 @@ prop 1 prop 2
 </div>
 </section>
 </section>
-<section id="is-the-average-revision-significantly-different-from-zero" class="level3">
-<h3 class="anchored" data-anchor-id="is-the-average-revision-significantly-different-from-zero">4.3 — Is the average revision significantly different from zero?</h3>
+<section id="is-the-average-revision-significantly-different-from-zero" class="level3" data-number="7.2">
+<h3 data-number="7.2" class="anchored" data-anchor-id="is-the-average-revision-significantly-different-from-zero"><span class="header-section-number">7.2</span> 4.3 — Is the average revision significantly different from zero?</h3>
 <p>Because revisions represent corrections to initially reported employment figures,<br>
 we expect them to <strong>average out near zero</strong> over time if the BLS estimates are<br>
 unbiased.<br>
@@ -889,8 +893,8 @@ A <strong>one-sample t-test</strong> formally evaluates the null hypothesis:</p>
 </div>
 </div>
 </section>
-<section id="has-the-average-revision-increased-post-2020" class="level3">
-<h3 class="anchored" data-anchor-id="has-the-average-revision-increased-post-2020">4.4 — Has the average revision increased post-2020?</h3>
+<section id="has-the-average-revision-increased-post-2020" class="level3" data-number="7.3">
+<h3 data-number="7.3" class="anchored" data-anchor-id="has-the-average-revision-increased-post-2020"><span class="header-section-number">7.3</span> 4.4 — Has the average revision increased post-2020?</h3>
 <p>The pandemic era brought heightened labor market volatility and lower survey response rates.<br>
 To assess whether this led to <strong>systematically larger revisions</strong>, we compare the mean revision:</p>
 <ul>
@@ -923,8 +927,8 @@ To assess whether this led to <strong>systematically larger revisions</strong>, 
 </div>
 </div>
 </section>
-<section id="are-revisions-larger-when-the-underlying-change-is-larger" class="level3">
-<h3 class="anchored" data-anchor-id="are-revisions-larger-when-the-underlying-change-is-larger">4.5 — Are revisions larger when the underlying change is larger?</h3>
+<section id="are-revisions-larger-when-the-underlying-change-is-larger" class="level3" data-number="7.4">
+<h3 data-number="7.4" class="anchored" data-anchor-id="are-revisions-larger-when-the-underlying-change-is-larger"><span class="header-section-number">7.4</span> 4.5 — Are revisions larger when the underlying change is larger?</h3>
 <p>Revisions may grow when the labor market is more volatile — for example,<br>
 during recessions or sudden employment shocks.<br>
 To examine this relationship, we measure the <strong>correlation</strong> between:</p>
@@ -961,8 +965,8 @@ sample estimates:
 </div>
 </section>
 </section>
-<section id="task-5-fact-checking-public-claims-about-ces-revisions" class="level2">
-<h2 class="anchored" data-anchor-id="task-5-fact-checking-public-claims-about-ces-revisions">Task 5 — Fact-Checking Public Claims About CES Revisions</h2>
+<section id="task-5-fact-checking-public-claims-about-ces-revisions" class="level2" data-number="8">
+<h2 data-number="8" class="anchored" data-anchor-id="task-5-fact-checking-public-claims-about-ces-revisions"><span class="header-section-number">8</span> Task 5 — Fact-Checking Public Claims About CES Revisions</h2>
 <p>This final section applies the results from Tasks 3 and 4 to evaluate <strong>two real-world claims</strong> made about employment revisions in the U.S. Current Employment Statistics (CES) program — particularly regarding the accuracy and transparency of the BLS during the period surrounding the firing of Commissioner Erika McEntarfer.</p>
 <p>Each fact-check includes:</p>
 <ul>
@@ -983,8 +987,8 @@ sample estimates:
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
-<section id="basic-summary-statistics-for-ces-levels-and-revisions" class="level3">
-<h3 class="anchored" data-anchor-id="basic-summary-statistics-for-ces-levels-and-revisions">Basic Summary Statistics for CES Levels and Revisions</h3>
+<section id="basic-summary-statistics-for-ces-levels-and-revisions" class="level3" data-number="8.1">
+<h3 data-number="8.1" class="anchored" data-anchor-id="basic-summary-statistics-for-ces-levels-and-revisions"><span class="header-section-number">8.1</span> Basic Summary Statistics for CES Levels and Revisions</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1047,8 +1051,8 @@ sample estimates:
 </div>
 </div>
 </section>
-<section id="largest-and-smallest-revisions-in-the-sample" class="level3">
-<h3 class="anchored" data-anchor-id="largest-and-smallest-revisions-in-the-sample">Largest and Smallest Revisions in the Sample</h3>
+<section id="largest-and-smallest-revisions-in-the-sample" class="level3" data-number="8.2">
+<h3 data-number="8.2" class="anchored" data-anchor-id="largest-and-smallest-revisions-in-the-sample"><span class="header-section-number">8.2</span> Largest and Smallest Revisions in the Sample</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1070,8 +1074,8 @@ sample estimates:
 </div>
 </div>
 </section>
-<section id="pre-2000-vs-post-2000-share-of-negative-revisions-proportion-test" class="level3">
-<h3 class="anchored" data-anchor-id="pre-2000-vs-post-2000-share-of-negative-revisions-proportion-test">Pre-2000 vs Post-2000 Share of Negative Revisions (Proportion Test)</h3>
+<section id="pre-2000-vs-post-2000-share-of-negative-revisions-proportion-test" class="level3" data-number="8.3">
+<h3 data-number="8.3" class="anchored" data-anchor-id="pre-2000-vs-post-2000-share-of-negative-revisions-proportion-test"><span class="header-section-number">8.3</span> Pre-2000 vs Post-2000 Share of Negative Revisions (Proportion Test)</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1154,8 +1158,8 @@ sample estimates:
 </div>
 </div>
 </section>
-<section id="one-sample-t-test-is-the-mean-revision-different-from-zero" class="level3">
-<h3 class="anchored" data-anchor-id="one-sample-t-test-is-the-mean-revision-different-from-zero">One-Sample t-Test: Is the Mean Revision Different from Zero?</h3>
+<section id="one-sample-t-test-is-the-mean-revision-different-from-zero" class="level3" data-number="8.4">
+<h3 data-number="8.4" class="anchored" data-anchor-id="one-sample-t-test-is-the-mean-revision-different-from-zero"><span class="header-section-number">8.4</span> One-Sample t-Test: Is the Mean Revision Different from Zero?</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1180,8 +1184,8 @@ mean of x
 </div>
 </div>
 </section>
-<section id="big-revisions-1-of-level-pre--vs-post-2020-proportion-test" class="level3">
-<h3 class="anchored" data-anchor-id="big-revisions-1-of-level-pre--vs-post-2020-proportion-test">Big Revisions (&gt;1% of Level) — Pre- vs Post-2020 (Proportion Test)</h3>
+<section id="big-revisions-1-of-level-pre--vs-post-2020-proportion-test" class="level3" data-number="8.5">
+<h3 data-number="8.5" class="anchored" data-anchor-id="big-revisions-1-of-level-pre--vs-post-2020-proportion-test"><span class="header-section-number">8.5</span> Big Revisions (&gt;1% of Level) — Pre- vs Post-2020 (Proportion Test)</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1234,8 +1238,8 @@ prop 1 prop 2
 </div>
 </div>
 </section>
-<section id="relationship-between-absolute-level-change-and-absolute-revision-correlation-test" class="level3">
-<h3 class="anchored" data-anchor-id="relationship-between-absolute-level-change-and-absolute-revision-correlation-test">Relationship Between Absolute Level Change and Absolute Revision (Correlation Test)</h3>
+<section id="relationship-between-absolute-level-change-and-absolute-revision-correlation-test" class="level3" data-number="8.6">
+<h3 data-number="8.6" class="anchored" data-anchor-id="relationship-between-absolute-level-change-and-absolute-revision-correlation-test"><span class="header-section-number">8.6</span> Relationship Between Absolute Level Change and Absolute Revision (Correlation Test)</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1266,8 +1270,8 @@ sample estimates:
 </div>
 </div>
 </section>
-<section id="do-large-change-months-have-larger-revisions-two-sample-t-test" class="level3">
-<h3 class="anchored" data-anchor-id="do-large-change-months-have-larger-revisions-two-sample-t-test">Do Large-Change Months Have Larger Revisions? (Two-Sample t-Test)</h3>
+<section id="do-large-change-months-have-larger-revisions-two-sample-t-test" class="level3" data-number="8.7">
+<h3 data-number="8.7" class="anchored" data-anchor-id="do-large-change-months-have-larger-revisions-two-sample-t-test"><span class="header-section-number">8.7</span> Do Large-Change Months Have Larger Revisions? (Two-Sample t-Test)</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1296,8 +1300,8 @@ mean in group FALSE  mean in group TRUE
 </div>
 </div>
 </section>
-<section id="fact-check-1-trump-the-numbers-were-rigged-and-revised-down-by-900000" class="level3">
-<h3 class="anchored" data-anchor-id="fact-check-1-trump-the-numbers-were-rigged-and-revised-down-by-900000">Fact Check 1 – Trump: “The numbers were rigged” and revised down by ~900,000</h3>
+<section id="fact-check-1-trump-the-numbers-were-rigged-and-revised-down-by-900000" class="level3" data-number="8.8">
+<h3 data-number="8.8" class="anchored" data-anchor-id="fact-check-1-trump-the-numbers-were-rigged-and-revised-down-by-900000"><span class="header-section-number">8.8</span> Fact Check 1 – Trump: “The numbers were rigged” and revised down by ~900,000</h3>
 <p>In early August 2025, President Donald Trump publicly claimed that BLS jobs numbers were <strong>“rigged”</strong> and that they had been revised <strong>“down by almost 900,000 jobs”</strong> after the 2024 election, describing this as the “biggest revision in history” and a justification for firing BLS Commissioner Erika McEntarfer.</p>
 <p>This claim has two parts:</p>
 <ol type="1">
@@ -1305,8 +1309,8 @@ mean in group FALSE  mean in group TRUE
 </li>
 <li>That these revisions are politically manipulated (“rigged”).</li>
 </ol>
-<section id="what-do-revisions-look-like-in-the-ces-data" class="level4">
-<h4 class="anchored" data-anchor-id="what-do-revisions-look-like-in-the-ces-data">What do revisions look like in the CES data?</h4>
+<section id="what-do-revisions-look-like-in-the-ces-data" class="level4" data-number="8.8.1">
+<h4 data-number="8.8.1" class="anchored" data-anchor-id="what-do-revisions-look-like-in-the-ces-data"><span class="header-section-number">8.8.1</span> What do revisions look like in the CES data?</h4>
 <p>Across my full sample (January 1979–June 2025) there are 558 monthly observations. The <strong>average CES employment level</strong> is about <strong>124,707 thousand jobs</strong><br>
 (roughly <strong>125 million jobs</strong>), with a standard deviation of about <strong>19,994 thousand</strong>. This is a very large labor market.</p>
 <p>For revisions (final – original):</p>
@@ -1319,8 +1323,8 @@ mean in group FALSE  mean in group TRUE
 <p>Figure 1 from Task 3 (<strong>“CES Revisions Over Time (1979–2025)”</strong>) shows that revisions fluctuate both above and below zero across many administrations. Figure 4 (<strong>“Distribution of CES Revisions (1979–2025)”</strong>) shows a roughly symmetric distribution around zero, with most revisions fairly close to zero and a relatively small number of extreme outliers.</p>
 </section>
 </section>
-<section id="largest-monthly-revision-in-the-sample" class="level3">
-<h3 class="anchored" data-anchor-id="largest-monthly-revision-in-the-sample">Largest Monthly Revision in the Sample</h3>
+<section id="largest-monthly-revision-in-the-sample" class="level3" data-number="8.9">
+<h3 data-number="8.9" class="anchored" data-anchor-id="largest-monthly-revision-in-the-sample"><span class="header-section-number">8.9</span> Largest Monthly Revision in the Sample</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1336,8 +1340,8 @@ mean in group FALSE  mean in group TRUE
 </div>
 <p>This is large in absolute terms, but it happens in the context of a very large labor market and is not unique to one president or one year.</p>
 </section>
-<section id="are-revisions-systematically-more-negative-post-2000" class="level3">
-<h3 class="anchored" data-anchor-id="are-revisions-systematically-more-negative-post-2000">Are Revisions Systematically More Negative Post-2000?</h3>
+<section id="are-revisions-systematically-more-negative-post-2000" class="level3" data-number="8.10">
+<h3 data-number="8.10" class="anchored" data-anchor-id="are-revisions-systematically-more-negative-post-2000"><span class="header-section-number">8.10</span> Are Revisions Systematically More Negative Post-2000?</h3>
 <p>This provides context for political claims that BLS revisions intentionally push job numbers downward in recent years.<br>
 We compare the <strong>share of negative revisions</strong> before vs after 2000.</p>
 <div class="cell">
@@ -1372,8 +1376,8 @@ sample estimates:
 </div>
 <p>The table neg_tab_5 shows the fraction of months with negative revisions before and after 2000, and prop_neg_test_5 is a formal two-sample proportion test. While there may be some difference across periods, the results do not show a dramatic shift to predominantly negative revisions that would match the idea of “rigged” numbers under a particular administration.</p>
 </section>
-<section id="is-the-average-revision-far-from-zero-one-sample-t-test" class="level3">
-<h3 class="anchored" data-anchor-id="is-the-average-revision-far-from-zero-one-sample-t-test">Is the Average Revision Far From Zero? (One-Sample t-Test)</h3>
+<section id="is-the-average-revision-far-from-zero-one-sample-t-test" class="level3" data-number="8.11">
+<h3 data-number="8.11" class="anchored" data-anchor-id="is-the-average-revision-far-from-zero-one-sample-t-test"><span class="header-section-number">8.11</span> Is the Average Revision Far From Zero? (One-Sample t-Test)</h3>
 <p>This test checks whether revisions are systematically biased upward or downward across the full sample — a core part of the “rigged numbers” narrative.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1401,8 +1405,8 @@ mean of x
 <p>Politifact-style rating for Claim 1: Pants on Fire</p>
 <p>The claim significantly misrepresents both the size and the pattern of CES revisions.</p>
 </section>
-<section id="fact-check-2-wilcox-piie-challenges-yes.-rigged-data-no." class="level3">
-<h3 class="anchored" data-anchor-id="fact-check-2-wilcox-piie-challenges-yes.-rigged-data-no.">Fact Check 2 — Wilcox / PIIE: “Challenges? Yes. Rigged data? No.”</h3>
+<section id="fact-check-2-wilcox-piie-challenges-yes.-rigged-data-no." class="level3" data-number="8.12">
+<h3 data-number="8.12" class="anchored" data-anchor-id="fact-check-2-wilcox-piie-challenges-yes.-rigged-data-no."><span class="header-section-number">8.12</span> Fact Check 2 — Wilcox / PIIE: “Challenges? Yes. Rigged data? No.”</h3>
 <p>Economist David Wilcox at the Peterson Institute for International Economics reviewed CES revisions and concluded that while measurement challenges exist — especially declining survey response rates — <strong>there is no evidence of manipulation or “rigged” data</strong>.</p>
 <p>We evaluate a simplified version of his claim:</p>
 <blockquote class="blockquote">
@@ -1411,8 +1415,8 @@ They represent normal measurement noise in a large labor market.</p>
 </blockquote>
 <hr>
 </section>
-<section id="how-large-are-revisions-relative-to-total-employment" class="level3">
-<h3 class="anchored" data-anchor-id="how-large-are-revisions-relative-to-total-employment">How Large Are Revisions Relative to Total Employment?</h3>
+<section id="how-large-are-revisions-relative-to-total-employment" class="level3" data-number="8.13">
+<h3 data-number="8.13" class="anchored" data-anchor-id="how-large-are-revisions-relative-to-total-employment"><span class="header-section-number">8.13</span> How Large Are Revisions Relative to Total Employment?</h3>
 <p>From the summary statistics above:</p>
 <ul>
 <li><strong>Mean absolute revision:</strong><br>
@@ -1425,8 +1429,8 @@ They represent normal measurement noise in a large labor market.</p>
 0.001%</li>
 </ul>
 <p>These figures are very small relative to the overall labor market, indicating that typical revisions reflect <strong>modest measurement updates</strong>, not suspicious adjustments.</p>
-<section id="are-large-revisions-more-common-in-recent-years" class="level4">
-<h4 class="anchored" data-anchor-id="are-large-revisions-more-common-in-recent-years">Are Large Revisions More Common in Recent Years?</h4>
+<section id="are-large-revisions-more-common-in-recent-years" class="level4" data-number="8.13.1">
+<h4 data-number="8.13.1" class="anchored" data-anchor-id="are-large-revisions-more-common-in-recent-years"><span class="header-section-number">8.13.1</span> Are Large Revisions More Common in Recent Years?</h4>
 <p>Figures 2 and 3 show that revisions can spike during major economic disruptions — such as recessions or the COVID period — but they generally remain well under 1% of total employment.</p>
 <p>To formally identify “big” revisions, I flagged any month where</p>
 <p>[ || &gt; 0.01 ]</p>
@@ -1469,8 +1473,8 @@ While slightly more common post-2020, <strong>large revisions remain rare overal
 <hr>
 </section>
 </section>
-<section id="do-larger-employment-swings-lead-to-larger-revisions" class="level3">
-<h3 class="anchored" data-anchor-id="do-larger-employment-swings-lead-to-larger-revisions">Do Larger Employment Swings Lead to Larger Revisions?</h3>
+<section id="do-larger-employment-swings-lead-to-larger-revisions" class="level3" data-number="8.14">
+<h3 data-number="8.14" class="anchored" data-anchor-id="do-larger-employment-swings-lead-to-larger-revisions"><span class="header-section-number">8.14</span> Do Larger Employment Swings Lead to Larger Revisions?</h3>
 <p>A natural question:<br>
 Are large revisions occurring because the labor market itself is moving more dramatically?</p>
 <p>To test this, I examined the relationship between:</p>
@@ -1501,8 +1505,8 @@ sample estimates:
 <p>The statistically significant <strong>positive correlation</strong> confirms that CES revisions tend to be larger when the labor market itself is more volatile — such as during recessions or the COVID period. This behavior is consistent with <strong>normal survey noise</strong>, not political tampering.</p>
 <hr>
 </section>
-<section id="do-large-employment-shifts-cause-larger-revisions" class="level3">
-<h3 class="anchored" data-anchor-id="do-large-employment-shifts-cause-larger-revisions">Do Large Employment Shifts Cause Larger Revisions?</h3>
+<section id="do-large-employment-shifts-cause-larger-revisions" class="level3" data-number="8.15">
+<h3 data-number="8.15" class="anchored" data-anchor-id="do-large-employment-shifts-cause-larger-revisions"><span class="header-section-number">8.15</span> Do Large Employment Shifts Cause Larger Revisions?</h3>
 <p>To further check this idea, I separated months into:</p>
 <ul>
 <li><strong>Large-change months</strong> → top 25% of absolute employment changes<br>
@@ -1532,8 +1536,8 @@ mean in group FALSE  mean in group TRUE
 <p>This two-sample t-test shows that <strong>large-change months</strong> have significantly larger revisions, reinforcing the interpretation that revisions scale with true labor-market volatility — not with politics.</p>
 <hr>
 </section>
-<section id="rating-wilcoxs-challenges-yes.-rigged-data-no.-claim" class="level3">
-<h3 class="anchored" data-anchor-id="rating-wilcoxs-challenges-yes.-rigged-data-no.-claim">Rating: Wilcox’s “Challenges? Yes. Rigged Data? No.” Claim</h3>
+<section id="rating-wilcoxs-challenges-yes.-rigged-data-no.-claim" class="level3" data-number="8.16">
+<h3 data-number="8.16" class="anchored" data-anchor-id="rating-wilcoxs-challenges-yes.-rigged-data-no.-claim"><span class="header-section-number">8.16</span> Rating: Wilcox’s “Challenges? Yes. Rigged Data? No.” Claim</h3>
 <p>Putting all statistical evidence together:</p>
 <ul>
 <li>Revisions are <strong>small</strong> compared to the overall employment level.</li>
@@ -1546,8 +1550,8 @@ mean in group FALSE  mean in group TRUE
 <p>CES revisions behave like <strong>normal measurement noise</strong> in a large, dynamic labor market — not rigged data.</p>
 </section>
 </section>
-<section id="extra-credit-1-non-technical-explanation-of-computational-inference" class="level2">
-<h2 class="anchored" data-anchor-id="extra-credit-1-non-technical-explanation-of-computational-inference">Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference</h2>
+<section id="extra-credit-1-non-technical-explanation-of-computational-inference" class="level2" data-number="9">
+<h2 data-number="9" class="anchored" data-anchor-id="extra-credit-1-non-technical-explanation-of-computational-inference"><span class="header-section-number">9</span> Extra Credit — 1️⃣ Non-Technical Explanation of Computational Inference</h2>
 <p>Traditional inference uses mathematical formulas to decide whether a result is statistically significant — for example, whether the <strong>average revision differs from zero</strong>. These formulas rely on assumptions about the data (like normality).</p>
 <p><strong>Computationally intensive inference</strong> flips the process:</p>
 <ul>
@@ -1573,8 +1577,8 @@ mean in group FALSE  mean in group TRUE
 </blockquote>
 <p>Computers let us evaluate that question directly — <strong>without</strong> relying exclusively on theoretical formulas.</p>
 <hr>
-<section id="schematic-workflow-for-computational-inference" class="level3">
-<h3 class="anchored" data-anchor-id="schematic-workflow-for-computational-inference">🔁 Schematic Workflow for Computational Inference</h3>
+<section id="schematic-workflow-for-computational-inference" class="level3" data-number="9.1">
+<h3 data-number="9.1" class="anchored" data-anchor-id="schematic-workflow-for-computational-inference"><span class="header-section-number">9.1</span> 🔁 Schematic Workflow for Computational Inference</h3>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1624,8 +1628,8 @@ mean in group FALSE  mean in group TRUE
 <li>Compute the statistic each time and then compare our real statistic to that reference distribution.</li>
 </ol>
 </section>
-<section id="computational-tests-for-ces-revisions" class="level3">
-<h3 class="anchored" data-anchor-id="computational-tests-for-ces-revisions">🔬 Computational Tests for CES Revisions</h3>
+<section id="computational-tests-for-ces-revisions" class="level3" data-number="9.2">
+<h3 data-number="9.2" class="anchored" data-anchor-id="computational-tests-for-ces-revisions"><span class="header-section-number">9.2</span> 🔬 Computational Tests for CES Revisions</h3>
 <p>We apply three resampling-based tests (bootstrap &amp; permutation) using <strong>infer</strong> to evaluate:<br>
 1️⃣ Mean revision (bootstrap mean)<br>
 2️⃣ Median revision (bootstrap median)<br>
@@ -1639,8 +1643,8 @@ mean in group FALSE  mean in group TRUE
 </details>
 </div>
 </section>
-<section id="prepare-clean-revision-data" class="level3">
-<h3 class="anchored" data-anchor-id="prepare-clean-revision-data">🧹 Prepare Clean Revision Data</h3>
+<section id="prepare-clean-revision-data" class="level3" data-number="9.3">
+<h3 data-number="9.3" class="anchored" data-anchor-id="prepare-clean-revision-data"><span class="header-section-number">9.3</span> 🧹 Prepare Clean Revision Data</h3>
 <p>We subset and clean the revision data to ensure it is ready for resampling-based inference.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1651,8 +1655,8 @@ mean in group FALSE  mean in group TRUE
 </details>
 </div>
 </section>
-<section id="bootstrap-ci-for-the-mean-revision-mean-analogue-of-a-t-test" class="level3">
-<h3 class="anchored" data-anchor-id="bootstrap-ci-for-the-mean-revision-mean-analogue-of-a-t-test">📊 3.1 Bootstrap CI for the Mean Revision (Mean Analogue of a t-Test)</h3>
+<section id="bootstrap-ci-for-the-mean-revision-mean-analogue-of-a-t-test" class="level3" data-number="9.4">
+<h3 data-number="9.4" class="anchored" data-anchor-id="bootstrap-ci-for-the-mean-revision-mean-analogue-of-a-t-test"><span class="header-section-number">9.4</span> 📊 3.1 Bootstrap CI for the Mean Revision (Mean Analogue of a t-Test)</h3>
 <p>We first compute the mean revision observed in the actual CES sample.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1667,8 +1671,8 @@ mean in group FALSE  mean in group TRUE
 <pre><code>[1] 1.926523</code></pre>
 </div>
 </div>
-<section id="bootstrap-distribution-of-the-mean-revision" class="level4">
-<h4 class="anchored" data-anchor-id="bootstrap-distribution-of-the-mean-revision">🔁 Bootstrap Distribution of the Mean Revision</h4>
+<section id="bootstrap-distribution-of-the-mean-revision" class="level4" data-number="9.4.1">
+<h4 data-number="9.4.1" class="anchored" data-anchor-id="bootstrap-distribution-of-the-mean-revision"><span class="header-section-number">9.4.1</span> 🔁 Bootstrap Distribution of the Mean Revision</h4>
 <p>We use bootstrap resampling to generate a simulated distribution of mean revisions under the assumption that the observed data reflect normal sampling variation.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1680,8 +1684,8 @@ mean in group FALSE  mean in group TRUE
 </details>
 </div>
 </section>
-<section id="percentile-bootstrap-confidence-interval-mean-revision" class="level4">
-<h4 class="anchored" data-anchor-id="percentile-bootstrap-confidence-interval-mean-revision">📏 95% Percentile Bootstrap Confidence Interval — Mean Revision</h4>
+<section id="percentile-bootstrap-confidence-interval-mean-revision" class="level4" data-number="9.4.2">
+<h4 data-number="9.4.2" class="anchored" data-anchor-id="percentile-bootstrap-confidence-interval-mean-revision"><span class="header-section-number">9.4.2</span> 📏 95% Percentile Bootstrap Confidence Interval — Mean Revision</h4>
 <p>A bootstrap CI provides a <strong>distribution-free</strong> estimate of uncertainty around the mean revision.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1700,8 +1704,8 @@ mean in group FALSE  mean in group TRUE
 </div>
 </div>
 </section>
-<section id="observed-median-revision-bootstrap-median-ci-setup" class="level4">
-<h4 class="anchored" data-anchor-id="observed-median-revision-bootstrap-median-ci-setup">🔹 Observed Median Revision (Bootstrap Median CI Setup)</h4>
+<section id="observed-median-revision-bootstrap-median-ci-setup" class="level4" data-number="9.4.3">
+<h4 data-number="9.4.3" class="anchored" data-anchor-id="observed-median-revision-bootstrap-median-ci-setup"><span class="header-section-number">9.4.3</span> 🔹 Observed Median Revision (Bootstrap Median CI Setup)</h4>
 <p>We compute the median revision as a more <strong>robust</strong> measure (less sensitive to outliers than the mean).</p>
 <div class="cell">
 <details class="code-fold">
@@ -1717,8 +1721,8 @@ mean in group FALSE  mean in group TRUE
 </div>
 </div>
 </section>
-<section id="bootstrap-distribution-of-the-median-revision" class="level4">
-<h4 class="anchored" data-anchor-id="bootstrap-distribution-of-the-median-revision">🔹 Bootstrap Distribution of the Median Revision</h4>
+<section id="bootstrap-distribution-of-the-median-revision" class="level4" data-number="9.4.4">
+<h4 data-number="9.4.4" class="anchored" data-anchor-id="bootstrap-distribution-of-the-median-revision"><span class="header-section-number">9.4.4</span> 🔹 Bootstrap Distribution of the Median Revision</h4>
 <p>We resample from the observed data <strong>2,000 times</strong> to approximate the typical range of median revisions.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1730,8 +1734,8 @@ mean in group FALSE  mean in group TRUE
 </details>
 </div>
 </section>
-<section id="percentile-bootstrap-ci-for-median-revision" class="level4">
-<h4 class="anchored" data-anchor-id="percentile-bootstrap-ci-for-median-revision">🔹 95% Percentile Bootstrap CI for Median Revision</h4>
+<section id="percentile-bootstrap-ci-for-median-revision" class="level4" data-number="9.4.5">
+<h4 data-number="9.4.5" class="anchored" data-anchor-id="percentile-bootstrap-ci-for-median-revision"><span class="header-section-number">9.4.5</span> 🔹 95% Percentile Bootstrap CI for Median Revision</h4>
 <p>This interval provides a robust estimate of the “typical” revision size, less influenced by extreme values than the mean.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1750,8 +1754,8 @@ mean in group FALSE  mean in group TRUE
 </div>
 </div>
 </section>
-<section id="prepare-data-for-permutation-test-positive-revisions-pre-vs-post-2000" class="level4">
-<h4 class="anchored" data-anchor-id="prepare-data-for-permutation-test-positive-revisions-pre-vs-post-2000">🔹 Prepare Data for Permutation Test — Positive Revisions (Pre vs Post-2000)</h4>
+<section id="prepare-data-for-permutation-test-positive-revisions-pre-vs-post-2000" class="level4" data-number="9.4.6">
+<h4 data-number="9.4.6" class="anchored" data-anchor-id="prepare-data-for-permutation-test-positive-revisions-pre-vs-post-2000"><span class="header-section-number">9.4.6</span> 🔹 Prepare Data for Permutation Test — Positive Revisions (Pre vs Post-2000)</h4>
 <p>We classify each month as having a <strong>positive revision or not</strong>, and divide the sample into <strong>pre-2000 vs post-2000</strong> periods.</p>
 <div class="cell">
 <details class="code-fold">
@@ -1770,8 +1774,8 @@ mean in group FALSE  mean in group TRUE
 </details>
 </div>
 </section>
-<section id="observed-difference-in-positive-revision-rates" class="level4">
-<h4 class="anchored" data-anchor-id="observed-difference-in-positive-revision-rates">🔹 Observed Difference in Positive Revision Rates</h4>
+<section id="observed-difference-in-positive-revision-rates" class="level4" data-number="9.4.7">
+<h4 data-number="9.4.7" class="anchored" data-anchor-id="observed-difference-in-positive-revision-rates"><span class="header-section-number">9.4.7</span> 🔹 Observed Difference in Positive Revision Rates</h4>
 <p><em>(Post-2000 − Pre-2000)</em></p>
 <p>We compute the observed change in the probability of positive revisions across the two time periods.</p>
 <div class="cell">
@@ -1789,8 +1793,8 @@ mean in group FALSE  mean in group TRUE
 </div>
 </div>
 </section>
-<section id="null-distribution-via-permutation" class="level4">
-<h4 class="anchored" data-anchor-id="null-distribution-via-permutation">🔹 Null Distribution via Permutation</h4>
+<section id="null-distribution-via-permutation" class="level4" data-number="9.4.8">
+<h4 data-number="9.4.8" class="anchored" data-anchor-id="null-distribution-via-permutation"><span class="header-section-number">9.4.8</span> 🔹 Null Distribution via Permutation</h4>
 <p><em>(Assuming no relationship between revisions and time period)</em></p>
 <p>We randomly shuffle the <strong>post-2000</strong> labels to simulate what differences would look like <strong>if timing didn’t matter</strong>.</p>
 <div class="cell">
@@ -1804,8 +1808,8 @@ mean in group FALSE  mean in group TRUE
 </details>
 </div>
 </section>
-<section id="two-sided-p-value" class="level4">
-<h4 class="anchored" data-anchor-id="two-sided-p-value">🔹 Two-Sided p-Value</h4>
+<section id="two-sided-p-value" class="level4" data-number="9.4.9">
+<h4 data-number="9.4.9" class="anchored" data-anchor-id="two-sided-p-value"><span class="header-section-number">9.4.9</span> 🔹 Two-Sided p-Value</h4>
 <p>How extreme is our <strong>observed difference in positive revisions</strong> if <strong>timing had no effect</strong>?</p>
 <div class="cell">
 <details class="code-fold">
@@ -1825,8 +1829,8 @@ mean in group FALSE  mean in group TRUE
 </div>
 </section>
 </section>
-<section id="interpretation-of-computational-results" class="level3">
-<h3 class="anchored" data-anchor-id="interpretation-of-computational-results">🔍 Interpretation of Computational Results</h3>
+<section id="interpretation-of-computational-results" class="level3" data-number="9.5">
+<h3 data-number="9.5" class="anchored" data-anchor-id="interpretation-of-computational-results"><span class="header-section-number">9.5</span> 🔍 Interpretation of Computational Results</h3>
 <p><strong>📌 What do the bootstrap and permutation tests tell us?</strong></p>
 <ul>
 <li><p><strong>Mean Revision (Bootstrap CI):</strong><br>
@@ -1842,8 +1846,8 @@ The permutation test comparing pre- vs post-2000 positive revision rates (<code>
 </ul>
 <hr>
 </section>
-<section id="overall-conclusion-from-computational-inference" class="level3">
-<h3 class="anchored" data-anchor-id="overall-conclusion-from-computational-inference">🧠 Overall Conclusion from Computational Inference</h3>
+<section id="overall-conclusion-from-computational-inference" class="level3" data-number="9.6">
+<h3 data-number="9.6" class="anchored" data-anchor-id="overall-conclusion-from-computational-inference"><span class="header-section-number">9.6</span> 🧠 Overall Conclusion from Computational Inference</h3>
 <p>✔ Revisions remain <strong>small</strong> relative to national employment levels<br>
 ✔ Centered around <strong>zero</strong> in both mean and median<br>
 ✔ Slight differences over time are <strong>statistically weak</strong><br>
@@ -2259,4 +2263,5 @@ The permutation test comparing pre- vs post-2000 positive revision rates (<code>
 
 
 
+<script src="site_libs/quarto-html/zenscroll-min.js"></script>
 </body></html>

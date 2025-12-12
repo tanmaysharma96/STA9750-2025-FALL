@@ -6,8 +6,9 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Tanmay Sharma">
 
-<title>final project – STA 9750 Submission Material</title>
+<title>Final Project – SQ Analysis: Ridership vs Transit Crime – STA 9750 Submission Material</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -75,7 +76,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-cd7454b418030687c631a6a7286fbe16.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-84ea971e290bb6a47a2ba8ce28b73e9d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="site_libs/bootstrap/bootstrap-029b10fc0dc652dab2ec1ac156c1a037.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -103,11 +104,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     "search-label": "Search"
   }
 }</script>
+<link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet">
+
+<script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
+
 
 
 </head>
 
-<body class="nav-fixed fullcontent quarto-light">
+<body class="nav-fixed quarto-light">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -129,19 +134,50 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#specific-question-sq-does-subway-ridership-volume-correlate-with-transit-crime" id="toc-specific-question-sq-does-subway-ridership-volume-correlate-with-transit-crime" class="nav-link active" data-scroll-target="#specific-question-sq-does-subway-ridership-volume-correlate-with-transit-crime"><span class="header-section-number">0.1</span> 🚇 Specific Question (SQ): Does Subway Ridership Volume Correlate with Transit Crime?</a></li>
+  <li><a href="#step-1-load-required-libraries" id="toc-step-1-load-required-libraries" class="nav-link" data-scroll-target="#step-1-load-required-libraries"><span class="header-section-number">0.2</span> 📦 Step 1: Load Required Libraries</a></li>
+  <li><a href="#step-2-create-project-data-directory" id="toc-step-2-create-project-data-directory" class="nav-link" data-scroll-target="#step-2-create-project-data-directory"><span class="header-section-number">0.3</span> 📁 Step 2: Create Project Data Directory</a></li>
+  <li><a href="#step-3.1-download-transit-related-nypd-complaint-data-20152025" id="toc-step-3.1-download-transit-related-nypd-complaint-data-20152025" class="nav-link" data-scroll-target="#step-3.1-download-transit-related-nypd-complaint-data-20152025"><span class="header-section-number">0.4</span> 🚨 Step 3.1: Download Transit-Related NYPD Complaint Data (2015–2025)</a></li>
+  <li><a href="#step-3.2-download-mta-monthly-subway-ridership-data" id="toc-step-3.2-download-mta-monthly-subway-ridership-data" class="nav-link" data-scroll-target="#step-3.2-download-mta-monthly-subway-ridership-data"><span class="header-section-number">0.5</span> 🚇 Step 3.2: Download MTA Monthly Subway Ridership Data</a></li>
+  <li><a href="#step-4-define-global-date-window-20152025" id="toc-step-4-define-global-date-window-20152025" class="nav-link" data-scroll-target="#step-4-define-global-date-window-20152025"><span class="header-section-number">0.6</span> 📅 Step 4: Define Global Date Window (2015–2025)</a></li>
+  <li><a href="#step-5-build-monthly-system-wide-transit-crime-counts" id="toc-step-5-build-monthly-system-wide-transit-crime-counts" class="nav-link" data-scroll-target="#step-5-build-monthly-system-wide-transit-crime-counts"><span class="header-section-number">0.7</span> 🚨 Step 5: Build Monthly System-Wide Transit Crime Counts</a></li>
+  <li><a href="#filtering-structuring-transit-related-complaint-records" id="toc-filtering-structuring-transit-related-complaint-records" class="nav-link" data-scroll-target="#filtering-structuring-transit-related-complaint-records"><span class="header-section-number">0.8</span> 🚨 Filtering &amp; Structuring Transit-Related Complaint Records</a></li>
+  <li><a href="#restricting-complaints-to-the-20152025-analysis-window" id="toc-restricting-complaints-to-the-20152025-analysis-window" class="nav-link" data-scroll-target="#restricting-complaints-to-the-20152025-analysis-window"><span class="header-section-number">0.9</span> 📅 Restricting Complaints to the 2015–2025 Analysis Window</a></li>
+  <li><a href="#ensuring-unique-complaints-building-monthly-crime-totals" id="toc-ensuring-unique-complaints-building-monthly-crime-totals" class="nav-link" data-scroll-target="#ensuring-unique-complaints-building-monthly-crime-totals"><span class="header-section-number">0.10</span> 🔍 Ensuring Unique Complaints &amp; Building Monthly Crime Totals</a></li>
+  <li><a href="#building-monthly-system-wide-subway-ridership" id="toc-building-monthly-system-wide-subway-ridership" class="nav-link" data-scroll-target="#building-monthly-system-wide-subway-ridership"><span class="header-section-number">0.11</span> 🚇 Building Monthly System-Wide Subway Ridership</a></li>
+  <li><a href="#step-7-merge-crime-and-ridership-data-create-normalized-metric" id="toc-step-7-merge-crime-and-ridership-data-create-normalized-metric" class="nav-link" data-scroll-target="#step-7-merge-crime-and-ridership-data-create-normalized-metric"><span class="header-section-number">0.12</span> 🔗 Step 7: Merge Crime and Ridership Data + Create Normalized Metric</a></li>
+  <li><a href="#interpretation-crime-per-million-riders" id="toc-interpretation-crime-per-million-riders" class="nav-link" data-scroll-target="#interpretation-crime-per-million-riders"><span class="header-section-number">0.13</span> 🧠 Interpretation: Crime per Million Riders</a></li>
+  <li><a href="#interpretation-correlation-between-ridership-and-transit-crime" id="toc-interpretation-correlation-between-ridership-and-transit-crime" class="nav-link" data-scroll-target="#interpretation-correlation-between-ridership-and-transit-crime"><span class="header-section-number">0.14</span> 🧠 Interpretation: Correlation Between Ridership and Transit Crime</a></li>
+  <li><a href="#interpretation-scatterplot-of-monthly-transit-crimes-vs.-ridership" id="toc-interpretation-scatterplot-of-monthly-transit-crimes-vs.-ridership" class="nav-link" data-scroll-target="#interpretation-scatterplot-of-monthly-transit-crimes-vs.-ridership"><span class="header-section-number">0.15</span> 🧠 Interpretation: Scatterplot of Monthly Transit Crimes vs.&nbsp;Ridership</a></li>
+  <li><a href="#interpretation-indexed-trends-for-ridership-and-transit-crime" id="toc-interpretation-indexed-trends-for-ridership-and-transit-crime" class="nav-link" data-scroll-target="#interpretation-indexed-trends-for-ridership-and-transit-crime"><span class="header-section-number">0.16</span> 🧠 Interpretation: Indexed Trends for Ridership and Transit Crime</a></li>
+  <li><a href="#interpretation-crimes-per-million-riders-normalized-crime-risk" id="toc-interpretation-crimes-per-million-riders-normalized-crime-risk" class="nav-link" data-scroll-target="#interpretation-crimes-per-million-riders-normalized-crime-risk"><span class="header-section-number">0.17</span> 🧠 Interpretation: Crimes per Million Riders (Normalized Crime Risk)</a></li>
+  <li><a href="#final-interpretation-for-sq-ridershipcrime-relationship-20152025" id="toc-final-interpretation-for-sq-ridershipcrime-relationship-20152025" class="nav-link" data-scroll-target="#final-interpretation-for-sq-ridershipcrime-relationship-20152025"><span class="header-section-number">0.18</span> 🧠 Final Interpretation for SQ: Ridership–Crime Relationship (2015–2025)</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">final project</h1>
+<h1 class="title">Final Project – SQ Analysis: Ridership vs Transit Crime</h1>
 </div>
 
 
 
 <div class="quarto-title-meta">
 
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Tanmay Sharma </p>
+          </div>
+  </div>
     
   
     
@@ -152,9 +188,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>📘 Overview
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This analysis investigates how <strong>subway ridership volume</strong> and <strong>transit-related crime</strong> move together across NYC’s transit system (2015–2025).<br>
+It integrates <strong>API-acquired open data</strong>, robust data cleaning, monthly aggregation, correlation analysis, and professional-grade visualizations to evaluate time-varying crime–ridership dynamics.</p>
+</div>
+</div>
+<section id="specific-question-sq-does-subway-ridership-volume-correlate-with-transit-crime" class="level3" data-number="0.1">
+<h3 data-number="0.1" class="anchored" data-anchor-id="specific-question-sq-does-subway-ridership-volume-correlate-with-transit-crime"><span class="header-section-number">0.1</span> 🚇 Specific Question (SQ): Does Subway Ridership Volume Correlate with Transit Crime?</h3>
+<p>✔ This SQ examines how <strong>monthly subway ridership</strong> and <strong>transit-related crime</strong> move together across NYC’s system<br>
+✔ Uses <strong>NYPD Complaint Data</strong> (filtered to subway incidents) + <strong>MTA Monthly Ridership</strong> from <strong>2015–2025</strong><br>
+✔ Evaluates whether higher ridership corresponds to <strong>higher crime counts</strong> at a system-wide level<br>
+✔ Separates analysis into <strong>overall</strong>, <strong>pre-2022</strong>, and <strong>post-2022</strong> periods to account for COVID-era disruptions<br>
+✔ Incorporates <strong>correlation measures</strong>, <strong>indexed trends</strong>, and <strong>crimes per million riders</strong> to capture both volume and risk dynamics</p>
+<p>➡ The goal is to assess whether transit crime scales with rider volume, and how this relationship has changed in recent years.</p>
+</section>
+<section id="step-1-load-required-libraries" class="level3" data-number="0.2">
+<h3 data-number="0.2" class="anchored" data-anchor-id="step-1-load-required-libraries"><span class="header-section-number">0.2</span> 📦 Step 1: Load Required Libraries</h3>
+<p>✔ <strong>tidyverse</strong> — core toolkit for data wrangling, transformation, and visualization<br>
+✔ <strong>lubridate</strong> — simplifies working with dates, months, and time-based grouping<br>
+✔ <strong>janitor</strong> — cleans column names and provides helpful data-quality utilities<br>
+✔ <strong>httr2</strong> — handles API requests to download live NYPD and MTA datasets<br>
+✔ <strong>readr</strong> — fast and efficient reading of large CSV files<br>
+✔ <strong>scales</strong> — improves numeric formatting for plots (labels, commas, percentages)</p>
+<p>➡ These libraries provide the foundational tools for acquiring, cleaning, merging, and analyzing crime and ridership datasets.</p>
 <div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- 1. Load Libraries ----</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stderr">
 <pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
 ✔ dplyr     1.1.4     ✔ readr     2.1.5
@@ -167,8 +238,28 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 ✖ dplyr::lag()    masks stats::lag()
 ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
 </div>
+<details class="code-fold">
+<summary>Show Code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'janitor' was built under R version 4.5.2</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'janitor'
+
+The following objects are masked from 'package:stats':
+
+    chisq.test, fisher.test</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(httr2)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readr)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(scales)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stderr">
 <pre><code>
 Attaching package: 'scales'
@@ -181,260 +272,575 @@ The following object is masked from 'package:readr':
 
     col_factor</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(janitor)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Warning: package 'janitor' was built under R version 4.5.2</code></pre>
 </div>
-<div class="cell-output cell-output-stderr">
-<pre><code>
-Attaching package: 'janitor'
-
-The following objects are masked from 'package:stats':
-
-    chisq.test, fisher.test</code></pre>
+</section>
+<section id="step-2-create-project-data-directory" class="level3" data-number="0.3">
+<h3 data-number="0.3" class="anchored" data-anchor-id="step-2-create-project-data-directory"><span class="header-section-number">0.3</span> 📁 Step 2: Create Project Data Directory</h3>
+<p>✔ Creates a dedicated folder (<code>data/courseproject</code>) to store all downloaded datasets<br>
+✔ Ensures the directory exists before saving files, preventing write errors<br>
+✔ <code>recursive = TRUE</code> allows creation of nested folders if they do not already exist<br>
+✔ Keeps all raw data organized and reproducible across different machines</p>
+<p>➡ This guarantees a clean, consistent file structure for the entire project workflow.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dir.create</span>(<span class="fu">file.path</span>(<span class="st">"data"</span>, <span class="st">"courseproject"</span>), <span class="at">showWarnings =</span> <span class="cn">FALSE</span>, <span class="at">recursive =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(readxl)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- 2. Define File Paths (🔧 fill in manually) ----</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>path_felonies   <span class="ot">&lt;-</span> <span class="st">"C:/Users/tanma/Downloads/MTA_Major_Felonies.csv"</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>path_summons    <span class="ot">&lt;-</span> <span class="st">"C:/Users/tanma/Downloads/MTA_Summonses_and_Arrests__Beginning_2019.csv"</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>path_ridership  <span class="ot">&lt;-</span> <span class="st">"C:/Users/tanma/Downloads/MTA_Daily_Ridership_Data__2020_-_2025_20251106.csv"</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 🧹 3. Data Cleaning &amp; Aggregation</span></span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- MTA Major Felonies ----</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>felonies <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(path_felonies) <span class="sc">|&gt;</span></span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 2026 Columns: 6
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr (4): Month, Agency, Police Force, Felony Type
-dbl (2): Felony Count, Crimes per Million Riders
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Try to find date/month and count columns</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>date_col <span class="ot">&lt;-</span> <span class="fu">names</span>(felonies)[<span class="fu">str_detect</span>(<span class="fu">names</span>(felonies), <span class="fu">regex</span>(<span class="st">"month|date"</span>, <span class="at">ignore_case =</span> <span class="cn">TRUE</span>))][<span class="dv">1</span>]</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>count_col <span class="ot">&lt;-</span> <span class="fu">names</span>(felonies)[<span class="fu">str_detect</span>(<span class="fu">names</span>(felonies), <span class="fu">regex</span>(<span class="st">"count|number|total"</span>, <span class="at">ignore_case =</span> <span class="cn">TRUE</span>))][<span class="dv">1</span>]</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>felonies <span class="ot">&lt;-</span> felonies <span class="sc">|&gt;</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">month =</span> <span class="fu">floor_date</span>(<span class="fu">parse_date_time</span>(<span class="sc">!!</span><span class="fu">sym</span>(date_col), <span class="at">orders =</span> <span class="fu">c</span>(<span class="st">"ymd"</span>, <span class="st">"mdy"</span>, <span class="st">"my"</span>)), <span class="st">"month"</span>),</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">felony_count =</span> <span class="fu">as.numeric</span>(<span class="sc">!!</span><span class="fu">sym</span>(count_col))</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(month), felony_count <span class="sc">&gt;</span> <span class="dv">0</span>) <span class="sc">|&gt;</span></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month) <span class="sc">|&gt;</span></span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">felony_count =</span> <span class="fu">sum</span>(felony_count, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- MTA Summonses &amp; Arrests ----</span></span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>summons <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(path_summons) <span class="sc">|&gt;</span></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">clean_names</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stderr">
-<pre><code>Rows: 972 Columns: 5
-── Column specification ────────────────────────────────────────────────────────
-Delimiter: ","
-chr (4): Month, Agency, Police Force, Metric
-dbl (1): Total
-
-ℹ Use `spec()` to retrieve the full column specification for this data.
-ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="st">"date"</span> <span class="sc">%in%</span> <span class="fu">names</span>(summons)) {</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  summons <span class="ot">&lt;-</span> summons <span class="sc">|&gt;</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">month =</span> <span class="fu">floor_date</span>(<span class="fu">parse_date_time</span>(date, <span class="at">orders =</span> <span class="fu">c</span>(<span class="st">"ymd"</span>, <span class="st">"mdy"</span>)), <span class="st">"month"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(month, <span class="at">name =</span> <span class="st">"summons_total"</span>)</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>} <span class="cf">else</span> {</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  summons <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">month =</span> felonies<span class="sc">$</span>month, <span class="at">summons_total =</span> <span class="cn">NA_real_</span>)</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- MTA Daily Ridership (robust coercion) ----</span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>ridership <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(path_ridership, <span class="at">show_col_types =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="co"># find the subways total column name</span></span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>sub_col <span class="ot">&lt;-</span> <span class="fu">names</span>(ridership)[</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  stringr<span class="sc">::</span><span class="fu">str_detect</span>(<span class="fu">names</span>(ridership),</span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>                      stringr<span class="sc">::</span><span class="fu">regex</span>(<span class="st">"^</span><span class="sc">\\</span><span class="st">s*subways</span><span class="sc">\\</span><span class="st">s*:</span><span class="sc">\\</span><span class="st">s*total</span><span class="sc">\\</span><span class="st">s*estimated</span><span class="sc">\\</span><span class="st">s*ridership</span><span class="sc">\\</span><span class="st">s*$"</span>,</span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>                                     <span class="at">ignore_case =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>]</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">length</span>(sub_col) <span class="sc">==</span> <span class="dv">0</span>) {</span>
-<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>  sub_col <span class="ot">&lt;-</span> <span class="fu">names</span>(ridership)[</span>
-<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>    stringr<span class="sc">::</span><span class="fu">str_detect</span>(<span class="fu">names</span>(ridership),</span>
-<span id="cb12-21"><a href="#cb12-21" aria-hidden="true" tabindex="-1"></a>                        stringr<span class="sc">::</span><span class="fu">regex</span>(<span class="st">"subway.*total.*ridership"</span>, <span class="at">ignore_case =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb12-22"><a href="#cb12-22" aria-hidden="true" tabindex="-1"></a>  ]</span>
-<span id="cb12-23"><a href="#cb12-23" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb12-24"><a href="#cb12-24" aria-hidden="true" tabindex="-1"></a><span class="fu">stopifnot</span>(<span class="fu">length</span>(sub_col) <span class="sc">&gt;=</span> <span class="dv">1</span>)</span>
-<span id="cb12-25"><a href="#cb12-25" aria-hidden="true" tabindex="-1"></a>sub_col <span class="ot">&lt;-</span> sub_col[<span class="dv">1</span>]</span>
-<span id="cb12-26"><a href="#cb12-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-27"><a href="#cb12-27" aria-hidden="true" tabindex="-1"></a><span class="co"># helper that only parses if needed</span></span>
-<span id="cb12-28"><a href="#cb12-28" aria-hidden="true" tabindex="-1"></a>to_numeric <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
-<span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.numeric</span>(x)) <span class="fu">as.numeric</span>(x) <span class="cf">else</span> readr<span class="sc">::</span><span class="fu">parse_number</span>(<span class="fu">as.character</span>(x))</span>
-<span id="cb12-30"><a href="#cb12-30" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb12-31"><a href="#cb12-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-32"><a href="#cb12-32" aria-hidden="true" tabindex="-1"></a>ridership <span class="ot">&lt;-</span> ridership <span class="sc">%&gt;%</span></span>
-<span id="cb12-33"><a href="#cb12-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb12-34"><a href="#cb12-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">Date =</span> dplyr<span class="sc">::</span><span class="fu">coalesce</span>(</span>
-<span id="cb12-35"><a href="#cb12-35" aria-hidden="true" tabindex="-1"></a>      <span class="fu">suppressWarnings</span>(lubridate<span class="sc">::</span><span class="fu">mdy</span>(<span class="fu">as.character</span>(.data<span class="sc">$</span>Date))),</span>
-<span id="cb12-36"><a href="#cb12-36" aria-hidden="true" tabindex="-1"></a>      <span class="fu">suppressWarnings</span>(lubridate<span class="sc">::</span><span class="fu">ymd</span>(<span class="fu">as.character</span>(.data<span class="sc">$</span>Date)))</span>
-<span id="cb12-37"><a href="#cb12-37" aria-hidden="true" tabindex="-1"></a>    ),</span>
-<span id="cb12-38"><a href="#cb12-38" aria-hidden="true" tabindex="-1"></a>    <span class="at">subways_total =</span> <span class="fu">to_numeric</span>(.data[[sub_col]])</span>
-<span id="cb12-39"><a href="#cb12-39" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb12-40"><a href="#cb12-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(Date), <span class="sc">!</span><span class="fu">is.na</span>(subways_total)) <span class="sc">%&gt;%</span></span>
-<span id="cb12-41"><a href="#cb12-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">month =</span> lubridate<span class="sc">::</span><span class="fu">floor_date</span>(Date, <span class="st">"month"</span>)) <span class="sc">%&gt;%</span></span>
-<span id="cb12-42"><a href="#cb12-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month) <span class="sc">%&gt;%</span></span>
-<span id="cb12-43"><a href="#cb12-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">subways_total =</span> <span class="fu">sum</span>(subways_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
-<span id="cb12-44"><a href="#cb12-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-45"><a href="#cb12-45" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb12-46"><a href="#cb12-46" aria-hidden="true" tabindex="-1"></a><span class="co"># 🔗 4. Merge Datasets</span></span>
-<span id="cb12-47"><a href="#cb12-47" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb12-48"><a href="#cb12-48" aria-hidden="true" tabindex="-1"></a>merged <span class="ot">&lt;-</span> ridership <span class="sc">|&gt;</span></span>
-<span id="cb12-49"><a href="#cb12-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(felonies, <span class="at">by =</span> <span class="st">"month"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-50"><a href="#cb12-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(summons, <span class="at">by =</span> <span class="st">"month"</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-51"><a href="#cb12-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb12-52"><a href="#cb12-52" aria-hidden="true" tabindex="-1"></a>    <span class="at">crimes_per_million =</span> <span class="fl">1e6</span> <span class="sc">*</span> felony_count <span class="sc">/</span> subways_total</span>
-<span id="cb12-53"><a href="#cb12-53" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
-<span id="cb12-54"><a href="#cb12-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>(felony_count, subways_total)</span>
-<span id="cb12-55"><a href="#cb12-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-56"><a href="#cb12-56" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb12-57"><a href="#cb12-57" aria-hidden="true" tabindex="-1"></a><span class="co"># 📊 5. Correlation Analysis</span></span>
-<span id="cb12-58"><a href="#cb12-58" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb12-59"><a href="#cb12-59" aria-hidden="true" tabindex="-1"></a>cor_overall <span class="ot">&lt;-</span> <span class="fu">cor</span>(merged<span class="sc">$</span>felony_count, merged<span class="sc">$</span>subways_total, <span class="at">use =</span> <span class="st">"complete.obs"</span>)</span>
-<span id="cb12-60"><a href="#cb12-60" aria-hidden="true" tabindex="-1"></a>cor_pre2022 <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
-<span id="cb12-61"><a href="#cb12-61" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">year</span>(month) <span class="sc">&lt;</span> <span class="dv">2022</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-62"><a href="#cb12-62" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">cor =</span> <span class="fu">cor</span>(felony_count, subways_total, <span class="at">use =</span> <span class="st">"complete.obs"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb12-63"><a href="#cb12-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(cor)</span>
-<span id="cb12-64"><a href="#cb12-64" aria-hidden="true" tabindex="-1"></a>cor_post2022 <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
-<span id="cb12-65"><a href="#cb12-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">year</span>(month) <span class="sc">&gt;=</span> <span class="dv">2022</span>) <span class="sc">|&gt;</span></span>
-<span id="cb12-66"><a href="#cb12-66" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">cor =</span> <span class="fu">cor</span>(felony_count, subways_total, <span class="at">use =</span> <span class="st">"complete.obs"</span>)) <span class="sc">|&gt;</span></span>
-<span id="cb12-67"><a href="#cb12-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(cor)</span>
-<span id="cb12-68"><a href="#cb12-68" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-69"><a href="#cb12-69" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Correlation summary:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="step-3.1-download-transit-related-nypd-complaint-data-20152025" class="level3" data-number="0.4">
+<h3 data-number="0.4" class="anchored" data-anchor-id="step-3.1-download-transit-related-nypd-complaint-data-20152025"><span class="header-section-number">0.4</span> 🚨 Step 3.1: Download Transit-Related NYPD Complaint Data (2015–2025)</h3>
+<p>✔ Pulls <strong>only subway-related complaints</strong> directly from the NYC Open Data API<br>
+✔ Applies a <strong>date filter (2015–2025)</strong> to avoid downloading millions of irrelevant rows<br>
+✔ Uses a <strong>targeted SELECT statement</strong> to keep only essential fields<br>
+✔ Expands API limits to ensure the full filtered dataset is returned<br>
+✔ Saves the cleaned CSV locally for reproducibility and faster re-runs</p>
+<p>➡ This approach prevents memory issues (<code>std::bad_alloc</code>) while providing a clean, transit-only dataset for downstream analysis.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 3.1 NYPD COMPLAINT DATA (Filtered API Download)</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Only transit-related complaints, only 2015–2025</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Avoid downloading 8M+ rows (prevents std::bad_alloc)</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>complaints_req <span class="ot">&lt;-</span> <span class="fu">request</span>(<span class="st">"https://data.cityofnewyork.us/resource/qgea-i56i.csv"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_url_query</span>(</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"$select"</span> <span class="ot">=</span> <span class="st">"cmplnt_num,cmplnt_fr_dt,juris_desc,prem_typ_desc,boro_nm,ofns_desc,law_cat_cd"</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"$where"</span>  <span class="ot">=</span> <span class="st">"cmplnt_fr_dt between '2015-01-01T00:00:00' and '2025-12-31T23:59:59' AND (juris_desc = 'N.Y. TRANSIT POLICE' OR prem_typ_desc = 'TRANSIT - NYC SUBWAY')"</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"$limit"</span>  <span class="ot">=</span> <span class="dv">500000</span>  <span class="co"># big enough cap; API default is only 1000</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>complaints_path <span class="ot">&lt;-</span> <span class="fu">file.path</span>(<span class="st">"data"</span>, <span class="st">"courseproject"</span>, <span class="st">"complaints_transit_filtered.csv"</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>complaints_req <span class="sc">|&gt;</span></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_progress</span>() <span class="sc">|&gt;</span></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">req_perform</span>(<span class="at">path =</span> complaints_path)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
-<pre><code>Correlation summary:</code></pre>
+<pre><code>&lt;httr2_response&gt;
+GET https://data.cityofnewyork.us/resource/qgea-i56i.csv?%24select=cmplnt_num%2Ccmplnt_fr_dt%2Cjuris_desc%2Cprem_typ_desc%2Cboro_nm%2Cofns_desc%2Claw_cat_cd&amp;%24where=cmplnt_fr_dt%20between%20%272015-01-01T00%3A00%3A00%27%20and%20%272025-12-31T23%3A59%3A59%27%20AND%20%28juris_desc%20%3D%20%27N.Y.%20TRANSIT%20POLICE%27%20OR%20prem_typ_desc%20%3D%20%27TRANSIT%20-%20NYC%20SUBWAY%27%29&amp;%24limit=500000
+Status: 200 OK
+Content-Type: text/csv
+Body: On disk 'data/courseproject/complaints_transit_filtered.csv' (16455545 bytes)</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">tibble</span>(</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">Period =</span> <span class="fu">c</span>(<span class="st">"All Months"</span>, <span class="st">"Pre-2022"</span>, <span class="st">"2022+"</span>),</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Correlation =</span> <span class="fu">c</span>(cor_overall, cor_pre2022, cor_post2022)</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>complaint_df <span class="ot">&lt;-</span> readr<span class="sc">::</span><span class="fu">read_csv</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  complaints_path,</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-3.2-download-mta-monthly-subway-ridership-data" class="level3" data-number="0.5">
+<h3 data-number="0.5" class="anchored" data-anchor-id="step-3.2-download-mta-monthly-subway-ridership-data"><span class="header-section-number">0.5</span> 🚇 Step 3.2: Download MTA Monthly Subway Ridership Data</h3>
+<p>✔ Retrieves <strong>system-wide monthly ridership</strong> for NYC subways (2008–present)<br>
+✔ Uses the NY State Open Data archival API for a stable and reproducible download<br>
+✔ Saves the dataset locally to <code>data/courseproject/</code> for consistent project structure<br>
+✔ <code>req_progress()</code> provides a clear download status when handling large files<br>
+✔ <code>read_csv()</code> loads the data efficiently for preprocessing and merging</p>
+<p>➡ This dataset supplies the core ridership metric needed to evaluate how crime levels scale with subway usage over time.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 3.2 MTA Monthly Ridership (Subway, 2008–Present)</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>url_data_monthly_ridership <span class="ot">&lt;-</span> <span class="st">"https://data.ny.gov/api/archival.csv?id=xfre-bxip&amp;version=64&amp;method=export"</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">request</span>(url_data_monthly_ridership) <span class="sc">|&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">req_progress</span>() <span class="sc">|&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="fu">req_perform</span>(<span class="at">path =</span> <span class="fu">file.path</span>(<span class="st">"data"</span>, <span class="st">"courseproject"</span>, <span class="st">"monthly_ridership.csv"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>&lt;httr2_response&gt;
+GET https://data.ny.gov/api/archival.csv?id=xfre-bxip&amp;version=64&amp;method=export
+Status: 200 OK
+Content-Type: text/csv
+Body: On disk 'data/courseproject/monthly_ridership.csv' (59225 bytes)</code></pre>
+</div>
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>monthly_ridership_df <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">file.path</span>(<span class="st">"data"</span>, <span class="st">"courseproject"</span>, <span class="st">"monthly_ridership.csv"</span>),</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-4-define-global-date-window-20152025" class="level3" data-number="0.6">
+<h3 data-number="0.6" class="anchored" data-anchor-id="step-4-define-global-date-window-20152025"><span class="header-section-number">0.6</span> 📅 Step 4: Define Global Date Window (2015–2025)</h3>
+<p>✔ Sets a consistent <strong>10-year analysis window</strong> for all datasets<br>
+✔ Ensures crime and ridership data are aligned on the same monthly timeline<br>
+✔ Filters out older records (pre-2015) and incomplete future records<br>
+✔ Creates a unified structure for merging NYPD and MTA data accurately</p>
+<p>➡ Establishing this shared date range is essential for producing valid system-wide comparisons.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Global Date Window for SQ (2015–2025)</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>start_date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(<span class="st">"2015-01-01"</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>end_date <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(<span class="st">"2025-12-31"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-5-build-monthly-system-wide-transit-crime-counts" class="level3" data-number="0.7">
+<h3 data-number="0.7" class="anchored" data-anchor-id="step-5-build-monthly-system-wide-transit-crime-counts"><span class="header-section-number">0.7</span> 🚨 Step 5: Build Monthly System-Wide Transit Crime Counts</h3>
+<p>✔ Filters NYPD complaint records to include <strong>only subway-related incidents</strong><br>
+✔ Treats each valid complaint as a <strong>single crime event</strong> for system-wide aggregation<br>
+✔ Converts complaint dates into <strong>monthly units</strong>, enabling time-aligned comparison with ridership<br>
+✔ Ensures only unique complaint numbers are counted to avoid duplication<br>
+✔ Produces the monthly crime totals needed to evaluate the SQ</p>
+<p>➡ This creates the core dataset for analyzing how transit crime levels move relative to subway ridership.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. Build Monthly Transit Crime Counts (System-Wide)</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co">#SQ: Does subway ridership volume correlate with the number of crimes?</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co">#Here we treat transit-related complaints as "crimes".</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="co">#ridership &lt;- readr::read_csv(path_ridership, show_col_types = FALSE)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="filtering-structuring-transit-related-complaint-records" class="level3" data-number="0.8">
+<h3 data-number="0.8" class="anchored" data-anchor-id="filtering-structuring-transit-related-complaint-records"><span class="header-section-number">0.8</span> 🚨 Filtering &amp; Structuring Transit-Related Complaint Records</h3>
+<p>✔ Cleans all column names for consistency across datasets<br>
+✔ Retains only complaints handled by <strong>N.Y. Transit Police</strong> or occurring in <strong>NYC Subway premises</strong><br>
+✔ Converts the raw complaint date into a standard <code>Date</code> format<br>
+✔ Aggregates dates into <strong>monthly periods</strong> using <code>floor_date()</code> to align with monthly ridership data<br>
+✔ Establishes the foundation for constructing accurate system-wide monthly crime totals</p>
+<p>➡ This step isolates true transit incidents and prepares them for monthly-level correlation analysis.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>complaints_transit <span class="ot">&lt;-</span> complaint_df <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="fu">clean_names</span>() <span class="sc">|&gt;</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a><span class="co"># keep transit-relevant complaints</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>juris_desc <span class="sc">==</span> <span class="st">"N.Y. TRANSIT POLICE"</span> <span class="sc">|</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>prem_typ_desc <span class="sc">==</span> <span class="st">"TRANSIT - NYC SUBWAY"</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a><span class="at">date =</span> <span class="fu">as.Date</span>(cmplnt_fr_dt),</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a><span class="at">month =</span> <span class="fu">floor_date</span>(date, <span class="st">"month"</span>)</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="restricting-complaints-to-the-20152025-analysis-window" class="level3" data-number="0.9">
+<h3 data-number="0.9" class="anchored" data-anchor-id="restricting-complaints-to-the-20152025-analysis-window"><span class="header-section-number">0.9</span> 📅 Restricting Complaints to the 2015–2025 Analysis Window</h3>
+<p>✔ Filters all transit-related complaints so only incidents between <strong>2015 and 2025</strong> are included<br>
+✔ Ensures full alignment with the defined SQ study period<br>
+✔ Removes outdated or incomplete records outside the analysis range<br>
+✔ Guarantees that monthly crime totals and ridership figures share the same temporal scope</p>
+<p>➡ This step keeps the dataset focused, comparable, and directly relevant to the SQ.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 🔗 4. restrict to 2015–2025 window</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>complaints_transit <span class="ot">&lt;-</span> complaints_transit <span class="sc">|&gt;</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(<span class="fu">between</span>(date, start_date, end_date))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="ensuring-unique-complaints-building-monthly-crime-totals" class="level3" data-number="0.10">
+<h3 data-number="0.10" class="anchored" data-anchor-id="ensuring-unique-complaints-building-monthly-crime-totals"><span class="header-section-number">0.10</span> 🔍 Ensuring Unique Complaints &amp; Building Monthly Crime Totals</h3>
+<p>✔ Uses <code>distinct()</code> to keep <strong>only one record per complaint number</strong>, preventing accidental double-counting<br>
+✔ Groups all cleaned records by <strong>month</strong>, matching the structure of the ridership dataset<br>
+✔ Counts the total number of <strong>transit-related complaints</strong> in each month<br>
+✔ Produces a clean, reliable <code>felony_count</code> metric for system-wide crime analysis</p>
+<p>➡ This creates the monthly crime time series needed to compare directly against subway ridership.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 📊 5. create monthly transit crime counts</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>complaints_transit <span class="ot">&lt;-</span> complaints_transit <span class="sc">|&gt;</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">group_by</span>(month) <span class="sc">|&gt;</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="at">felony_count =</span> <span class="fu">n</span>(), <span class="co"># total transit complaints per month</span></span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="co">#sanity check</span></span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(complaints_transit<span class="sc">$</span>felony_count)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  368.0   894.5   993.5  1070.8  1071.0  2658.0 </code></pre>
+</div>
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(complaints_transit)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["month"],"name":[1],"type":["date"],"align":["right"]},{"label":["felony_count"],"name":[2],"type":["int"],"align":["right"]}],"data":[{"1":"2015-01-01","2":"929"},{"1":"2015-02-01","2":"863"},{"1":"2015-03-01","2":"918"},{"1":"2015-04-01","2":"995"},{"1":"2015-05-01","2":"999"},{"1":"2015-06-01","2":"883"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="building-monthly-system-wide-subway-ridership" class="level3" data-number="0.11">
+<h3 data-number="0.11" class="anchored" data-anchor-id="building-monthly-system-wide-subway-ridership"><span class="header-section-number">0.11</span> 🚇 Building Monthly System-Wide Subway Ridership</h3>
+<p>✔ Standardizes column names for consistent processing<br>
+✔ Automatically detects the <strong>date column</strong> and the <strong>total ridership column</strong>, making the code robust to schema changes<br>
+✔ Converts all date values into monthly periods using <code>floor_date()</code><br>
+✔ Ensures the ridership field is properly parsed as a numeric value, even when stored as text<br>
+✔ Filters the dataset to the shared <strong>2015–2025</strong> analysis window<br>
+✔ Aggregates ridership at the <strong>monthly level</strong>, producing a clean <code>subways_total</code> metric</p>
+<p>➡ This step generates the monthly ridership series required to compare against monthly crime counts.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 📈 6. Build Monthly Subway Ridership (System-Wide)</span></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>monthly_ridership_df <span class="ot">&lt;-</span> monthly_ridership_df <span class="sc">|&gt;</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a><span class="fu">clean_names</span>()</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- A) Try to detect date and subway ridership columns ----</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>date_col_r <span class="ot">&lt;-</span> <span class="fu">names</span>(monthly_ridership_df)[</span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a><span class="fu">str_detect</span>(<span class="fu">names</span>(monthly_ridership_df),</span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a><span class="fu">regex</span>(<span class="st">"date|month|period"</span>, <span class="at">ignore_case =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a>][<span class="dv">1</span>]</span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-14"><a href="#cb22-14" aria-hidden="true" tabindex="-1"></a>sub_col_r <span class="ot">&lt;-</span> <span class="fu">names</span>(monthly_ridership_df)[</span>
+<span id="cb22-15"><a href="#cb22-15" aria-hidden="true" tabindex="-1"></a><span class="fu">str_detect</span>(<span class="fu">names</span>(monthly_ridership_df),</span>
+<span id="cb22-16"><a href="#cb22-16" aria-hidden="true" tabindex="-1"></a><span class="fu">regex</span>(<span class="st">"subway|subways.*total|ridership"</span>, <span class="at">ignore_case =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb22-17"><a href="#cb22-17" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb22-18"><a href="#cb22-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-19"><a href="#cb22-19" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Helper: robust numeric coercion ----</span></span>
+<span id="cb22-20"><a href="#cb22-20" aria-hidden="true" tabindex="-1"></a>to_numeric <span class="ot">&lt;-</span> <span class="cf">function</span>(x) {</span>
+<span id="cb22-21"><a href="#cb22-21" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="fu">is.numeric</span>(x)) <span class="fu">as.numeric</span>(x) <span class="cf">else</span> readr<span class="sc">::</span><span class="fu">parse_number</span>(<span class="fu">as.character</span>(x))</span>
+<span id="cb22-22"><a href="#cb22-22" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb22-23"><a href="#cb22-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-24"><a href="#cb22-24" aria-hidden="true" tabindex="-1"></a>ridership_month <span class="ot">&lt;-</span> monthly_ridership_df <span class="sc">|&gt;</span></span>
+<span id="cb22-25"><a href="#cb22-25" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(</span>
+<span id="cb22-26"><a href="#cb22-26" aria-hidden="true" tabindex="-1"></a><span class="at">month =</span> <span class="fu">floor_date</span>(</span>
+<span id="cb22-27"><a href="#cb22-27" aria-hidden="true" tabindex="-1"></a><span class="fu">parse_date_time</span>(<span class="sc">!!</span><span class="fu">sym</span>(date_col_r),</span>
+<span id="cb22-28"><a href="#cb22-28" aria-hidden="true" tabindex="-1"></a><span class="at">orders =</span> <span class="fu">c</span>(<span class="st">"ymd"</span>, <span class="st">"mdy"</span>, <span class="st">"my"</span>)),</span>
+<span id="cb22-29"><a href="#cb22-29" aria-hidden="true" tabindex="-1"></a><span class="st">"month"</span></span>
+<span id="cb22-30"><a href="#cb22-30" aria-hidden="true" tabindex="-1"></a>),</span>
+<span id="cb22-31"><a href="#cb22-31" aria-hidden="true" tabindex="-1"></a><span class="at">subways_total =</span> <span class="fu">to_numeric</span>(.data[[sub_col_r[<span class="dv">1</span>]]])</span>
+<span id="cb22-32"><a href="#cb22-32" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb22-33"><a href="#cb22-33" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(</span>
+<span id="cb22-34"><a href="#cb22-34" aria-hidden="true" tabindex="-1"></a><span class="fu">between</span>(month, start_date, end_date),</span>
+<span id="cb22-35"><a href="#cb22-35" aria-hidden="true" tabindex="-1"></a><span class="sc">!</span><span class="fu">is.na</span>(subways_total)</span>
+<span id="cb22-36"><a href="#cb22-36" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb22-37"><a href="#cb22-37" aria-hidden="true" tabindex="-1"></a><span class="fu">group_by</span>(month) <span class="sc">|&gt;</span></span>
+<span id="cb22-38"><a href="#cb22-38" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(</span>
+<span id="cb22-39"><a href="#cb22-39" aria-hidden="true" tabindex="-1"></a><span class="at">subways_total =</span> <span class="fu">sum</span>(subways_total, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb22-40"><a href="#cb22-40" aria-hidden="true" tabindex="-1"></a><span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb22-41"><a href="#cb22-41" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+</section>
+<section id="step-7-merge-crime-and-ridership-data-create-normalized-metric" class="level3" data-number="0.12">
+<h3 data-number="0.12" class="anchored" data-anchor-id="step-7-merge-crime-and-ridership-data-create-normalized-metric"><span class="header-section-number">0.12</span> 🔗 Step 7: Merge Crime and Ridership Data + Create Normalized Metric</h3>
+<p>✔ Combines monthly crime counts with monthly ridership totals using a clean <code>left_join()</code><br>
+✔ Removes months where either dataset is missing values to maintain analytical integrity<br>
+✔ Computes <strong>crimes per million riders</strong>, a normalized measure that accounts for fluctuations in ridership volume<br>
+✔ Allows the analysis to distinguish between changes in <em>crime totals</em> and changes in <em>crime risk per rider</em><br>
+✔ Produces a unified <code>merged</code> dataset used for correlation analysis and visualization</p>
+<p>➡ The sanity checks (<code>summary()</code> and <code>head()</code>) confirm that the merged dataset behaves as expected before further analysis.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 7. Merge Crime + Ridership and Create Normalized Metric</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>merged <span class="ot">&lt;-</span> ridership_month <span class="sc">|&gt;</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">left_join</span>(complaints_transit, <span class="at">by =</span> <span class="st">"month"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(felony_count), <span class="sc">!</span><span class="fu">is.na</span>(subways_total)) <span class="sc">|&gt;</span></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a><span class="at">crimes_per_million =</span> <span class="fl">1e6</span> <span class="sc">*</span> felony_count <span class="sc">/</span> subways_total</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a><span class="co"># 🧾 Quick sanity check</span></span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(merged<span class="sc">$</span>crimes_per_million)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  3.757   5.362   6.768  13.868  26.505  38.196 </code></pre>
+</div>
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(merged)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div data-pagedtable="false">
+  <script data-pagedtable-source="" type="application/json">
+{"columns":[{"label":["month"],"name":[1],"type":["dttm"],"align":["right"]},{"label":["subways_total"],"name":[2],"type":["dbl"],"align":["right"]},{"label":["felony_count"],"name":[3],"type":["int"],"align":["right"]},{"label":["crimes_per_million"],"name":[4],"type":["dbl"],"align":["right"]}],"data":[{"1":"2015-01-01","2":"27414028","3":"929","4":"33.88776"},{"1":"2015-02-01","2":"26073710","3":"863","4":"33.09847"},{"1":"2015-03-01","2":"31133467","3":"918","4":"29.48595"},{"1":"2015-04-01","2":"32227230","3":"995","4":"30.87451"},{"1":"2015-05-01","2":"33822527","3":"999","4":"29.53653"},{"1":"2015-06-01","2":"33859725","3":"883","4":"26.07818"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+</div>
+</div>
+</section>
+<section id="interpretation-crime-per-million-riders" class="level3" data-number="0.13">
+<h3 data-number="0.13" class="anchored" data-anchor-id="interpretation-crime-per-million-riders"><span class="header-section-number">0.13</span> 🧠 Interpretation: Crime per Million Riders</h3>
+<ol type="1">
+<li>Transit crime rates ranged from <strong>approximately 4 to 38 crimes per million riders</strong> throughout the study period.<br>
+</li>
+<li><strong>2015–2017</strong> show noticeably <strong>higher per-capita crime</strong>, largely because ridership was at peak levels while crime counts stayed relatively steady.<br>
+</li>
+<li>After <strong>2018</strong>, per-million crime rates fall as ridership remains high and crime totals do not increase at the same pace.<br>
+</li>
+<li>The <strong>COVID-19 period</strong> disrupts both ridership and crime, creating sharp swings in per-capita values that influence later correlation patterns.</li>
+</ol>
+<p>➡ Overall, rider risk decreases prior to COVID, becomes distorted during the pandemic, and stabilizes again as ridership begins recovering.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="co">#8. Correlation Analysis for SQ</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="co"># "Does subway ridership volume correlate with the number of crimes?"</span></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>cor_overall <span class="ot">&lt;-</span> <span class="fu">cor</span>(merged<span class="sc">$</span>felony_count, merged<span class="sc">$</span>subways_total, <span class="at">use =</span> <span class="st">"complete.obs"</span>)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>cor_pre2022 <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(<span class="fu">year</span>(month) <span class="sc">&lt;</span> <span class="dv">2022</span>) <span class="sc">|&gt;</span></span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(<span class="at">cor =</span> <span class="fu">cor</span>(felony_count, subways_total, <span class="at">use =</span> <span class="st">"complete.obs"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="fu">pull</span>(cor)</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>cor_post2022 <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(<span class="fu">year</span>(month) <span class="sc">&gt;=</span> <span class="dv">2022</span>) <span class="sc">|&gt;</span></span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a><span class="fu">summarise</span>(<span class="at">cor =</span> <span class="fu">cor</span>(felony_count, subways_total, <span class="at">use =</span> <span class="st">"complete.obs"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a><span class="fu">pull</span>(cor)</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a>cor_table <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a><span class="at">Period =</span> <span class="fu">c</span>(<span class="st">"All Months (2015–2025)"</span>, <span class="st">"Pre-2022"</span>, <span class="st">"2022+"</span>),</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a><span class="at">Correlation =</span> <span class="fu">c</span>(cor_overall, cor_pre2022, cor_post2022)</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(cor_table)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 3 × 2
-  Period     Correlation
-  &lt;chr&gt;            &lt;dbl&gt;
-1 All Months       0.804
-2 Pre-2022         0.790
-3 2022+            0.285</code></pre>
+  Period                 Correlation
+  &lt;chr&gt;                        &lt;dbl&gt;
+1 All Months (2015–2025)       0.295
+2 Pre-2022                     0.196
+3 2022+                        0.544</code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 📈 6. Visualizations</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- A) Scatter with Regression Line ----</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(merged, <span class="fu">aes</span>(<span class="at">x =</span> subways_total, <span class="at">y =</span> felony_count)) <span class="sc">+</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">color =</span> <span class="st">"firebrick"</span>) <span class="sc">+</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">labels =</span> <span class="fu">label_number</span>(<span class="at">big.mark =</span> <span class="st">","</span>)) <span class="sc">+</span></span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">label_number</span>(<span class="at">big.mark =</span> <span class="st">","</span>)) <span class="sc">+</span></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Monthly Transit Felonies vs Subway Ridership"</span>,</span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"MTA Major Felonies Data (2019–2025)"</span>,</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Monthly Subway Ridership (entries + exits)"</span>,</span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Reported Felonies"</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>)</span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="interpretation-correlation-between-ridership-and-transit-crime" class="level3" data-number="0.14">
+<h3 data-number="0.14" class="anchored" data-anchor-id="interpretation-correlation-between-ridership-and-transit-crime"><span class="header-section-number">0.14</span> 🧠 Interpretation: Correlation Between Ridership and Transit Crime</h3>
+<ol type="1">
+<li>The <strong>overall correlation is modest (0.29)</strong>, indicating that ridership and crime move together, but not strongly.<br>
+</li>
+<li><strong>Pre-2022</strong>, the correlation is very weak (<strong>0.19</strong>), suggesting crime levels did not scale meaningfully with changes in ridership.<br>
+</li>
+<li><strong>Post-2022</strong>, the correlation strengthens substantially (<strong>0.54</strong>), indicating a clearer relationship between ridership volume and crime counts.
+<ul>
+<li>As ridership recovers, <strong>crime counts rise proportionally</strong>.<br>
+</li>
+<li>Transit crime appears <strong>more sensitive to crowding and rider volume</strong> in recent years.</li>
+</ul></li>
+</ol>
+<p>➡ These patterns show that the ridership–crime relationship is <strong>time-dependent</strong>, becoming stronger in the post-COVID recovery era.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="co">#9. Visualizations for Slides / Report</span></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="co"># 9A. Scatter: Monthly Transit Crimes vs Subway Ridership</span></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(merged, <span class="fu">aes</span>(<span class="at">x =</span> subways_total, <span class="at">y =</span> felony_count)) <span class="sc">+</span></span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">"lm"</span>, <span class="at">se =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a><span class="fu">scale_x_continuous</span>(<span class="at">labels =</span> <span class="fu">label_number</span>(<span class="at">big.mark =</span> <span class="st">","</span>)) <span class="sc">+</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a><span class="fu">scale_y_continuous</span>(<span class="at">labels =</span> <span class="fu">label_number</span>(<span class="at">big.mark =</span> <span class="st">","</span>)) <span class="sc">+</span></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Monthly Transit Crimes vs Subway Ridership"</span>,</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a><span class="at">subtitle =</span> <span class="st">"NYPD Transit Complaints vs MTA Monthly Subway Ridership (2015–2025)"</span>,</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Monthly Subway Ridership (entries + exits)"</span>,</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Transit-Related Complaints (count)"</span></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>)</span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stderr">
 <pre><code>`geom_smooth()` using formula = 'y ~ x'</code></pre>
 </div>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="MTA_project_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="MTA_project_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- B) Indexed Time Series (baseline = 100) ----</span></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>base_vals <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(month <span class="sc">==</span> <span class="fu">min</span>(month))</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>merged <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">ridership_index =</span> <span class="dv">100</span> <span class="sc">*</span> subways_total <span class="sc">/</span> base_vals<span class="sc">$</span>subways_total,</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">crimes_index =</span> <span class="dv">100</span> <span class="sc">*</span> felony_count <span class="sc">/</span> base_vals<span class="sc">$</span>felony_count</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>merged_long <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(month, ridership_index, crimes_index) <span class="sc">|&gt;</span></span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="sc">-</span>month, <span class="at">names_to =</span> <span class="st">"metric"</span>, <span class="at">values_to =</span> <span class="st">"index"</span>)</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(merged_long, <span class="fu">aes</span>(month, index, <span class="at">color =</span> metric)) <span class="sc">+</span></span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">1.1</span>) <span class="sc">+</span></span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Indexed Trends: Transit Crimes vs Ridership"</span>,</span>
-<span id="cb18-18"><a href="#cb18-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Baseline = 100 (first month in dataset)"</span>,</span>
-<span id="cb18-19"><a href="#cb18-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Month"</span>,</span>
-<span id="cb18-20"><a href="#cb18-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Index"</span>,</span>
-<span id="cb18-21"><a href="#cb18-21" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="cn">NULL</span></span>
-<span id="cb18-22"><a href="#cb18-22" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb18-23"><a href="#cb18-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
-<span id="cb18-24"><a href="#cb18-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span>
-<span id="cb18-25"><a href="#cb18-25" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="interpretation-scatterplot-of-monthly-transit-crimes-vs.-ridership" class="level3" data-number="0.15">
+<h3 data-number="0.15" class="anchored" data-anchor-id="interpretation-scatterplot-of-monthly-transit-crimes-vs.-ridership"><span class="header-section-number">0.15</span> 🧠 Interpretation: Scatterplot of Monthly Transit Crimes vs.&nbsp;Ridership</h3>
+<ol type="1">
+<li>The scatter is <strong>widely dispersed</strong>, showing substantial variation in crime even at similar ridership levels.<br>
+</li>
+<li>The <strong>slightly upward-sloping regression line</strong> indicates that higher ridership is only <strong>modestly associated</strong> with higher crime totals.<br>
+</li>
+<li><strong>COVID-era months</strong> stand out as outliers — extremely low ridership but still moderate crime counts — which flattens the overall trend prior to 2022.<br>
+</li>
+<li>These visual patterns align with the correlation results: the ridership–crime relationship becomes <strong>meaningfully stronger only in the later years</strong> of the dataset.</li>
+</ol>
+<p>➡ The scatterplot reinforces that the link between ridership and crime is <strong>weak before 2022</strong> and <strong>stronger after ridership recovery begins</strong>.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co">#9B. Indexed Time Series (baseline = 100 at first month)</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>base_vals <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a><span class="fu">filter</span>(month <span class="sc">==</span> <span class="fu">min</span>(month))</span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>merged <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a><span class="fu">mutate</span>(</span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a><span class="at">ridership_index =</span> <span class="dv">100</span> <span class="sc">*</span> subways_total <span class="sc">/</span> base_vals<span class="sc">$</span>subways_total,</span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a><span class="at">crimes_index =</span> <span class="dv">100</span> <span class="sc">*</span> felony_count <span class="sc">/</span> base_vals<span class="sc">$</span>felony_count</span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a>merged_long <span class="ot">&lt;-</span> merged <span class="sc">|&gt;</span></span>
+<span id="cb30-13"><a href="#cb30-13" aria-hidden="true" tabindex="-1"></a><span class="fu">select</span>(month, ridership_index, crimes_index) <span class="sc">|&gt;</span></span>
+<span id="cb30-14"><a href="#cb30-14" aria-hidden="true" tabindex="-1"></a><span class="fu">pivot_longer</span>(<span class="sc">-</span>month, <span class="at">names_to =</span> <span class="st">"metric"</span>, <span class="at">values_to =</span> <span class="st">"index"</span>)</span>
+<span id="cb30-15"><a href="#cb30-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-16"><a href="#cb30-16" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(merged_long, <span class="fu">aes</span>(month, index, <span class="at">color =</span> metric)) <span class="sc">+</span></span>
+<span id="cb30-17"><a href="#cb30-17" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="fl">1.05</span>) <span class="sc">+</span></span>
+<span id="cb30-18"><a href="#cb30-18" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb30-19"><a href="#cb30-19" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Indexed Trends: Transit Crimes vs Ridership"</span>,</span>
+<span id="cb30-20"><a href="#cb30-20" aria-hidden="true" tabindex="-1"></a><span class="at">subtitle =</span> <span class="st">"Baseline = 100 at first month in 2015"</span>,</span>
+<span id="cb30-21"><a href="#cb30-21" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Month"</span>,</span>
+<span id="cb30-22"><a href="#cb30-22" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Index (Baseline = 100)"</span>,</span>
+<span id="cb30-23"><a href="#cb30-23" aria-hidden="true" tabindex="-1"></a><span class="at">color =</span> <span class="cn">NULL</span></span>
+<span id="cb30-24"><a href="#cb30-24" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb30-25"><a href="#cb30-25" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>) <span class="sc">+</span></span>
+<span id="cb30-26"><a href="#cb30-26" aria-hidden="true" tabindex="-1"></a><span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"bottom"</span>)</span>
+<span id="cb30-27"><a href="#cb30-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-28"><a href="#cb30-28" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="MTA_project_files/figure-html/unnamed-chunk-1-2.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="MTA_project_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- C) Crimes per Million Riders ----</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(merged, <span class="fu">aes</span>(month, crimes_per_million)) <span class="sc">+</span></span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">"steelblue"</span>) <span class="sc">+</span></span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Transit Crimes per Million Riders (Monthly)"</span>,</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="st">"Normalized by total subway ridership"</span>,</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Month"</span>,</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Crimes per Million Riders"</span></span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>)</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="interpretation-indexed-trends-for-ridership-and-transit-crime" class="level3" data-number="0.16">
+<h3 data-number="0.16" class="anchored" data-anchor-id="interpretation-indexed-trends-for-ridership-and-transit-crime"><span class="header-section-number">0.16</span> 🧠 Interpretation: Indexed Trends for Ridership and Transit Crime</h3>
+<p><strong>Ridership Index</strong> 1. Shows a <strong>sharp decline during COVID (2020)</strong> as system-wide usage collapsed.<br>
+2. Displays a <strong>gradual recovery</strong> in the following years.<br>
+3. Still remains <strong>below pre-2018 levels</strong>, indicating an incomplete ridership rebound.</p>
+<p><strong>Crime Index</strong> - Remains <strong>relatively stable from 2015–2019</strong>, even as ridership fluctuates.<br>
+- In 2020,<br>
+1. <strong>Ridership collapses</strong>, but<br>
+2. Crime decreases <strong>far less proportionally</strong>, causing <strong>higher per-rider crime risk</strong> despite fewer total incidents.</p>
+<p><strong>Post-2022</strong> - Both indices begin to <strong>rise together more closely</strong>, aligning with the <strong>stronger correlation</strong> observed in the later period.</p>
+<p>➡ This trend suggests that the crime–ridership relationship tightened after the pandemic, with crime levels</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 9C. Crimes per Million Riders Over Time</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>p3 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(merged, <span class="fu">aes</span>(month, crimes_per_million)) <span class="sc">+</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_line</span>(<span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a><span class="at">title =</span> <span class="st">"Transit Crimes per Million Riders (Monthly)"</span>,</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a><span class="at">subtitle =</span> <span class="st">"NYPD Transit Complaints Normalized by MTA Subway Ridership"</span>,</span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a><span class="at">x =</span> <span class="st">"Month"</span>,</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a><span class="at">y =</span> <span class="st">"Crimes per Million Riders"</span></span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">13</span>)</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(p3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="MTA_project_files/figure-html/unnamed-chunk-1-3.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="MTA_project_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="co"># 🧾 7. Summary Output</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># =========================================================</span></span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(merged<span class="sc">$</span>crimes_per_million)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-  1.641   2.101   2.351   2.737   2.836  10.827 </code></pre>
 </div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(<span class="fu">head</span>(merged))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code># A tibble: 6 × 7
-  month               subways_total felony_count summons_total
-  &lt;dttm&gt;                      &lt;dbl&gt;        &lt;dbl&gt;         &lt;dbl&gt;
-1 2020-03-01 00:00:00      73625223          181            NA
-2 2020-04-01 00:00:00      11730474          127            NA
-3 2020-05-01 00:00:00      15275851           94            NA
-4 2020-06-01 00:00:00      23928304          114            NA
-5 2020-07-01 00:00:00      32508961          112            NA
-6 2020-08-01 00:00:00      35197734          119            NA
-# ℹ 3 more variables: crimes_per_million &lt;dbl&gt;, ridership_index &lt;dbl&gt;,
-#   crimes_index &lt;dbl&gt;</code></pre>
-</div>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">✅ Analysis Complete — All Outputs Ready for Slide Presentation</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="interpretation-crimes-per-million-riders-normalized-crime-risk" class="level3" data-number="0.17">
+<h3 data-number="0.17" class="anchored" data-anchor-id="interpretation-crimes-per-million-riders-normalized-crime-risk"><span class="header-section-number">0.17</span> 🧠 Interpretation: Crimes per Million Riders (Normalized Crime Risk)</h3>
+<ul>
+<li><strong>Pre-2018:</strong> Crime-per-capita is relatively high, averaging <strong>30–35 crimes per million riders</strong>.<br>
+</li>
+<li><strong>2018–2019:</strong> Per-capita crime drops sharply as ridership reaches peak levels while crime counts remain stable.<br>
+</li>
+<li><strong>2020:</strong> Extremely low ridership during COVID produces an <strong>artificial spike</strong> in per-rider crime risk, even though total complaints decline.<br>
+</li>
+<li><strong>2022–2025:</strong> A <strong>steady upward trend</strong> emerges:
+<ul>
+<li>Ridership is recovering,<br>
+</li>
+<li>But <strong>complaints are rising faster</strong>,<br>
+→ resulting in <strong>higher normalized crime rates</strong> in recent years.</li>
+</ul></li>
+</ul>
+<p>➡ This normalized metric captures <em>actual rider risk</em>, showing that the system may <strong>feel less safe</strong> even if total crime counts do not rise dramatically.</p>
+<div class="cell">
+<details class="code-fold">
+<summary>Show Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 10. Final Console Message</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">✅ SQ Analysis Complete — Ridership vs Transit Crime (2015–2025)</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-✅ Analysis Complete — All Outputs Ready for Slide Presentation</code></pre>
+✅ SQ Analysis Complete — Ridership vs Transit Crime (2015–2025)</code></pre>
+</div>
+</div>
+</section>
+<section id="final-interpretation-for-sq-ridershipcrime-relationship-20152025" class="level3" data-number="0.18">
+<h3 data-number="0.18" class="anchored" data-anchor-id="final-interpretation-for-sq-ridershipcrime-relationship-20152025"><span class="header-section-number">0.18</span> 🧠 Final Interpretation for SQ: Ridership–Crime Relationship (2015–2025)</h3>
+<ul>
+<li>Subway ridership and transit crime show a <strong>modest overall positive correlation</strong> across 2015–2025 (<strong>r ≈ 0.29</strong>).<br>
+</li>
+<li>The relationship is <strong>not stable over time</strong>:
+<ul>
+<li><strong>Pre-2022:</strong> Correlation is weak, indicating that crime levels did not strongly scale with ridership.<br>
+</li>
+<li><strong>Post-2022:</strong> Correlation strengthens significantly (<strong>r ≈ 0.54</strong>), suggesting crime counts now rise more consistently with ridership recovery.<br>
+</li>
+</ul></li>
+<li>Normalized crime measures (<strong>crimes per million riders</strong>) add additional insight:
+<ul>
+<li>Rider risk <strong>declined sharply in 2018–2019</strong>, when ridership peaked and crime counts remained stable.<br>
+</li>
+<li>Post-COVID, risk levels <strong>rise again</strong>, as crime increases at a faster rate than ridership.</li>
+</ul></li>
+</ul>
+<p>➡ Overall, recent years show a tighter link between rider volume and crime levels, while normalized metrics highlight that <strong>per-rider risk has increased</strong> despite crime totals not rising dramatically.</p>
+<div class="callout callout-style-default callout-important callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Important</span>🟣 Key Takeaway: Ridership–Crime Dynamics Have Shifted Post-COVID
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<ul>
+<li>The ridership–crime correlation strengthened substantially after 2022.<br>
+</li>
+<li>Rider risk (crimes per million riders) has increased in recent years, even without dramatic increases in total crime.<br>
+</li>
+<li>System-level crime trends must be interpreted relative to underlying ridership volume, not in isolation.<br>
+</li>
+</ul>
 </div>
 </div>
 
 
+</section>
 
 </main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">

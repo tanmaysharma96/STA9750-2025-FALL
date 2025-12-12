@@ -27,7 +27,6 @@ It integrates **API-acquired open data**, robust data cleaning, monthly aggregat
 
 ➡ The goal is to assess whether transit crime scales with rider volume, and how this relationship has changed in recent years.
 
-
 ### 📦 Step 1: Load Required Libraries
 
 ✔ **tidyverse** — core toolkit for data wrangling, transformation, and visualization  
@@ -46,6 +45,7 @@ library(janitor)
 library(httr2)
 library(readr)
 library(scales)
+library(gt)
 ```
 
 ### 📁 Step 2: Create Project Data Directory
@@ -295,6 +295,30 @@ head(merged)
 ➡ Overall, rider risk decreases prior to COVID, becomes distorted during the pandemic, and stabilizes again as ridership begins recovering.
 
 ```{r}
+#Monthly Transit Crime Trend with LOESS Smoothing
+p_trend <- ggplot(merged, aes(month, felony_count)) +
+geom_line(alpha = 0.5) +
+geom_smooth(se = FALSE, linewidth = 1.1) +
+labs(
+title = "Monthly Transit Crime Trend (2015–2025)",
+subtitle = "Raw counts with LOESS smoothing to highlight long-run pattern",
+x = "Month",
+y = "Transit-Related Complaints (count)"
+) +
+theme_minimal(base_size = 13)
+
+p_trend
+```
+### 🧠 Interpretation: Smoothed Monthly Crime Trend
+
+- Monthly transit crime shows **substantial short-term noise**, but the LOESS line reveals a smoother underlying pattern.  
+- Crime levels are **relatively high pre-2018**, ease downward slightly, and then fluctuate around a lower plateau.  
+- During the **COVID period**, crime counts fall, but not as sharply as ridership, creating an apparent dip followed by a rebound.  
+- Post-2022, the smoothed trend indicates **gradually rising crime counts**, consistent with your correlation and risk metrics.  
+
+➡ This view helps separate **long-run structure** from **month-to-month volatility** in transit crime.
+
+```{r}
 #8. Correlation Analysis for SQ
 # "Does subway ridership volume correlate with the number of crimes?"
 
@@ -316,7 +340,31 @@ Correlation = c(cor_overall, cor_pre2022, cor_post2022)
 )
 
 print(cor_table)
+
+# Publication-Style Correlation Table
+
+cor_table_gt <- cor_table |>
+mutate(
+Correlation = round(Correlation, 3)
+) |>
+gt() |>
+tab_header(
+title = "Correlation Between Ridership and Transit Crime by Period"
+)
+
+cor_table_gt
 ```
+
+::: {.callout-important}
+### 📌 Key Indicators for SQ (2015–2025)
+
+- **Total Transit Complaints:** `r sum(merged$felony_count)`  
+- **Average Monthly Complaints:** `r round(mean(merged$felony_count), 1)`  
+- **Average Crimes per Million Riders:** `r round(mean(merged$crimes_per_million), 2)`  
+- **Strongest Crime–Ridership Correlation:** Post-2022 (`r round(cor_post2022, 3)`)  
+
+These metrics provide a quick, high-level snapshot of how **crime volume** and **crime risk per rider** behave over the study period.
+:::
 
 ### 🧠 Interpretation: Correlation Between Ridership and Transit Crime
 
@@ -358,6 +406,41 @@ print(p1)
 
 ➡ The scatterplot reinforces that the link between ridership and crime is **weak before 2022** and **stronger after ridership recovery begins**.
 
+```{r}
+#Faceted Scatter: Pre- vs Post-2022
+merged_period <- merged |>
+mutate(
+period = ifelse(lubridate::year(month) < 2022, "Pre-2022", "2022+"),
+ridership_millions = subways_total / 1e6 # rescale to millions
+)
+
+p1_faceted <- ggplot(merged_period,
+aes(x = ridership_millions, y = felony_count)) +
+geom_point(alpha = 0.6) +
+geom_smooth(method = "lm", se = FALSE) +
+scale_x_continuous(
+breaks = scales::pretty_breaks(4),
+labels = scales::label_number(accuracy = 1)
+) +
+scale_y_continuous(labels = scales::label_number(big.mark = ",")) +
+facet_wrap(~ period, scales = "free_x") +
+labs(
+title = "Ridership vs Transit Crime by Period",
+subtitle = "Comparing Pre-2022 and Post-2022 Relationships",
+x = "Monthly Subway Ridership (millions of entries + exits)",
+y = "Transit-Related Complaints (count)"
+) +
+theme_minimal(base_size = 13)
+
+p1_faceted
+```
+### 🧠 Interpretation: Ridership–Crime Relationship by Period
+
+- In the **Pre-2022** panel, the regression line is **flatter**, and the cloud of points is more diffuse — ridership and crime are only **weakly linked**.  
+- In the **2022+** panel, the regression line is **clearly steeper**, and points align more closely along the trend, indicating a **stronger ridership–crime connection**.  
+- This visual contrast reinforces the numeric results: the **correlation roughly triples** from the pre-2022 period to the post-2022 period.  
+
+➡ The relationship between ridership and crime is **structurally different after COVID**, which is crucial context for interpreting system-wide trends.
 
 ```{r}
 #9B. Indexed Time Series (baseline = 100 at first month)
@@ -435,6 +518,38 @@ print(p3)
 ➡ This normalized metric captures *actual rider risk*, showing that the system may **feel less safe** even if total crime counts do not rise dramatically.
 
 ```{r}
+#Heatmap of Crimes per Million Riders Over Time
+crime_heat <- merged |>
+mutate(
+year = lubridate::year(month),
+month_num = lubridate::month(month)
+)
+
+p_heat <- ggplot(crime_heat, aes(x = month_num, y = factor(year), fill = crimes_per_million)) +
+geom_tile(color = "white") +
+scale_fill_viridis_c(option = "magma") +
+scale_x_continuous(breaks = 1:12) +
+labs(
+title = "Heatmap of Transit Crimes per Million Riders",
+subtitle = "Higher intensity cells indicate higher crime risk per rider",
+x = "Month",
+y = "Year",
+fill = "Crimes per\nMillion"
+) +
+theme_minimal(base_size = 13)
+
+p_heat
+```
+### 🧠 Interpretation: Heatmap of Normalized Crime Risk
+
+- **Darker cells** correspond to **higher crimes per million riders**, making it easy to spot periods of elevated risk.  
+- The pre-2018 rows show **consistently darker shading**, reinforcing the idea that early years had **higher per-rider risk**.  
+- The COVID period appears as an **irregular band**, reflecting disrupted ridership and crime patterns.  
+- Recent years (2022–2025) show a **visible darkening trend**, consistent with the upward slope in the crimes-per-million line plot.  
+
+➡ The heatmap provides a compact view of how **risk levels shift across both years and seasons**, complementing the time-series plots.
+
+```{r}
 # 10. Final Console Message
 
 cat("\n✅ SQ Analysis Complete — Ridership vs Transit Crime (2015–2025)\n")
@@ -457,4 +572,19 @@ cat("\n✅ SQ Analysis Complete — Ridership vs Transit Crime (2015–2025)\n")
 - Rider risk (crimes per million riders) has increased in recent years, even without dramatic increases in total crime.  
 - System-level crime trends must be interpreted relative to underlying ridership volume, not in isolation.  
 :::
+
+### ⚠️ Limitations
+
+- NYPD complaint data reflect **reported incidents**, which may understate true crime levels and vary with reporting behavior.  
+- Ridership data are based on **turnstile entries/exits**, which may include noise from repeat taps or non-trip-related swipes.  
+- COVID-era months break standard time-series assumptions, making trend estimation more challenging.  
+- Crime categories are **aggregated across offense types**; some specific categories may show different dynamics than the system-wide pattern.
+
+### 🔮 Future Work
+
+- Extend the analysis to the **station or line level** to identify localized hotspots and high-risk routes.  
+- Incorporate **lagged relationships** (e.g., ARIMA, VAR) to see whether changes in ridership predict future crime.  
+- Add **covariates** such as service changes, police deployment, or neighborhood socioeconomic indicators.  
+- Explore **predictive models** to forecast high-risk months or periods for staffing and resource allocation.
+
 

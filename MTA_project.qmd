@@ -10,35 +10,38 @@ format:
   html:
     theme: cosmo
     df-print: paged
+execute: 
+  warning: false
+  message: false
 ---
 ::: {.callout-note}
 ### 📘 Overview  
-This analysis investigates how **subway ridership volume** and **transit-related crime** move together across NYC’s transit system (2015–2025).  
-It integrates **API-acquired open data**, robust data cleaning, monthly aggregation, correlation analysis, and professional-grade visualizations to evaluate time-varying crime–ridership dynamics.
+This report analyzes how **subway ridership volume** and **transit-related crime** correlate across NYC’s transit system (2015–2025).  
+This report makes use of **API-acquired open data**, monthly aggregation, robust data cleaning, correlation analysis, as well as visualizations in order to analyze time-varying crime–ridership dynamics.
 :::
 
 ### 🚇 Specific Question (SQ): Does Subway Ridership Volume Correlate with Transit Crime?
 
-✔ This SQ examines how **monthly subway ridership** and **transit-related crime** move together across NYC’s system  
-✔ Uses **NYPD Complaint Data** (filtered to subway incidents) + **MTA Monthly Ridership** from **2015–2025**  
-✔ Evaluates whether higher ridership corresponds to **higher crime counts** at a system-wide level  
-✔ Separates analysis into **overall**, **pre-2022**, and **post-2022** periods to account for COVID-era disruptions  
-✔ Incorporates **correlation measures**, **indexed trends**, and **crimes per million riders** to capture both volume and risk dynamics  
+✔ My SQ examines how both **monthly subway ridership** and **transit-related crime** move together  
+✔ I use **NYPD Complaint Data** (filtered by subway incidents) as well as **MTA Monthly Ridership** from the years **2015–2025**  
+✔ I evaluate if higher ridership corresponds to **higher crime counts** at a system-wide level  
+✔ I also separates my analysis into **overall**, **pre-2022**, and **post-2022** time frames to accommodate for any COVID-era disruptions  
+✔ Finally, I incorporate **correlation measures**, **indexed trends**, as well as **crimes per million riders** to capture both risk and volume performance  
 
-➡ The goal is to assess whether transit crime scales with rider volume, and how this relationship has changed in recent years.
+➡ The overarching goal is to assess whether transit crime correlates with ridership volume, focusing on how this relationship may have changed in more recent years.
 
-### 📦 Step 1: Load Required Libraries
+### 📦 Step 1: Loading Required Libraries
 
-✔ **tidyverse** — core toolkit for data wrangling, transformation, and visualization  
-✔ **lubridate** — simplifies working with dates, months, and time-based grouping  
-✔ **janitor** — cleans column names and provides helpful data-quality utilities  
-✔ **httr2** — handles API requests to download live NYPD and MTA datasets  
-✔ **readr** — fast and efficient reading of large CSV files  
-✔ **scales** — improves numeric formatting for plots (labels, commas, percentages)
+✔ **tidyverse** — this toolkit is responsible for visualization and transformation  
+✔ **lubridate** — simplifies work related to time based grouping  
+✔ **janitor** — cleans column names  
+✔ **httr2** — handles API requests to download MTA and NYPD datasets  
+✔ **readr** — efficient reading of large CSV files  
+✔ **scales** — strengthens numeric formatting for plots such as labels and percentages
 
 ➡ These libraries provide the foundational tools for acquiring, cleaning, merging, and analyzing crime and ridership datasets.
 ```{r}
-# ---- 1. Load Libraries ----
+# ---- Loading Libraries ----
 library(tidyverse)
 library(lubridate)
 library(janitor)
@@ -48,40 +51,35 @@ library(scales)
 library(gt)
 ```
 
-### 📁 Step 2: Create Project Data Directory
+### 📁 Step 2: Creating Project Data Directory
 
-✔ Creates a dedicated folder (`data/courseproject`) to store all downloaded datasets  
-✔ Ensures the directory exists before saving files, preventing write errors  
-✔ `recursive = TRUE` allows creation of nested folders if they do not already exist  
-✔ Keeps all raw data organized and reproducible across different machines
-
-➡ This guarantees a clean, consistent file structure for the entire project workflow.
+✔ This creates a dedicated folder (`data/courseproject`) to store datasets  
+✔ Ensures a directory exists prior to saving files. This prevents any "write errors"  
+✔ `recursive = TRUE` <- this allows creation of nested folders (if not already existing)  
+✔ Helps to keep all raw data reproducible and organized across different machines
 
 ```{r}
 dir.create(file.path("data", "courseproject"), showWarnings = FALSE, recursive = TRUE)
 ```
 ### 🚨 Step 3.1: Download Transit-Related NYPD Complaint Data (2015–2025)
 
-✔ Pulls **only subway-related complaints** directly from the NYC Open Data API  
-✔ Applies a **date filter (2015–2025)** to avoid downloading millions of irrelevant rows  
-✔ Uses a **targeted SELECT statement** to keep only essential fields  
-✔ Expands API limits to ensure the full filtered dataset is returned  
-✔ Saves the cleaned CSV locally for reproducibility and faster re-runs  
-
-➡ This approach prevents memory issues (`std::bad_alloc`) while providing a clean, transit-only dataset for downstream analysis.
+✔ Obtains **only complaints related to subway** from NYC Open Data API  
+✔ Applies a **date filter from 2015–2025** to avoid downloading irrelevant rows  
+✔ Uses a **SELECT statement** to keep essential fields  
+✔ Expands API limits, ensuring full and filtered dataset is returned  
+✔ Saves cleaned CSV (locally) for quicker re-runs and reproducibility   
 
 ```{r}
 # =========================================================
-# 3.1 NYPD COMPLAINT DATA (Filtered API Download)
+# 3.1 NYPD COMPLAINT DATA
 # Only transit-related complaints, only 2015–2025
-# Avoid downloading 8M+ rows (prevents std::bad_alloc)
 # =========================================================
 
 complaints_req <- request("https://data.cityofnewyork.us/resource/qgea-i56i.csv") |>
   req_url_query(
     "$select" = "cmplnt_num,cmplnt_fr_dt,juris_desc,prem_typ_desc,boro_nm,ofns_desc,law_cat_cd",
     "$where"  = "cmplnt_fr_dt between '2015-01-01T00:00:00' and '2025-12-31T23:59:59' AND (juris_desc = 'N.Y. TRANSIT POLICE' OR prem_typ_desc = 'TRANSIT - NYC SUBWAY')",
-    "$limit"  = 500000  # big enough cap; API default is only 1000
+    "$limit"  = 500000
   )
 
 complaints_path <- file.path("data", "courseproject", "complaints_transit_filtered.csv")
@@ -95,15 +93,14 @@ complaint_df <- readr::read_csv(
   show_col_types = FALSE
 )
 ```
-### 🚇 Step 3.2: Download MTA Monthly Subway Ridership Data
+### 🚇 Step 3.2: Downloading MTA Monthly Subway Ridership Data
 
-✔ Retrieves **system-wide monthly ridership** for NYC subways (2008–present)  
-✔ Uses the NY State Open Data archival API for a stable and reproducible download  
-✔ Saves the dataset locally to `data/courseproject/` for consistent project structure  
-✔ `req_progress()` provides a clear download status when handling large files  
-✔ `read_csv()` loads the data efficiently for preprocessing and merging  
+✔ Obtains **system-wide monthly ridership** for subways in NYC (2008–present)  
+✔ Makes use of NY State Open Data archival API for stable downloading  
+✔ Saves dataset to `data/courseproject/` for project structure that is consistent  
+✔ `req_progress()` provides clear status of download when taking care of larger files  
+✔ `read_csv()` loads data efficiently for merging as well as for pre-processing  
 
-➡ This dataset supplies the core ridership metric needed to evaluate how crime levels scale with subway usage over time.
 ```{r}
 
 # 3.2 MTA Monthly Ridership (Subway, 2008–Present)
@@ -118,51 +115,49 @@ file.path("data", "courseproject", "monthly_ridership.csv"),
 show_col_types = FALSE
 )
 ```
-### 📅 Step 4: Define Global Date Window (2015–2025)
+### 📅 Step 4: Defining a  Global Window Date (2015–2025)
 
-✔ Sets a consistent **10-year analysis window** for all datasets  
-✔ Ensures crime and ridership data are aligned on the same monthly timeline  
-✔ Filters out older records (pre-2015) and incomplete future records  
-✔ Creates a unified structure for merging NYPD and MTA data accurately  
+✔ Sets a **10-year analysis window** for consistency amongst all datasets  
+✔ Makes sure that ridership and crime data are the same on the monthly timeline  
+✔ Deletes older records (pre-2015) as well as incomplete future records  
+✔ Creates unified structure in order for accurate merging of NYPD and MTA  
 
-➡ Establishing this shared date range is essential for producing valid system-wide comparisons.
+➡ Creating this shared date range is important to produce valid comparisons
 ```{r}
 
 # 4. Global Date Window for SQ (2015–2025)
 start_date <- as.Date("2015-01-01")
 end_date <- as.Date("2025-12-31")
 ```
-### 🚨 Step 5: Build Monthly System-Wide Transit Crime Counts
+### 🚨 Step 5: Building System-Wide Monthly Transit Crime Counts
 
-✔ Filters NYPD complaint records to include **only subway-related incidents**  
-✔ Treats each valid complaint as a **single crime event** for system-wide aggregation  
-✔ Converts complaint dates into **monthly units**, enabling time-aligned comparison with ridership  
-✔ Ensures only unique complaint numbers are counted to avoid duplication  
-✔ Produces the monthly crime totals needed to evaluate the SQ  
+✔ **Only subway-related incidents** are included after filtering NYPD complaint records   
+✔ Takes each complaint as **single crime event** for aggregation on system-wide level   
+✔ Converts complaint dates into **monthly units**, enabling time-aligned comparison with ridership
+✔ Helps to ensures that only unique complaint numbers are counted in order to avoid duplication  
+✔ Outputs crime totals (monthly) needed to evaluate the SQ  
 
-➡ This creates the core dataset for analyzing how transit crime levels move relative to subway ridership.
+➡ Creates the core dataset in order to analyze how transit crime levels fluctuate relative to subway ridership.
 ```{r}
-# 5. Build Monthly Transit Crime Counts (System-Wide)
+# 5. Building Monthly Transit Crime Counts (System-Wide)
 #SQ: Does subway ridership volume correlate with the number of crimes?
 #Here we treat transit-related complaints as "crimes".
 #ridership <- readr::read_csv(path_ridership, show_col_types = FALSE)
 ```
 ### 🚨 Filtering & Structuring Transit-Related Complaint Records
 
-✔ Cleans all column names for consistency across datasets  
-✔ Retains only complaints handled by **N.Y. Transit Police** or occurring in **NYC Subway premises**  
-✔ Converts the raw complaint date into a standard `Date` format  
-✔ Aggregates dates into **monthly periods** using `floor_date()` to align with monthly ridership data  
-✔ Establishes the foundation for constructing accurate system-wide monthly crime totals  
+✔ Cleans column names for consistency across both datasets  
+✔ Keeps only the complaints by **N.Y. Transit Police** or that occur in **NYC Subway premises**
+✔ Converts raw complaint date into standard `Date` format  
+✔ Converts dates to **monthly periods** using `floor_date()` to correlate with monthly ridership
 
-➡ This step isolates true transit incidents and prepares them for monthly-level correlation analysis.
+➡ This process helps to isolate transit incidents, preparing them for correlation analysis on the monthly-level.
 
 ```{r}
 
 complaints_transit <- complaint_df |>
 clean_names() |>
 
-# keep transit-relevant complaints
 filter(
 juris_desc == "N.Y. TRANSIT POLICE" |
 prem_typ_desc == "TRANSIT - NYC SUBWAY"
@@ -172,32 +167,29 @@ date = as.Date(cmplnt_fr_dt),
 month = floor_date(date, "month")
 )
 ```
-### 📅 Restricting Complaints to the 2015–2025 Analysis Window
+### 📅 Restricting Complaints to 2015–2025 Analysis Window
 
-✔ Filters all transit-related complaints so only incidents between **2015 and 2025** are included  
-✔ Ensures full alignment with the defined SQ study period  
-✔ Removes outdated or incomplete records outside the analysis range  
-✔ Guarantees that monthly crime totals and ridership figures share the same temporal scope  
+✔ This step removes complaints so that only incidents between **2015 and 2025** are included  
+✔ Removes incomplete or outdated records that falls outside the range for analysis
 
-➡ This step keeps the dataset focused, comparable, and directly relevant to the SQ.
+➡ This helps ensure that the dataset is focused and pertains to the SQ.
 ```{r}
 # =========================================================
-# 🔗 4. restrict to 2015–2025 window
+# 🔗 4. restricting to our 2015–2025 window
 # =========================================================
 complaints_transit <- complaints_transit |>
 filter(between(date, start_date, end_date))
 ```
 ### 🔍 Ensuring Unique Complaints & Building Monthly Crime Totals
 
-✔ Uses `distinct()` to keep **only one record per complaint number**, preventing accidental double-counting  
-✔ Groups all cleaned records by **month**, matching the structure of the ridership dataset  
-✔ Counts the total number of **transit-related complaints** in each month  
-✔ Produces a clean, reliable `felony_count` metric for system-wide crime analysis  
+✔ Uses `distinct()` in order to keep **only one record per complaint number**. This helps to prevent any accidental double-counting  
+✔ Also groups the cleaned records by **month**, keeping in line with the structure of the ridership dataset  
+✔ Counts total amount of **transit-related complaints** during each month  
+✔ Produces a reliable and clean `felony_count` metric for analysis of crime 
 
-➡ This creates the monthly crime time series needed to compare directly against subway ridership.
 ```{r}
 # =========================================================
-# 📊 5. create monthly transit crime counts
+# 📊 5. creating monthly transit crime counts
 # =========================================================
 complaints_transit <- complaints_transit |>
 group_by(month) |>
@@ -205,29 +197,29 @@ summarise(
 felony_count = n(), # total transit complaints per month
 .groups = "drop"
 )
-#sanity check
+
 summary(complaints_transit$felony_count)
 head(complaints_transit)
 ```
 ### 🚇 Building Monthly System-Wide Subway Ridership
 
-✔ Standardizes column names for consistent processing  
-✔ Automatically detects the **date column** and the **total ridership column**, making the code robust to schema changes  
-✔ Converts all date values into monthly periods using `floor_date()`  
-✔ Ensures the ridership field is properly parsed as a numeric value, even when stored as text  
-✔ Filters the dataset to the shared **2015–2025** analysis window  
-✔ Aggregates ridership at the **monthly level**, producing a clean `subways_total` metric  
+✔ This step standardizes names of columns for consistency  
+✔ Detects **date column** and **total ridership column**  
+✔ Using `floor_date()`, converts date values into periods on the monthly level   
+✔ Helps ensure the ridership field is properly listed as a numeric value
+✔ Filters the dataset to the **2015–2025** analysis window for our scope of study  
+✔ Ridership at the **monthly level** is aggregated, producing a `subways_total` metric  
 
-➡ This step generates the monthly ridership series required to compare against monthly crime counts.
+➡ This step creates a monthly ridership series essential in comparing against monthly crime counts.
 ```{r}
 # =========================================================
-# 📈 6. Build Monthly Subway Ridership (System-Wide)
+# 📈 6. Building System Wide Monthly Subway Ridership
 # =========================================================
 
 monthly_ridership_df <- monthly_ridership_df |>
 clean_names()
 
-# ---- A) Try to detect date and subway ridership columns ----
+# ---- A) Trying to detect date and subway ridership columns ----
 date_col_r <- names(monthly_ridership_df)[
 str_detect(names(monthly_ridership_df),
 regex("date|month|period", ignore_case = TRUE))
@@ -238,7 +230,6 @@ str_detect(names(monthly_ridership_df),
 regex("subway|subways.*total|ridership", ignore_case = TRUE))
 ]
 
-# ---- Helper: robust numeric coercion ----
 to_numeric <- function(x) {
 if (is.numeric(x)) as.numeric(x) else readr::parse_number(as.character(x))
 }
@@ -262,17 +253,17 @@ subways_total = sum(subways_total, na.rm = TRUE),
 .groups = "drop"
 )
 ```
-### 🔗 Step 7: Merge Crime and Ridership Data + Create Normalized Metric
+### 🔗 Step 7: Merging Crime and Ridership Data & Creating a Normalized Metric
 
-✔ Combines monthly crime counts with monthly ridership totals using a clean `left_join()`  
-✔ Removes months where either dataset is missing values to maintain analytical integrity  
-✔ Computes **crimes per million riders**, a normalized measure that accounts for fluctuations in ridership volume  
-✔ Allows the analysis to distinguish between changes in *crime totals* and changes in *crime risk per rider*  
-✔ Produces a unified `merged` dataset used for correlation analysis and visualization  
+✔ This combines monthly ridership totals with monthly crime counts through the use of a `left_join()`  
+✔ Takes out months where any dataset is missing values to keep analytical integrity  
+✔ Outputs **crimes per million riders**, a measure (normalized) which accounts for changes in ridership volume
+✔ Lets the analysis differentiate amongst changes in *crime totals* as well as changes in *crime risk per rider*  
+✔ Outputs a `merged` dataset that is used for visualization and correlation analysis  
 
-➡ The sanity checks (`summary()` and `head()`) confirm that the merged dataset behaves as expected before further analysis.
+➡ The sanity checks in the code below (`summary()` and `head()`) confirm that the dataset that is merged works as expected prior to further analysis.
 ```{r}
-# 7. Merge Crime + Ridership and Create Normalized Metric
+# 7. Merging Crime and Ridership & creating normalized metric
 merged <- ridership_month |>
 left_join(complaints_transit, by = "month") |>
 filter(!is.na(felony_count), !is.na(subways_total)) |>
@@ -280,19 +271,19 @@ mutate(
 crimes_per_million = 1e6 * felony_count / subways_total
 )
 # =========================================================
-# 🧾 Quick sanity check
+# sanity check
 # =========================================================
 summary(merged$crimes_per_million)
 head(merged)
 ```
 ### 🧠 Interpretation: Crime per Million Riders
 
-1. Transit crime rates ranged from **approximately 4 to 38 crimes per million riders** throughout the study period.  
-2. **2015–2017** show noticeably **higher per-capita crime**, largely because ridership was at peak levels while crime counts stayed relatively steady.  
-3. After **2018**, per-million crime rates fall as ridership remains high and crime totals do not increase at the same pace.  
-4. The **COVID-19 period** disrupts both ridership and crime, creating sharp swings in per-capita values that influence later correlation patterns.  
+1. Transit crime rates varied from **approximately 4 to 38 crimes per million riders** throughout the period of study.  
+2. The years **2015–2017** showcase **higher per-capita crime**. This can be attributed to the fact that ridership was at peak levels whereas crime counts seemed to stay relatively steady.  
+3. Following **2018**, per-million crime rates are seen to fall while ridership remains high; crime totals do not increase at the same pace.  
+4. The **COVID-19 period** disrupts both ridership and crime. It creates sharp swings in per-capita values which influence later correlation patterns.  
 
-➡ Overall, rider risk decreases prior to COVID, becomes distorted during the pandemic, and stabilizes again as ridership begins recovering.
+➡ Overall, it can be seen that rider risk decreases prior to COVID, becomes unpredictable during the pandemic, and then stabilizes again once ridership begins recovering.
 
 ```{r}
 #Monthly Transit Crime Trend with LOESS Smoothing
@@ -311,12 +302,10 @@ p_trend
 ```
 ### 🧠 Interpretation: Smoothed Monthly Crime Trend
 
-- Monthly transit crime shows **substantial short-term noise**, but the LOESS line reveals a smoother underlying pattern.  
-- Crime levels are **relatively high pre-2018**, ease downward slightly, and then fluctuate around a lower plateau.  
+- Monthly transit crime showcases **substantial short-term noise**, but the line (LOESS) shows us a much smoother underlying pattern.  
+- Crime levels seem to be **relatively high pre-2018**, trend downward slightly, and finally rest around a lower plateau.
 - During the **COVID period**, crime counts fall, but not as sharply as ridership, creating an apparent dip followed by a rebound.  
-- Post-2022, the smoothed trend indicates **gradually rising crime counts**, consistent with your correlation and risk metrics.  
-
-➡ This view helps separate **long-run structure** from **month-to-month volatility** in transit crime.
+- Following 2022, we can see that the smoothed trend indicates **gradually rising crime counts**. This is consistent with our correlation and risk metrics.  
 
 ```{r}
 #8. Correlation Analysis for SQ
@@ -341,7 +330,6 @@ Correlation = c(cor_overall, cor_pre2022, cor_post2022)
 
 print(cor_table)
 
-# Publication-Style Correlation Table
 
 cor_table_gt <- cor_table |>
 mutate(
@@ -363,18 +351,18 @@ cor_table_gt
 - **Average Crimes per Million Riders:** `r round(mean(merged$crimes_per_million), 2)`  
 - **Strongest Crime–Ridership Correlation:** Post-2022 (`r round(cor_post2022, 3)`)  
 
-These metrics provide a quick, high-level snapshot of how **crime volume** and **crime risk per rider** behave over the study period.
+The metrics above show us a high-level snapshot of how **crime volume** and **crime risk per rider** behave over our study period.
 :::
 
 ### 🧠 Interpretation: Correlation Between Ridership and Transit Crime
 
-1. The **overall correlation is modest (0.29)**, indicating that ridership and crime move together, but not strongly.  
-2. **Pre-2022**, the correlation is very weak (**0.19**), suggesting crime levels did not scale meaningfully with changes in ridership.  
-3. **Post-2022**, the correlation strengthens substantially (**0.54**), indicating a clearer relationship between ridership volume and crime counts.  
+1. The **overall correlation is not too strong (0.29)**; this indicates that ridership and crime share a weak but notable correlation.  
+2. **Pre-2022**, the correlation is at the weakest (**0.19**); this suggests that crime levels did not scale in a meaningful manner with changes in ridership.  
+3. **Post-2022**, the correlation strengthens substantially and is at its highest point in our study (**0.54**); this indicates a more clear relationship amongst ridership volume and crime counts.  
    - As ridership recovers, **crime counts rise proportionally**.  
    - Transit crime appears **more sensitive to crowding and rider volume** in recent years.  
 
-➡ These patterns show that the ridership–crime relationship is **time-dependent**, becoming stronger in the post-COVID recovery era.
+➡ These results show us that the relationship between ridership and crime is **time-dependent**. The relationship grows stronger in the post-COVID recovery era.
 
 
 ```{r}
@@ -399,12 +387,12 @@ print(p1)
 ```
 ### 🧠 Interpretation: Scatterplot of Monthly Transit Crimes vs. Ridership
 
-1. The scatter is **widely dispersed**, showing substantial variation in crime even at similar ridership levels.  
-2. The **slightly upward-sloping regression line** indicates that higher ridership is only **modestly associated** with higher crime totals.  
-3. **COVID-era months** stand out as outliers — extremely low ridership but still moderate crime counts — which flattens the overall trend prior to 2022.  
+1. The scatter is **widely dispersed**, showing us substantial variation in crime even at similar ridership levels.  
+2. The **upward sloping regression line** tells us that higher levels of ridership is only **modestly associated** with higher crime totals.  
+3. **COVID-era months** stand out as outliers — there is extremely low ridership but still moderate crime counts — which flattens the overall trend prior to 2022.  
 4. These visual patterns align with the correlation results: the ridership–crime relationship becomes **meaningfully stronger only in the later years** of the dataset.  
 
-➡ The scatterplot reinforces that the link between ridership and crime is **weak before 2022** and **stronger after ridership recovery begins**.
+➡ The scatterplot reiterates the fact that the relationship between crime and ridership is **weak before 2022** and **stronger after ridership recovery begins**.
 
 ```{r}
 #Faceted Scatter: Pre- vs Post-2022
@@ -436,11 +424,11 @@ p1_faceted
 ```
 ### 🧠 Interpretation: Ridership–Crime Relationship by Period
 
-- In the **Pre-2022** panel, the regression line is **flatter**, and the cloud of points is more diffuse — ridership and crime are only **weakly linked**.  
-- In the **2022+** panel, the regression line is **clearly steeper**, and points align more closely along the trend, indicating a **stronger ridership–crime connection**.  
-- This visual contrast reinforces the numeric results: the **correlation roughly triples** from the pre-2022 period to the post-2022 period.  
+- In the **Pre-2022** area, we see that the regression line has a small slope, and the cloud of points is more diffused. This implies that ridership and crime are only **weakly correlated**.  
+- In the **2022+** area, the slope of the regression line is **clearly steeper**, and points closely align along the trend. This indicates a **stronger ridership–crime connection**.  
+- This visual contrast reiterates the numeric results: **correlation roughly triples** from pre-2022 period to post-2022 period.  
 
-➡ The relationship between ridership and crime is **structurally different after COVID**, which is crucial context for interpreting system-wide trends.
+➡ TIt can be seen that he relationship between crime and ridership is **structurally different after COVID**. This is an important element in interpreting system-wide trends.
 
 ```{r}
 #9B. Indexed Time Series (baseline = 100 at first month)
@@ -475,20 +463,20 @@ print(p2)
 ### 🧠 Interpretation: Indexed Trends for Ridership and Transit Crime
 
 **Ridership Index**
-1. Shows a **sharp decline during COVID (2020)** as system-wide usage collapsed.  
-2. Displays a **gradual recovery** in the following years.  
-3. Still remains **below pre-2018 levels**, indicating an incomplete ridership rebound.
+1. Shows a **relatively sharp decline during COVID (2020)** as usage was close to completely collapsed.  
+2. We see some **gradual recovery** in the following years.  
+3. Still remains **below pre-2018 levels**. This indicates an incomplete ridership rebound.
 
 **Crime Index**
-- Remains **relatively stable from 2015–2019**, even as ridership fluctuates.  
+- Remains **relatively stable from 2015–2019**, even through fluctuations in ridership.  
 - In 2020,  
   1. **Ridership collapses**, but  
-  2. Crime decreases **far less proportionally**, causing **higher per-rider crime risk** despite fewer total incidents.
+  2. Crime collapses **far less proportionally**, leading to **higher per-rider crime risk** despite less number of total incidents.
 
 **Post-2022**
-- Both indices begin to **rise together more closely**, aligning with the **stronger correlation** observed in the later period.
+- Both indices begin to **rise closely together**, creating a **stronger correlation** which is observed during the later period.
 
-➡ This trend suggests that the crime–ridership relationship tightened after the pandemic, with crime levels
+➡ This trend suggests that the crime–ridership relationship tightened after the pandemic with crime levels
 
 ```{r}
 # 9C. Crimes per Million Riders Over Time
@@ -507,9 +495,9 @@ print(p3)
 ```
 ### 🧠 Interpretation: Crimes per Million Riders (Normalized Crime Risk)
 
-- **Pre-2018:** Crime-per-capita is relatively high, averaging **30–35 crimes per million riders**.  
-- **2018–2019:** Per-capita crime drops sharply as ridership reaches peak levels while crime counts remain stable.  
-- **2020:** Extremely low ridership during COVID produces an **artificial spike** in per-rider crime risk, even though total complaints decline.  
+- **Pre-2018:** Crime-per-capita is quite high; it averaged **30–35 crimes per million riders**.  
+- **2018–2019:** Crime-per-capita drops sharply whilst ridership hits peak levels and total crime counts remain relatively stable.  
+- **2020:** Low ridership during COVID creates an **inflated spike** in crime risk per-rider, although total complaints decline.  
 - **2022–2025:** A **steady upward trend** emerges:  
   - Ridership is recovering,  
   - But **complaints are rising faster**,  
@@ -542,8 +530,8 @@ p_heat
 ```
 ### 🧠 Interpretation: Heatmap of Normalized Crime Risk
 
-- **Darker cells** correspond to **higher crimes per million riders**, making it easy to spot periods of elevated risk.  
-- The pre-2018 rows show **consistently darker shading**, reinforcing the idea that early years had **higher per-rider risk**.  
+- **Darker cells** correspond to **higher crimes per million riders**. This makes it easy to spot which periods pose higher levels of risk.  
+- The pre-2018 rows demonstrate **consistently darker shading**. This reinforces the idea that earlier years had **higher per-rider risk**.  
 - The COVID period appears as an **irregular band**, reflecting disrupted ridership and crime patterns.  
 - Recent years (2022–2025) show a **visible darkening trend**, consistent with the upward slope in the crimes-per-million line plot.  
 
@@ -556,15 +544,15 @@ cat("\n✅ SQ Analysis Complete — Ridership vs Transit Crime (2015–2025)\n")
 ```
 ### 🧠 Final Interpretation for SQ: Ridership–Crime Relationship (2015–2025)
 
-- Subway ridership and transit crime show a **modest overall positive correlation** across 2015–2025 (**r ≈ 0.29**).  
-- The relationship is **not stable over time**:  
-  - **Pre-2022:** Correlation is weak, indicating that crime levels did not strongly scale with ridership.  
-  - **Post-2022:** Correlation strengthens significantly (**r ≈ 0.54**), suggesting crime counts now rise more consistently with ridership recovery.  
-- Normalized crime measures (**crimes per million riders**) add additional insight:  
-  - Rider risk **declined sharply in 2018–2019**, when ridership peaked and crime counts remained stable.  
-  - Post-COVID, risk levels **rise again**, as crime increases at a faster rate than ridership.  
+- Transit crime and subway ridership show a **modest overall positive correlation** across 2015–2025 (**r ≈ 0.29**).  
+- This relationship is **not stable over time**:  
+  - **Pre-2022:** Correlation is quite weak, indicating crime levels didn't scale strongly with ridership.  
+  - **Post-2022:** Correlation increases significantly (**r ≈ 0.54**); this suggests crime counts now rise more consistently with recovery in ridership.  
+- Normalized crime measures (**crimes per million riders**) add more insight:  
+  - Per-rider risk **fell sharply in 2018–2019**, whereas ridership peaked and crime counts remained predictable and stable.  
+  - Post-COVID levels of risk **rise again** as crime grows at a quicker rate than ridership.  
 
-➡ Overall, recent years show a tighter link between rider volume and crime levels, while normalized metrics highlight that **per-rider risk has increased** despite crime totals not rising dramatically.
+➡ Overall, more recent years demonstrate a higher correlation between rider volume and crime levels, while normalized metrics highlight that **per-rider risk has increased** despite crime totals not rising dramatically.
 
 ::: {.callout-important}
 ### 🟣 Key Takeaway: Ridership–Crime Dynamics Have Shifted Post-COVID  
@@ -575,16 +563,14 @@ cat("\n✅ SQ Analysis Complete — Ridership vs Transit Crime (2015–2025)\n")
 
 ### ⚠️ Limitations
 
-- NYPD complaint data reflect **reported incidents**, which may understate true crime levels and vary with reporting behavior.  
-- Ridership data are based on **turnstile entries/exits**, which may include noise from repeat taps or non-trip-related swipes.  
-- COVID-era months break standard time-series assumptions, making trend estimation more challenging.  
-- Crime categories are **aggregated across offense types**; some specific categories may show different dynamics than the system-wide pattern.
+- NYPD complaint data reflects **reported incidents**. This may under-represent actual crime levels and can vary with the nature of reporting.  
+- Ridership data is based on **turnstile entries/exits**. This may include noise from repeat taps or non-trip-related swipes. Additionally, there may be riders who didn't tap or swipe their cards.  
+- COVID-era months disrupt standard time-series assumptions. This makes trends more harder to estimate.
+- Categories of crimes are **aggregated across offense types**; certain categories may show different dynamics when compared to the system-wide pattern.
 
 ### 🔮 Future Work
 
-- Extend the analysis to the **station or line level** to identify localized hotspots and high-risk routes.  
-- Incorporate **lagged relationships** (e.g., ARIMA, VAR) to see whether changes in ridership predict future crime.  
-- Add **covariates** such as service changes, police deployment, or neighborhood socioeconomic indicators.  
-- Explore **predictive models** to forecast high-risk months or periods for staffing and resource allocation.
-
-
+- Improve the analysis to either the **station or line level** in order to identify high-risk routes as well as localized hotspots.  
+- Incorporate **lagged relationships** (such as ARIMA and VAR) in order to assess if changes in ridership predict future crime.  
+- Add **covariates** such as police deployment or service changes.
+- Explore **predictive models** in order to predict months that are high-risk for riders or periods where MTA should focus more on resource allocation and staffing. 

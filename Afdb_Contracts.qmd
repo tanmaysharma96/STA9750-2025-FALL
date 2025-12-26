@@ -1,0 +1,305 @@
+---
+title: "AfDB Consultancy Contracts — Summary of Spending & Daily Rates"
+author: "Tanmay Sharma"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  warning: false
+  message: false
+---
+
+### 🧭 Executive Summary
+
+✓ Consultancy spending is primarily allocated to **individual consultants** rather than firms  
+✓ Individual daily rates show **substantial dispersion** and strong right-skewness  
+✓ Pricing varies meaningfully across departments, reflecting **heterogeneous consultancy needs**  
+✓ Contract awards are **concentrated among a small subset** of repeat individuals  
+
+→ Overall, the consultancy portfolio reflects a strategy centered on individualized expertise, differentiated pricing, and repeated engagement with proven consultants.
+
+
+```{r}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(gt)
+library(stringr)
+
+df <- read_excel("C:/Users/tanma/Downloads/Consultancy-1.xlsx", sheet = "Sheet1")
+
+df <- df %>%
+  mutate(
+    po_uac_amount = as.numeric(`PO UAC AMOUNT`),
+    workdays      = as.numeric(`ACTUAL NB WKD`)
+  )
+```
+### 🗂️ Data Overview*
+
+✓ This dataset contains awarded consultancy records including contract value (`PO UAC AMOUNT`) and duration (`ACTUAL NB WKD`)  
+✓ Daily rates are computed only for **individual consultants** and only when workdays are valid (> 0)  
+✓ Summary tables and figures below use these definitions consistently  
+
+→ This section provides context on the analytic sample and clarifies the daily rate definition used throughout the report.
+
+### 🧹 Data Quality & Cleaning Rules
+
+✓ Numeric fields are coerced to numeric types for calculation consistency  
+✓ Daily rate computations exclude missing values and records with non-positive workdays  
+✓ This prevents invalid rates caused by missing denominators or non-numeric entries  
+
+→ Cleaning rules ensure daily rates are computed reliably and make results defensible for reporting.
+
+
+1. Total Value of Contracts: Firms vs Individuals
+
+```{r}
+totals <- df %>%
+  group_by(Type_Consultant) %>%
+  summarise(total_value = sum(po_uac_amount, na.rm = TRUE), .groups = "drop")
+
+totals_tbl <- totals %>%
+  mutate(
+    `Consultant Type` = stringr::str_to_title(Type_Consultant),
+    `Total Contract Value (USD)` = total_value
+  ) %>%
+  select(`Consultant Type`, `Total Contract Value (USD)`) %>%
+  arrange(desc(`Total Contract Value (USD)`))
+
+gt::gt(totals_tbl) %>%
+  gt::fmt_currency(columns = `Total Contract Value (USD)`, currency = "USD", decimals = 0) %>%
+  gt::tab_header(
+    title = "Table 1. Total Contract Value by Consultant Type",
+    subtitle = "Sum of PO UAC AMOUNT across all records"
+  ) %>%
+  gt::tab_options(table.font.size = gt::px(14), table.width = gt::pct(100))
+```
+
+### 💼 Total Value of Contracts by Consultant Type
+
+✓ Total contract value awarded to **individual consultants exceeds that of firms**  
+✓ Firm-level contracts account for a smaller share of aggregate consultancy spending  
+✓ Spending patterns indicate preference for **direct engagement with individuals**  
+
+→ These results suggest an institutional reliance on individual expertise rather than bundled or firm-delivered consultancy services.
+
+2. Daily Rates for Individual Consultants
+
+```{r}
+ind <- df %>%
+  filter(Type_Consultant == "INDIVIDUAL") %>%
+  mutate(daily_rate = po_uac_amount / workdays) %>%
+  filter(is.finite(daily_rate), !is.na(daily_rate), workdays > 0)
+
+daily_rate_summary <- ind %>%
+  summarise(
+    `Number of Contracts` = n(),
+    `Minimum Daily Rate`  = min(daily_rate),
+    `25th Percentile`     = quantile(daily_rate, 0.25),
+    `Median Daily Rate`   = median(daily_rate),
+    `Mean Daily Rate`     = mean(daily_rate),
+    `75th Percentile`     = quantile(daily_rate, 0.75),
+    `Maximum Daily Rate`  = max(daily_rate)
+  )
+
+gt(daily_rate_summary) %>%
+  fmt_number(columns = `Number of Contracts`, decimals = 0) %>%
+  fmt_currency(
+    columns = -`Number of Contracts`,
+    currency = "USD",
+    decimals = 0
+  ) %>%
+  tab_header(
+    title = "Table 2. Summary Statistics of Individual Daily Rates",
+    subtitle = "Daily Rate = PO UAC AMOUNT ÷ ACTUAL NB WKD (Individuals Only)"
+  ) %>%
+  tab_options(
+    table.font.size = px(14),
+    table.width = pct(100)
+  )
+```
+
+### 💰 Daily Rate Characteristics of Individual Consultants
+
+✓ The **median daily rate is substantially lower than the mean**, indicating right-skewness  
+✓ A small number of contracts exhibit **exceptionally high daily rates**  
+✓ Most individual contracts cluster within a moderate pricing range  
+
+→ The distribution implies that typical consultancy pricing is better represented by the median, while averages are influenced by high-value outliers.
+
+
+3. Distribution of Daily Rates: Dispersion and Range
+
+```{r}
+rate_stats <- ind %>%
+  summarise(
+    `Minimum Daily Rate` = min(daily_rate),
+    `Maximum Daily Rate` = max(daily_rate)
+  ) %>%
+  mutate(
+    `Range (Max − Min)` = `Maximum Daily Rate` - `Minimum Daily Rate`
+  )
+
+gt(rate_stats) %>%
+  fmt_currency(columns = everything(), currency = "USD", decimals = 0) %>%
+  tab_header(
+    title = "Table 3. Range of Individual Daily Rates",
+    subtitle = "Minimum, maximum, and implied dispersion of daily consultancy rates"
+  ) %>%
+  tab_options(
+    table.font.size = px(14),
+    table.width = pct(100)
+  )
+
+ggplot(ind, aes(x = daily_rate)) +
+  geom_histogram(bins = 60) +
+  scale_x_log10(labels = comma) +
+  labs(
+    title = "Figure 1. Distribution of Individual Daily Rates",
+    x = "Daily Rate (log scale)",
+    y = "Number of Contracts"
+  )
+```
+
+### 📈 Distribution and Dispersion of Daily Rates
+
+✓ Daily rates span **multiple orders of magnitude**  
+✓ The difference between minimum and maximum rates is extremely large  
+✓ Observed dispersion reflects **heterogeneity in roles, seniority, and scope**  
+
+→ The wide range of daily rates highlights the diverse nature of consultancy engagements rather than uniform pricing structures.
+
+4. Daily Rates Across Departments
+
+```{r}
+dept_summary <- ind %>%
+  group_by(DEPARTMENT) %>%
+  summarise(
+    n_contracts = n(),
+    median_daily_rate = median(daily_rate),
+    mean_daily_rate = mean(daily_rate),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(n_contracts))
+
+# Professional table: show top 15 departments by contract count
+dept_top15 <- dept_summary %>%
+  slice_head(n = 15) %>%
+  transmute(
+    `Department` = DEPARTMENT,
+    `Number of Contracts` = n_contracts,
+    `Median Daily Rate` = median_daily_rate,
+    `Mean Daily Rate` = mean_daily_rate
+  )
+
+gt(dept_top15) %>%
+  fmt_number(columns = `Number of Contracts`, decimals = 0) %>%
+  fmt_currency(columns = c(`Median Daily Rate`, `Mean Daily Rate`),
+               currency = "USD", decimals = 0) %>%
+  tab_header(
+    title = "Table 4. Daily Rates by Department (Top 15 by Contract Count)",
+    subtitle = "Rates computed for individual consultants only: PO UAC AMOUNT ÷ ACTUAL NB WKD"
+  ) %>%
+  tab_options(
+    table.font.size = px(14),
+    table.width = pct(100)
+  )
+
+# Use the same top 15 list for the plot
+top_depts <- dept_top15$Department
+
+ind %>%
+  filter(DEPARTMENT %in% top_depts) %>%
+  ggplot(aes(x = reorder(DEPARTMENT, daily_rate, median), y = daily_rate)) +
+  geom_boxplot(outlier.alpha = 0.3) +
+  coord_flip() +
+  scale_y_log10(labels = comma) +
+  labs(
+    title = "Figure 2. Daily Rates by Department (Top 15 by Contract Count)",
+    x = "Department",
+    y = "Daily Rate (log scale)"
+  )
+```
+
+### 🏢 Department-Level Differences in Daily Rates
+
+✓ Median daily rates vary substantially across departments  
+✓ Some departments exhibit **higher typical rates and greater variability**  
+✓ Departments differ in both pricing norms and dispersion  
+
+→ These patterns suggest that consultancy pricing is shaped by department-specific functional needs, technical complexity, and specialization.
+
+5. Repeat Contracting: Contracts per Individual (maximum)
+
+```{r}
+contracts_per_person <- ind %>%
+  group_by(NAME) %>%
+  summarise(
+    contracts_awarded = n_distinct(Contract),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(contracts_awarded))
+
+# ---- Table 5: Top 10 individuals by number of contracts ----
+top10_contracts <- contracts_per_person %>%
+  slice_head(n = 10) %>%
+  transmute(
+    `Consultant Name` = NAME,
+    `Number of Contracts Awarded` = contracts_awarded
+  )
+
+gt(top10_contracts) %>%
+  fmt_number(columns = `Number of Contracts Awarded`, decimals = 0) %>%
+  tab_header(
+    title = "Table 5. Top 10 Individuals by Number of Contracts Awarded",
+    subtitle = "Distinct contract counts per individual consultant"
+  ) %>%
+  tab_options(
+    table.font.size = px(14),
+    table.width = pct(100)
+  )
+
+# ---- Table 6: Individual(s) with the maximum number of contracts ----
+max_contracts <- max(contracts_per_person$contracts_awarded, na.rm = TRUE)
+
+max_contracts_tbl <- contracts_per_person %>%
+  filter(contracts_awarded == max_contracts) %>%
+  transmute(
+    `Consultant Name` = NAME,
+    `Contracts Awarded (Maximum)` = contracts_awarded
+  )
+
+gt(max_contracts_tbl) %>%
+  fmt_number(columns = `Contracts Awarded (Maximum)`, decimals = 0) %>%
+  tab_header(
+    title = "Table 6. Individual(s) with the Maximum Number of Contracts",
+    subtitle = paste0("Maximum contracts awarded to one individual: ", max_contracts)
+  ) %>%
+  tab_options(
+    table.font.size = px(14),
+    table.width = pct(100)
+  )
+```
+
+### 🔁 Repeat Contracting and Consultant Concentration
+
+✓ The maximum number of contracts awarded to a single individual is **five**  
+✓ Most consultants appear only once or twice in the dataset  
+✓ Repeat awards are concentrated among a **small group of individuals**  
+
+→ This concentration indicates institutional preference for continuity and reliance on consultants with established performance and domain knowledge.
+
+### 🧠 Overall Conclusion
+
+✓ Consultancy spending is dominated by **individual-level engagements**  
+✓ Pricing structures are **highly heterogeneous**, with notable outliers  
+✓ Departmental differences reflect varied operational and technical demands  
+✓ Contract awards show **moderate concentration**, favoring repeat consultants  
+
+→ Taken together, the evidence points to a consultancy strategy that prioritizes specialized individual expertise, flexible pricing, and sustained relationships over standardized firm-based contracting.

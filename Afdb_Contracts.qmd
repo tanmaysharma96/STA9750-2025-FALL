@@ -261,6 +261,41 @@ ggplot(ind, aes(x = daily_rate)) +
   )
 ```
 
+### ⏳ Duration vs Daily Rate *(mechanical driver of dispersion)*
+
+✓ Many extreme daily rates occur when workdays are very small (e.g., 1–5 days)  
+✓ Longer contracts often show lower daily rates, consistent with retainer / bundled scope structures  
+✓ This relationship helps separate true pricing differences from arithmetic effects  
+
+→ This section explains why the daily-rate distribution is mechanically right-skewed.
+
+```{r}
+# Correlation (log-log) between duration and rate
+dur_rate_corr <- ind %>%
+  mutate(
+    log_workdays = log10(workdays),
+    log_rate = log10(daily_rate + 1e-6)
+  ) %>%
+  summarise(
+    `Correlation(log workdays, log rate)` = cor(log_workdays, log_rate, use = "complete.obs")
+  )
+
+gt(dur_rate_corr) %>%
+  fmt_number(everything(), decimals = 3) %>%
+  tab_header(title = "Table. Duration–Rate Relationship (Log Scale)")
+
+ggplot(ind, aes(x = workdays, y = daily_rate)) +
+  geom_point(alpha = 0.35) +
+  scale_x_log10() +
+  scale_y_log10(labels = scales::comma) +
+  labs(
+    title = "Figure. Contract Workdays vs Daily Rate",
+    x = "Workdays (log scale)",
+    y = "Daily Rate (log scale)"
+  )
+```
+
+
 ### 🏢 Department-Level Differences in Daily Rates
 
 ✓ Median daily rates vary meaningfully across departments  
@@ -278,6 +313,7 @@ dept_summary <- ind_dept %>%
     `Number of Contracts` = n(),
     `Median Daily Rate` = median(daily_rate),
     `Mean Daily Rate` = mean(daily_rate),
+    `Trimmed Mean (10%)` = mean(daily_rate, trim = 0.10),
     .groups = "drop"
   ) %>%
   arrange(desc(`Number of Contracts`))
@@ -405,6 +441,45 @@ ggplot(ind_geo, aes(x = daily_rate, color = consultant_origin)) +
 
 → Together, these views communicate both rigor and clarity without relying on boxplots.
 
+### 📏 Local vs International *(quantified difference)*
+
+✓ Compares medians (robust under skewness) rather than only means  
+✓ Reports absolute and percent difference in typical rates  
+✓ Adds a nonparametric test (Wilcoxon) for defensible inference  
+
+→ This section turns the visual comparison into an explicit, reportable result.
+
+```{r}
+geo_compare <- ind_geo %>%
+  group_by(consultant_origin) %>%
+  summarise(
+    n = n(),
+    median_rate = median(daily_rate),
+    mean_rate = mean(daily_rate),
+    .groups = "drop"
+  )
+
+# compute differences
+med_int <- geo_compare$median_rate[geo_compare$consultant_origin == "International"]
+med_loc <- geo_compare$median_rate[geo_compare$consultant_origin == "Local"]
+
+test_p <- wilcox.test(daily_rate ~ consultant_origin, data = ind_geo)$p.value
+
+geo_effect <- tibble::tibble(
+  `Median (International)` = med_int,
+  `Median (Local)` = med_loc,
+  `Median Difference` = med_int - med_loc,
+  `Median % Difference` = (med_int - med_loc) / med_loc,
+  `Wilcoxon p-value` = test_p
+)
+
+gt(geo_effect) %>%
+  fmt_currency(c(`Median (International)`, `Median (Local)`, `Median Difference`), decimals = 0) %>%
+  fmt_percent(`Median % Difference`, decimals = 1) %>%
+  fmt_number(`Wilcoxon p-value`, decimals = 3) %>%
+  tab_header(title = "Table. International vs Local Daily Rates — Effect Size & Test")
+```
+
 ### 🧱 WBS Focus: Supervision – Private Sector *(social & environmental oversight)*
 
 ✓ Contracts under **Supervision – Private Sector** are concentrated in oversight functions  
@@ -523,6 +598,55 @@ ggplot(contracts_per_person, aes(x = `Number of Contracts`, y = `Median Daily Ra
   )
 ```
 
+### 💳 Concentration of Total Spend *(Pareto-style risk view)*
+
+✓ A small number of consultants can account for a disproportionate share of total spending  
+✓ Concentration is assessed by cumulative share of PO UAC AMOUNT (contract-level)  
+✓ This provides an audit-relevant view of dependency and vendor risk  
+
+→ This section quantifies “how concentrated” spend is beyond just contract counts.
+
+```{r}
+spend_by_person <- ind %>%
+  group_by(NAME_clean) %>%
+  summarise(
+    total_spend = sum(po_uac_amount, na.rm = TRUE),
+    contracts = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_spend)) %>%
+  mutate(
+    cum_spend = cumsum(total_spend),
+    share_spend = total_spend / sum(total_spend),
+    cum_share = cum_spend / sum(total_spend),
+    rank = row_number()
+  )
+
+# Top-share table
+top_share_tbl <- spend_by_person %>%
+  summarise(
+    `Top 1 share`   = sum(share_spend[rank <= 1]),
+    `Top 5 share`   = sum(share_spend[rank <= 5]),
+    `Top 10 share`  = sum(share_spend[rank <= 10]),
+    `Top 25 share`  = sum(share_spend[rank <= 25]),
+    `Top 50 share`  = sum(share_spend[rank <= 50])
+  )
+
+gt(top_share_tbl) %>%
+  fmt_percent(everything(), decimals = 1) %>%
+  tab_header(title = "Table. Share of Total Individual Spend Held by Top Consultants")
+
+# Lorenz-style cumulative curve
+ggplot(spend_by_person, aes(x = rank, y = cum_share)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Figure. Cumulative Share of Spend by Consultant (Individuals)",
+    x = "Consultant Rank (by total spend)",
+    y = "Cumulative share of total spend"
+  )
+```
+
 ### 🧠 Overall Conclusion
 
 ✓ Consultancy spending is dominated by **individual-level engagements**  
@@ -532,6 +656,43 @@ ggplot(contracts_per_person, aes(x = `Number of Contracts`, y = `Median Daily Ra
 ✓ No evidence of systematic overpricing or structural inefficiency is observed  
 
 → Overall, the consultancy portfolio reflects disciplined pricing, functional specialization, and sustained engagement with proven experts.
+
+### 🧪 Appendix: Data Integrity Checks *(zero rates & extreme outliers)*
+
+✓ Minimum daily rates of $0 can arise from $0-valued amounts or placeholder entries  
+✓ Extremely high daily rates often occur in short-duration contracts (small workdays)  
+✓ Flagging does not imply wrongdoing—only identifies records for review  
+
+→ This appendix provides a defensible “red-flag scan” typical of audit analytics.
+
+```{r}
+# Quick diagnostics for zero and extreme values
+integrity_tbl <- ind %>%
+  summarise(
+    `Contracts (Individuals)` = n(),
+    `Zero daily rate count` = sum(daily_rate == 0, na.rm = TRUE),
+    `Zero daily rate share` = mean(daily_rate == 0, na.rm = TRUE),
+    `Workdays <= 5 count` = sum(workdays <= 5, na.rm = TRUE),
+    `Max daily rate` = max(daily_rate, na.rm = TRUE)
+  )
+
+gt(integrity_tbl) %>%
+  fmt_number(c(`Contracts (Individuals)`, `Zero daily rate count`, `Workdays <= 5 count`), decimals = 0) %>%
+  fmt_percent(`Zero daily rate share`, decimals = 1) %>%
+  fmt_currency(`Max daily rate`, decimals = 0) %>%
+  tab_header(title = "Table. Integrity Checks on Derived Daily Rates")
+
+# Show top 20 daily rates for audit trail
+top_rates <- ind %>%
+  arrange(desc(daily_rate)) %>%
+  select(Contract, NAME_clean, DEPARTMENT, REGION, po_uac_amount, workdays, daily_rate) %>%
+  slice_head(n = 20)
+
+gt(top_rates) %>%
+  fmt_currency(c(po_uac_amount, daily_rate), decimals = 0) %>%
+  fmt_number(workdays, decimals = 0) %>%
+  tab_header(title = "Table. Top 20 Daily Rates (Individuals) — For Review")
+```
 
 ### 📎 Appendix: Reproducibility & Interpretation Notes
 

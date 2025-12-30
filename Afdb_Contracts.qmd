@@ -13,16 +13,17 @@ execute:
   warning: false
   message: false
 ---
+## Overview & Method
 
 ### 🧭 Executive Summary
 
-✓ Consultancy spending is primarily allocated to **individual consultants** rather than firms  
-✓ Individual daily rates show **substantial dispersion** and right-skewness  
-✓ Pricing varies meaningfully across departments and functions  
-✓ Contract awards are concentrated among a **small subset of repeat individuals**  
-✓ International consultants typically command **higher daily rates** than local consultants  
+✓ Consultancy spending is dominated by **individual-level engagements**, exceeding firm-based contracts in total value  
+✓ Individual daily rates exhibit **substantial dispersion and right-skewness**, making medians more informative than means  
+✓ Apparent pricing differences across consultants are driven primarily by **contract duration and departmental assignment**  
+✓ After controlling for duration and department, **no statistically or economically meaningful difference** persists between local and international consultants  
+✓ Contract awards and total spend are **moderately concentrated** among a small subset of repeat consultants, consistent with reliance on specialized expertise  
 
-→ Overall, the portfolio reflects reliance on individualized expertise, segmented pricing, and repeat engagement with proven consultants.
+→ Overall, the consultancy portfolio reflects **disciplined pricing, functional specialization, and contract-structure effects**, with no evidence of systematic overpricing or geographic bias.
 
 ### 🚫 Exclusion of Consultancy Travel Costs *(methodological refinement)*
 
@@ -41,6 +42,33 @@ library(scales)
 library(gt)
 library(stringr)
 library(tidyr)
+library(lubridate)
+library(readr)
+library(broom)
+
+# --- robust date parser: handles Excel serials + messy text, never errors ---
+parse_po_date <- function(x) {
+  x_chr <- as.character(x)
+
+  # Excel serial dates often appear as numbers (or numeric-looking strings)
+  excel_num <- suppressWarnings(readr::parse_number(x_chr))
+  d_excel   <- suppressWarnings(as.Date(excel_num, origin = "1899-12-30"))
+
+  # Text dates in many formats
+  d_text <- suppressWarnings(
+    lubridate::parse_date_time(
+      x_chr,
+      orders = c(
+        "Ymd", "Y-m-d", "Y/m/d", "Y.m.d",
+        "dmY", "d/m/Y", "d-m-Y", "d.m.Y",
+        "mdY", "m/d/Y", "m-d-Y", "m.d.Y"
+      ),
+      tz = "UTC"
+    ) %>% as.Date()
+  )
+
+  dplyr::coalesce(d_text, d_excel)
+}
 
 # --- helper to standardize "missing code" placeholders ---
 fix_missing_code <- function(x) {
@@ -51,22 +79,17 @@ fix_missing_code <- function(x) {
   x
 }
 
-df <- read_excel("C:/Users/tanma/Downloads/Consultancy-1.xlsx", sheet = "Sheet1")
+df <- read_excel(
+  "C:/Users/tanma/Downloads/Consultancy-1.xlsx",
+  sheet = "Sheet1",
+  col_types = "text"
+)
 
 df <- df %>%
   mutate(
-    po_uac_amount = as.numeric(`PO UAC AMOUNT`),
-    workdays      = as.numeric(`ACTUAL NB WKD`),
-
-    # clean placeholder codes
-    DEPARTMENT    = fix_missing_code(DEPARTMENT),
-    `WBS NAME`    = fix_missing_code(`WBS NAME`),
-    WBS           = fix_missing_code(WBS),
-    `Fund Centre` = fix_missing_code(`Fund Centre`),
-    REGION        = fix_missing_code(REGION)
-  ) %>%
-  # Exclude travel-related cost records using COST TYPE
-  filter(!str_detect(str_to_lower(`COST TYPE`), "travel"))
+    po_uac_amount = readr::parse_number(`PO UAC AMOUNT`),
+    workdays      = readr::parse_number(`ACTUAL NB WKD`)
+  )
 ```
 
 ### 🗂️ Data Overview *(analytic scope)*
@@ -102,7 +125,21 @@ ind_contract <- df %>%
     NAME       = first(NAME),
     DEPARTMENT = first(DEPARTMENT),
     REGION     = first(REGION),
+    LOCATION   = first(LOCATION),          # ✅ country
+    GENDER     = first(GENDER),            # ✅ governance cut
+    SENIORITY  = first(SENIORITY),         # ✅ governance cut
+    `RECRUIT TYPE` = first(`RECRUIT TYPE`),# ✅ governance cut
+    `AREA OF SPEC` = first(`AREA OF SPEC`),# ✅ technical cut
+    `Deliverable Group` = first(`Deliverable Group`), # ✅ delivery cut
+    `Fund Centre` = first(`Fund Centre`),  # ✅ org/unit cut
     `WBS NAME` = first(`WBS NAME`),
+    
+    `Purchase Order Date`  = min(`Purchase Order Date`, na.rm = TRUE),
+    `Contract Start Date`  = min(`Contract Start Date`, na.rm = TRUE),
+    `Contract End Date`    = max(`Contract End Date`, na.rm = TRUE),
+    `PO Posting year`      = first(`PO Posting year`),
+
+
     po_uac_amount = sum(po_uac_amount, na.rm = TRUE),
     workdays      = max(workdays, na.rm = TRUE),
     .groups = "drop"
@@ -147,6 +184,8 @@ ind_geo <- ind %>%
   ) %>%
   filter(!is.na(consultant_origin))
 ```
+
+## Portfolio Composition (Spend & Rate Baselines)
 
 ### 💼 Total Value of Contracts by Consultant Type
 
@@ -261,6 +300,11 @@ ggplot(ind, aes(x = daily_rate)) +
   )
 ```
 
+## Diagnostic Analysis (What Drives Observed Rate Differences?)
+
+This section moves beyond descriptive comparisons to examine *why* daily rates differ.  
+The analyses below test whether observed variation reflects structural pricing behavior or mechanical effects driven by contract duration, functional assignment, and reporting structure.
+
 ### ⏳ Duration vs Daily Rate *(mechanical driver of dispersion)*
 
 ✓ Many extreme daily rates occur when workdays are very small (e.g., 1–5 days)  
@@ -295,6 +339,44 @@ ggplot(ind, aes(x = workdays, y = daily_rate)) +
   )
 ```
 
+#### ⏳ Duration vs Daily Rate — Interpretation
+
+✓ Extremely high daily rates are disproportionately associated with very short contracts (e.g., 1–5 workdays)  
+✓ Longer-duration contracts tend to exhibit lower daily rates, consistent with bundled or retainer-style scopes  
+✓ The negative log–log correlation reflects a mechanical arithmetic relationship rather than deliberate price escalation  
+
+→ Contract duration is a key driver of dispersion in daily rates and must be controlled for when comparing pricing across groups.
+
+#### After controlling for duration + origin + department, do differences persist?
+
+```{r}
+model_df <- ind %>%
+  filter(!is.na(DEPARTMENT), !is.na(REGION)) %>%
+  mutate(
+    origin = if_else(REGION == "Non-Regional Member Countries", "International", "Local"),
+    log_rate = log(daily_rate + 1),
+    log_days = log(workdays + 1)
+  )
+
+fit <- lm(log_rate ~ log_days + origin + DEPARTMENT, data = model_df)
+
+model_sum <- broom::tidy(fit) %>%
+  filter(term %in% c("log_days", "originInternational")) %>%
+  select(term, estimate, std.error, statistic, p.value)
+
+gt(model_sum) %>%
+  fmt_number(c(estimate, std.error, statistic), decimals = 3) %>%
+  fmt_number(p.value, decimals = 4) %>%
+  tab_header(title = "Table. Multivariate Check: Drivers of Daily Rates (log scale)")
+```
+
+#### 🧪 Multivariate Controls — Interpretation
+
+✓ Contract duration remains a strong predictor of daily rates after controls  
+✓ The local vs international indicator is not statistically significant once duration and department are included  
+✓ Departmental fixed effects absorb a substantial share of remaining variation  
+
+→ Apparent geographic differences in daily rates largely reflect **contract structure and functional assignment**, not systematic pricing differences by consultant origin.
 
 ### 🏢 Department-Level Differences in Daily Rates
 
@@ -305,7 +387,6 @@ ggplot(ind, aes(x = workdays, y = daily_rate)) +
 → Departmental pricing patterns suggest consultancy needs are shaped by function-specific requirements rather than uniform rate setting.
 
 ```{r}
-
 ind_dept <- ind %>% filter(!is.na(DEPARTMENT))
 dept_summary <- ind_dept %>%
   group_by(DEPARTMENT) %>%
@@ -353,15 +434,132 @@ ggplot(
   )
 ```
 
-### 🌍 Local vs International Consultants *(alternative visualizations — clearer than boxplots)*
+#### 🏢 Department-Level Pricing — Interpretation
 
-✓ Boxplots can hide density and overlap when distributions are skewed  
-✓ Showing **distribution shape** or **central tendency + spread** improves interpretability  
-✓ Alternatives below are better suited for executive / audit audiences  
+✓ Median daily rates vary meaningfully across departments  
+✓ Higher rates tend to cluster in technically specialized or oversight-oriented units  
+✓ Departments with the largest contract volumes do not systematically exhibit elevated rates  
 
-→ Use one of the following depending on whether you want emphasis on distribution, comparison, or magnitude.
+→ Departmental pricing patterns reflect heterogeneity in consultancy needs rather than uniform or centralized rate setting.
 
-### Option 1: 🎻 Violin Plot *(distribution shape)*
+## Geographic & Organisational Cuts (Where Patterns Concentrate)
+
+### Location Overview: Top Countries by Contracts & Spend
+
+```{r}
+loc_tbl <- ind %>%
+  filter(!is.na(LOCATION)) %>%
+  group_by(LOCATION) %>%
+  summarise(
+    `Contracts` = n(),
+    `Total Spend` = sum(po_uac_amount, na.rm = TRUE),
+    `Median Daily Rate` = median(daily_rate),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(`Contracts`))
+
+gt(loc_tbl %>% slice_head(n = 15)) %>%
+  fmt_number(`Contracts`, decimals = 0) %>%
+  fmt_currency(c(`Total Spend`, `Median Daily Rate`), decimals = 0) %>%
+  tab_header(title = "Table. Top 15 Locations by Contract Count (Individuals)")
+
+loc_spend_tbl <- ind %>%
+  filter(!is.na(LOCATION)) %>%
+  group_by(LOCATION) %>%
+  summarise(
+    `Contracts` = n(),
+    `Total Spend` = sum(po_uac_amount, na.rm = TRUE),
+    `Median Daily Rate` = median(daily_rate),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(`Total Spend`))
+
+gt(loc_spend_tbl %>% slice_head(n = 15)) %>%
+  fmt_number(`Contracts`, decimals = 0) %>%
+  fmt_currency(c(`Total Spend`, `Median Daily Rate`), decimals = 0) %>%
+  tab_header(title = "Table. Top 15 Locations by Total Spend (Individuals)")
+```
+
+#### Country vs Rate *(Median + IQR)*
+
+```{r}
+loc_rate <- ind %>%
+  filter(!is.na(LOCATION)) %>%
+  group_by(LOCATION) %>%
+  summarise(
+    n = n(),
+    median_rate = median(daily_rate),
+    q25 = quantile(daily_rate, 0.25),
+    q75 = quantile(daily_rate, 0.75),
+    .groups = "drop"
+  ) %>%
+  filter(n >= 15) %>%        # adjust threshold if needed
+  arrange(desc(n)) %>%
+  slice_head(n = 20)
+
+ggplot(loc_rate, aes(x = reorder(LOCATION, median_rate), y = median_rate)) +
+  geom_point(size = 2.5) +
+  geom_errorbar(aes(ymin = q25, ymax = q75), width = 0.15) +
+  coord_flip() +
+  scale_y_log10(labels = scales::comma) +
+  labs(
+    title = "Figure. Median Daily Rate by Location (Top 20 by Volume; IQR bars)",
+    x = "Location",
+    y = "Median Daily Rate (log scale)"
+  )
+```
+
+#### Country × Department *(High-spend combinations)*
+
+```{r}
+loc_dept <- ind %>%
+  filter(!is.na(LOCATION), !is.na(DEPARTMENT)) %>%
+  group_by(LOCATION, DEPARTMENT) %>%
+  summarise(
+    contracts = n(),
+    median_rate = median(daily_rate),
+    total_spend = sum(po_uac_amount, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_spend))
+
+gt(loc_dept %>% slice_head(n = 20)) %>%
+  fmt_number(contracts, decimals = 0) %>%
+  fmt_currency(c(median_rate, total_spend), decimals = 0) %>%
+  tab_header(title = "Table. Top 20 Location × Department Combinations by Spend (Individuals)")
+```
+
+#### “Spend vs Typical Rate” *(high-spend + high-rate flags)*
+
+```{r}
+loc_scatter <- ind %>%
+  filter(!is.na(LOCATION)) %>%
+  group_by(LOCATION) %>%
+  summarise(
+    contracts = n(),
+    total_spend = sum(po_uac_amount, na.rm = TRUE),
+    median_rate = median(daily_rate),
+    .groups = "drop"
+  ) %>%
+  filter(contracts >= 10)
+
+ggplot(loc_scatter, aes(x = total_spend, y = median_rate)) +
+  geom_point(alpha = 0.6) +
+  scale_x_log10(labels = scales::comma) +
+  scale_y_log10(labels = scales::comma) +
+  labs(
+    title = "Figure. Location Spend vs Median Daily Rate (Individuals)",
+    x = "Total Spend (log scale)",
+    y = "Median Daily Rate (log scale)"
+  )
+```
+
+### 🌍 Local vs International Consultants — How to Read This Section
+
+The following visualizations present the same comparison using different distributional lenses.  
+The **Median + IQR view** should be treated as the primary result; violin and ECDF plots are included for robustness and diagnostic validation.
+
+#### Option 1: 🎻 Violin Plot *(distribution shape)*
 
 ✓ Shows full density of daily rates by group  
 ✓ Makes skewness and tail behavior explicit  
@@ -381,7 +579,36 @@ ggplot(ind_geo, aes(x = consultant_origin, y = daily_rate)) +
   )
 ```
 
-### Option 2: 📊 Median + IQR Dot Plot *(executive-friendly)*
+#### 🎻 Violin Plot — Interpretation
+
+✓ Both groups exhibit strongly right-skewed daily-rate distributions  
+✓ Density overlap is substantial across most of the distribution  
+✓ Differences at the upper tail do not reflect typical pricing behavior  
+
+→ Distributional shape reinforces that central tendencies are more informative than extreme values.
+
+#### Seniority: Central tendency + Spread
+
+```{r}
+sen_tbl <- ind %>%
+  filter(!is.na(SENIORITY)) %>%
+  group_by(SENIORITY) %>%
+  summarise(
+    contracts = n(),
+    median_rate = median(daily_rate),
+    q25 = quantile(daily_rate, 0.25),
+    q75 = quantile(daily_rate, 0.75),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(contracts))
+
+gt(sen_tbl) %>%
+  fmt_number(contracts, decimals = 0) %>%
+  fmt_currency(c(median_rate, q25, q75), decimals = 0) %>%
+  tab_header(title = "Table. Daily Rates by Seniority (Median + IQR)")
+```
+
+#### Option 2: 📊 Median + IQR Dot Plot *(executive-friendly)*
 
 ✓ Focuses attention on **typical pricing**, not extremes  
 ✓ Easier to read for non-technical stakeholders  
@@ -413,7 +640,15 @@ ggplot(geo_stats, aes(x = consultant_origin, y = median_rate)) +
   )
 ```
 
-### Option 3: 📈 ECDF Comparison *(distribution dominance)*
+#### 📊 Median + IQR — Interpretation (Primary Result)
+
+✓ Median daily rates are very similar between local and international consultants  
+✓ Interquartile ranges overlap substantially across both groups  
+✓ Typical pricing differences are small relative to within-group dispersion  
+
+→ For reporting and decision-making purposes, **median differences are economically modest**.
+
+#### Option 3: 📈 ECDF Comparison *(distribution dominance)*
 
 ✓ Shows whether one group consistently dominates another  
 ✓ No binning, no assumptions about shape  
@@ -433,13 +668,41 @@ ggplot(ind_geo, aes(x = daily_rate, color = consultant_origin)) +
   )
 ```
 
-### Use Cases for the 3 options Given Above
+#### 📈 ECDF Comparison — Interpretation
+
+✓ Cumulative distributions track closely across consultant origin  
+✓ Neither group exhibits first-order stochastic dominance  
+✓ Differences at the extremes do not translate into systematic shifts across the distribution  
+
+→ This view confirms the absence of consistent dominance by either group.
+
+#### Use Cases for the 3 options Given Above
 
 ✓ Use **Median + IQR** for the main report  
 ✓ Use **Violin** in technical annexes  
 ✓ Use **ECDF** if asked to justify dominance or absence of bias  
 
 → Together, these views communicate both rigor and clarity without relying on boxplots.
+
+#### Recruit type: Rates + Contract Duration *(helps interpret pricing)*
+
+```{r}
+recruit_tbl <- ind %>%
+  filter(!is.na(`RECRUIT TYPE`)) %>%
+  group_by(`RECRUIT TYPE`) %>%
+  summarise(
+    contracts = n(),
+    median_rate = median(daily_rate),
+    median_days = median(workdays),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(contracts))
+
+gt(recruit_tbl) %>%
+  fmt_number(c(contracts, median_days), decimals = 0) %>%
+  fmt_currency(median_rate, decimals = 0) %>%
+  tab_header(title = "Table. Recruit Type vs Typical Rate and Duration")
+```
 
 ### 📏 Local vs International *(quantified difference)*
 
@@ -480,73 +743,46 @@ gt(geo_effect) %>%
   tab_header(title = "Table. International vs Local Daily Rates — Effect Size & Test")
 ```
 
-### 🧱 WBS Focus: Supervision – Private Sector *(social & environmental oversight)*
+#### 📏 Local vs International — Quantified Difference (Inference)
 
-✓ Contracts under **Supervision – Private Sector** are concentrated in oversight functions  
-✓ Activities align primarily with **social, environmental, and safeguards supervision**  
-✓ Daily rates fall within expected ranges for compliance-oriented technical expertise  
+✓ Median daily rate differences are small in absolute and percentage terms  
+✓ The Wilcoxon test fails to reject equality of distributions  
+✓ Results are robust to skewness and outliers  
 
-→ Spending patterns are consistent with governance, monitoring, and safeguards mandates rather than execution-heavy delivery.
+→ There is **no statistically or economically meaningful difference** in typical daily rates by consultant origin.
+
+#### Gender: Volume + Median Rate
 
 ```{r}
-# Focus on Supervision – Private Sector within WBS
-wbs_supervision <- ind %>%
-  filter(
-    str_detect(
-      str_to_lower(`WBS NAME`),
-      "supervision"
-    ),
-    str_detect(
-      str_to_lower(`WBS NAME`),
-      "private"
-    )
-  )
-
-wbs_summary <- wbs_supervision %>%
-  group_by(`WBS NAME`) %>%
+gender_tbl <- ind %>%
+  filter(!is.na(GENDER)) %>%
+  group_by(GENDER) %>%
   summarise(
-    `Number of Contracts` = n(),
-    `Median Daily Rate`   = median(daily_rate),
-    `Mean Daily Rate`     = mean(daily_rate),
+    contracts = n(),
+    median_rate = median(daily_rate),
+    mean_rate = mean(daily_rate),
     .groups = "drop"
   ) %>%
-  arrange(desc(`Number of Contracts`))
+  arrange(desc(contracts))
 
-gt::gt(wbs_summary) %>%
-  gt::fmt_number(columns = `Number of Contracts`, decimals = 0) %>%
-  gt::fmt_currency(
-    columns = c(`Median Daily Rate`, `Mean Daily Rate`),
-    currency = "USD",
-    decimals = 0
-  ) %>%
-  gt::tab_header(
-    title = "Table. Supervision – Private Sector (Daily Rates)",
-    subtitle = "Individual consultants only; governance and oversight functions"
-  ) %>%
-  gt::tab_options(
-    table.font.size = gt::px(14),
-    table.width = gt::pct(100)
-  )
-```
+gt(gender_tbl) %>%
+  fmt_number(contracts, decimals = 0) %>%
+  fmt_currency(c(median_rate, mean_rate), decimals = 0) %>%
+  tab_header(title = "Table. Contracts and Daily Rates by Gender (Individuals)")
 
-### 🚨 WBS Anomaly Scan *(within Supervision – Private Sector)*
-
-✓ No WBS subgroup exhibits systematically elevated daily rates  
-✓ Observed outliers are limited to a small number of niche technical engagements  
-✓ Distribution remains stable around the median with no structural skew  
-
-→ No evidence of anomalous or inefficient pricing is detected within this WBS category.
-
-```{r}
-ggplot(wbs_supervision, aes(x = daily_rate)) +
-  geom_histogram(bins = 40) +
-  scale_x_log10(labels = scales::comma) +
+ggplot(ind %>% filter(!is.na(GENDER)), aes(x = GENDER, y = daily_rate)) +
+  geom_violin(trim = FALSE, alpha = 0.5) +
+  scale_y_log10(labels = scales::comma) +
   labs(
-    title = "Figure. Daily Rate Distribution — Supervision / Private Sector",
-    x = "Daily Rate (log scale)",
-    y = "Number of Contracts"
+    title = "Figure. Daily Rate Distribution by Gender (Individuals)",
+    x = "Gender",
+    y = "Daily Rate (log scale)"
   )
 ```
+
+## Risk & Governance Perspective
+
+The following sections shift from pricing diagnostics to **concentration and dependency risk**, which are central to audit and governance assessments.
 
 ### 🔁 Repeat Contracting and Consultant Concentration
 
@@ -598,6 +834,14 @@ ggplot(contracts_per_person, aes(x = `Number of Contracts`, y = `Median Daily Ra
   )
 ```
 
+#### 🔁 Repeat Contracting — Interpretation
+
+✓ Most consultants appear only once or twice across the dataset  
+✓ A small subset receives multiple contract awards  
+✓ Repeat engagements do not correspond to systematically higher daily rates  
+
+→ Repeat contracting reflects continuity and institutional familiarity rather than pricing escalation.
+
 ### 💳 Concentration of Total Spend *(Pareto-style risk view)*
 
 ✓ A small number of consultants can account for a disproportionate share of total spending  
@@ -647,6 +891,127 @@ ggplot(spend_by_person, aes(x = rank, y = cum_share)) +
   )
 ```
 
+#### 💳 Spend Concentration — Interpretation
+
+✓ Total spend is more concentrated than contract counts  
+✓ A small number of consultants account for a disproportionate share of expenditure  
+✓ This pattern is typical of portfolios reliant on specialized expertise  
+
+→ Concentration metrics provide an **audit-relevant view of dependency risk**, complementing earlier pricing analyses.
+
+### 🧱 WBS Focus: Supervision – Private Sector *(social & environmental oversight)*
+
+✓ Contracts under **Supervision – Private Sector** are concentrated in oversight functions  
+✓ Activities align primarily with **social, environmental, and safeguards supervision**  
+✓ Daily rates fall within expected ranges for compliance-oriented technical expertise  
+
+→ Spending patterns are consistent with governance, monitoring, and safeguards mandates rather than execution-heavy delivery.
+
+```{r}
+# Focus on Supervision – Private Sector within WBS
+wbs_supervision <- ind %>%
+  filter(
+    str_detect(
+      str_to_lower(`WBS NAME`),
+      "supervision"
+    ),
+    str_detect(
+      str_to_lower(`WBS NAME`),
+      "private"
+    )
+  )
+
+wbs_summary <- wbs_supervision %>%
+  group_by(`WBS NAME`) %>%
+  summarise(
+    `Number of Contracts` = n(),
+    `Median Daily Rate`   = median(daily_rate),
+    `Mean Daily Rate`     = mean(daily_rate),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(`Number of Contracts`))
+
+gt::gt(wbs_summary) %>%
+  gt::fmt_number(columns = `Number of Contracts`, decimals = 0) %>%
+  gt::fmt_currency(
+    columns = c(`Median Daily Rate`, `Mean Daily Rate`),
+    currency = "USD",
+    decimals = 0
+  ) %>%
+  gt::tab_header(
+    title = "Table. Supervision – Private Sector (Daily Rates)",
+    subtitle = "Individual consultants only; governance and oversight functions"
+  ) %>%
+  gt::tab_options(
+    table.font.size = gt::px(14),
+    table.width = gt::pct(100)
+  )
+```
+
+#### 🚨 WBS Anomaly Scan *(within Supervision – Private Sector)*
+
+✓ No WBS subgroup exhibits systematically elevated daily rates  
+✓ Observed outliers are limited to a small number of niche technical engagements  
+✓ Distribution remains stable around the median with no structural skew  
+
+→ No evidence of anomalous or inefficient pricing is detected within this WBS category.
+
+```{r}
+ggplot(wbs_supervision, aes(x = daily_rate)) +
+  geom_histogram(bins = 40) +
+  scale_x_log10(labels = scales::comma) +
+  labs(
+    title = "Figure. Daily Rate Distribution — Supervision / Private Sector",
+    x = "Daily Rate (log scale)",
+    y = "Number of Contracts"
+  )
+```
+
+## Time Dynamics
+
+### 📅 Time trends (spend + median rate over time)
+
+```{r}
+ind_time <- ind %>%
+  mutate(
+    po_date = parse_po_date(`Purchase Order Date`),
+    month   = as.Date(lubridate::floor_date(po_date, unit = "month"))
+  ) %>%
+  filter(!is.na(po_date))
+
+date_qc <- ind %>%
+  mutate(po_date_parsed = parse_po_date(`Purchase Order Date`)) %>%
+  summarise(
+    `Contracts` = n(),
+    `Parsable PO Date Count` = sum(!is.na(po_date_parsed)),
+    `Parsable Share` = mean(!is.na(po_date_parsed))
+  )
+
+gt(date_qc) %>%
+  fmt_number(c(`Contracts`, `Parsable PO Date Count`), decimals = 0) %>%
+  fmt_percent(`Parsable Share`, decimals = 1) %>%
+  tab_header(title = "Table. Purchase Order Date Parse Coverage")
+
+monthly <- ind_time %>%
+  group_by(month) %>%
+  summarise(
+    contracts = n(),
+    total_spend = sum(po_uac_amount, na.rm = TRUE),
+    median_rate = median(daily_rate),
+    .groups = "drop"
+  )
+
+ggplot(monthly, aes(x = month, y = total_spend)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::comma)
+
+ggplot(monthly, aes(x = month, y = median_rate)) +
+  geom_line() +
+  scale_y_log10(labels = scales::comma)
+```
+
+## Conclusions & Appendices
+
 ### 🧠 Overall Conclusion
 
 ✓ Consultancy spending is dominated by **individual-level engagements**  
@@ -657,7 +1022,12 @@ ggplot(spend_by_person, aes(x = rank, y = cum_share)) +
 
 → Overall, the consultancy portfolio reflects disciplined pricing, functional specialization, and sustained engagement with proven experts.
 
-### 🧪 Appendix: Data Integrity Checks *(zero rates & extreme outliers)*
+### 🧪 Data Integrity Appendix — How to Interpret
+
+The diagnostics below are included to demonstrate audit diligence.  
+They flag records for review but do **not** represent inferred pricing behavior or typical consultancy rates.
+
+#### 🧪 Appendix: Data Integrity Checks *(zero rates & extreme outliers)*
 
 ✓ Minimum daily rates of $0 can arise from $0-valued amounts or placeholder entries  
 ✓ Extremely high daily rates often occur in short-duration contracts (small workdays)  

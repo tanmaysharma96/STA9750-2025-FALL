@@ -15,7 +15,7 @@ execute:
 ---
 ## Overview & Method
 
-### 🧭 Executive Summary
+### Executive Summary
 
 ✓ Consultancy spending is dominated by **individual-level engagements**, exceeding firm-based contracts in total value  
 ✓ Individual daily rates exhibit **substantial dispersion and right-skewness**, making medians more informative than means  
@@ -25,7 +25,7 @@ execute:
 
 → Overall, the consultancy portfolio reflects **disciplined pricing, functional specialization, and contract-structure effects**, with no evidence of systematic overpricing or geographic bias.
 
-### 🚫 Exclusion of Consultancy Travel Costs *(methodological refinement)*
+### Exclusion of Consultancy Travel Costs *(methodological refinement)*
 
 ✓ Records include both consultancy services and reimbursable travel costs  
 ✓ Travel-related line items do not represent professional service fees  
@@ -92,7 +92,7 @@ df <- df %>%
   )
 ```
 
-### 🗂️ Data Overview *(analytic scope)*
+###️ Data Overview *(analytic scope)*
 
 ✓ Dataset includes awarded consultancy records with contract value (`PO UAC AMOUNT`) and duration (`ACTUAL NB WKD`)  
 ✓ Daily rates are computed **only for individual consultants** and only when workdays are valid (> 0)  
@@ -100,7 +100,7 @@ df <- df %>%
 
 → This section clarifies the analytic sample and ensures consistent interpretation of daily rate metrics throughout the report.
 
-### 🧹 Data Quality & Cleaning Rules
+### Data Quality & Cleaning Rules
 
 ✓ Contract value and workday fields are coerced to numeric for calculation consistency  
 ✓ Records with missing or non-positive workdays are excluded from daily rate calculations  
@@ -187,7 +187,7 @@ ind_geo <- ind %>%
 
 ## Portfolio Composition (Spend & Rate Baselines)
 
-### 💼 Total Value of Contracts by Consultant Type
+### Total Value of Contracts by Consultant Type
 
 ✓ Total contract value awarded to **individual consultants exceeds that of firms**  
 ✓ Firm-level contracts represent a smaller share of aggregate consultancy spending  
@@ -226,7 +226,7 @@ gt::gt(totals_tbl) %>%
   )
 ```
 
-### 💰 Daily Rate Characteristics of Individual Consultants
+### Daily Rate Characteristics of Individual Consultants
 
 ✓ The **median daily rate is lower than the mean**, indicating right-skewness  
 ✓ A small number of contracts exhibit **exceptionally high daily rates**  
@@ -263,7 +263,7 @@ gt::gt(daily_rate_summary) %>%
   )
 ```
 
-### 📈 Distribution and Dispersion of Daily Rates
+### Distribution and Dispersion of Daily Rates
 
 ✓ Individual daily rates span a wide range, reflecting heterogeneous consultancy roles  
 ✓ The gap between minimum and maximum rates is substantial  
@@ -305,7 +305,7 @@ ggplot(ind, aes(x = daily_rate)) +
 This section moves beyond descriptive comparisons to examine *why* daily rates differ.  
 The analyses below test whether observed variation reflects structural pricing behavior or mechanical effects driven by contract duration, functional assignment, and reporting structure.
 
-### ⏳ Duration vs Daily Rate *(mechanical driver of dispersion)*
+### Duration vs Daily Rate *(mechanical driver of dispersion)*
 
 ✓ Many extreme daily rates occur when workdays are very small (e.g., 1–5 days)  
 ✓ Longer contracts often show lower daily rates, consistent with retainer / bundled scope structures  
@@ -339,7 +339,7 @@ ggplot(ind, aes(x = workdays, y = daily_rate)) +
   )
 ```
 
-#### ⏳ Duration vs Daily Rate — Interpretation
+#### Duration vs Daily Rate — Interpretation
 
 ✓ Extremely high daily rates are disproportionately associated with very short contracts (e.g., 1–5 workdays)  
 ✓ Longer-duration contracts tend to exhibit lower daily rates, consistent with bundled or retainer-style scopes  
@@ -370,7 +370,7 @@ gt(model_sum) %>%
   tab_header(title = "Table. Multivariate Check: Drivers of Daily Rates (log scale)")
 ```
 
-#### 🧪 Multivariate Controls — Interpretation
+#### Multivariate Controls — Interpretation
 
 ✓ Contract duration remains a strong predictor of daily rates after controls  
 ✓ The local vs international indicator is not statistically significant once duration and department are included  
@@ -378,7 +378,7 @@ gt(model_sum) %>%
 
 → Apparent geographic differences in daily rates largely reflect **contract structure and functional assignment**, not systematic pricing differences by consultant origin.
 
-### 🏢 Department-Level Differences in Daily Rates
+### Department-Level Differences in Daily Rates
 
 ✓ Median daily rates vary meaningfully across departments  
 ✓ Some departments exhibit higher typical rates and wider dispersion  
@@ -434,7 +434,7 @@ ggplot(
   )
 ```
 
-#### 🏢 Department-Level Pricing — Interpretation
+#### Department-Level Pricing — Interpretation
 
 ✓ Median daily rates vary meaningfully across departments  
 ✓ Higher rates tend to cluster in technically specialized or oversight-oriented units  
@@ -554,12 +554,12 @@ ggplot(loc_scatter, aes(x = total_spend, y = median_rate)) +
   )
 ```
 
-### 🌍 Local vs International Consultants — How to Read This Section
+### Local vs International Consultants — How to Read This Section
 
 The following visualizations present the same comparison using different distributional lenses.  
 The **Median + IQR view** should be treated as the primary result; violin and ECDF plots are included for robustness and diagnostic validation.
 
-#### Option 1: 🎻 Violin Plot *(distribution shape)*
+#### Option 1: Violin Plot *(distribution shape)*
 
 ✓ Shows full density of daily rates by group  
 ✓ Makes skewness and tail behavior explicit  
@@ -579,7 +579,7 @@ ggplot(ind_geo, aes(x = consultant_origin, y = daily_rate)) +
   )
 ```
 
-#### 🎻 Violin Plot — Interpretation
+#### Violin Plot — Interpretation
 
 ✓ Both groups exhibit strongly right-skewed daily-rate distributions  
 ✓ Density overlap is substantial across most of the distribution  
@@ -608,7 +608,7 @@ gt(sen_tbl) %>%
   tab_header(title = "Table. Daily Rates by Seniority (Median + IQR)")
 ```
 
-#### Option 2: 📊 Median + IQR Dot Plot *(executive-friendly)*
+#### Option 2: Median + IQR Dot Plot *(executive-friendly)*
 
 ✓ Focuses attention on **typical pricing**, not extremes  
 ✓ Easier to read for non-technical stakeholders  
@@ -640,7 +640,7 @@ ggplot(geo_stats, aes(x = consultant_origin, y = median_rate)) +
   )
 ```
 
-#### 📊 Median + IQR — Interpretation (Primary Result)
+#### Median + IQR — Interpretation (Primary Result)
 
 ✓ Median daily rates are very similar between local and international consultants  
 ✓ Interquartile ranges overlap substantially across both groups  
@@ -648,7 +648,7 @@ ggplot(geo_stats, aes(x = consultant_origin, y = median_rate)) +
 
 → For reporting and decision-making purposes, **median differences are economically modest**.
 
-#### Option 3: 📈 ECDF Comparison *(distribution dominance)*
+#### Option 3: ECDF Comparison *(distribution dominance)*
 
 ✓ Shows whether one group consistently dominates another  
 ✓ No binning, no assumptions about shape  
@@ -668,7 +668,7 @@ ggplot(ind_geo, aes(x = daily_rate, color = consultant_origin)) +
   )
 ```
 
-#### 📈 ECDF Comparison — Interpretation
+#### ECDF Comparison — Interpretation
 
 ✓ Cumulative distributions track closely across consultant origin  
 ✓ Neither group exhibits first-order stochastic dominance  
@@ -704,7 +704,7 @@ gt(recruit_tbl) %>%
   tab_header(title = "Table. Recruit Type vs Typical Rate and Duration")
 ```
 
-### 📏 Local vs International *(quantified difference)*
+### Local vs International *(quantified difference)*
 
 ✓ Compares medians (robust under skewness) rather than only means  
 ✓ Reports absolute and percent difference in typical rates  
@@ -743,7 +743,7 @@ gt(geo_effect) %>%
   tab_header(title = "Table. International vs Local Daily Rates — Effect Size & Test")
 ```
 
-#### 📏 Local vs International — Quantified Difference (Inference)
+#### Local vs International — Quantified Difference (Inference)
 
 ✓ Median daily rate differences are small in absolute and percentage terms  
 ✓ The Wilcoxon test fails to reject equality of distributions  
@@ -784,7 +784,7 @@ ggplot(ind %>% filter(!is.na(GENDER)), aes(x = GENDER, y = daily_rate)) +
 
 The following sections shift from pricing diagnostics to **concentration and dependency risk**, which are central to audit and governance assessments.
 
-### 🔁 Repeat Contracting and Consultant Concentration
+### Repeat Contracting and Consultant Concentration
 
 ✓ A small subset of individual consultants receive multiple contract awards  
 ✓ Most consultants appear only once or twice across the dataset  
@@ -834,7 +834,7 @@ ggplot(contracts_per_person, aes(x = `Number of Contracts`, y = `Median Daily Ra
   )
 ```
 
-#### 🔁 Repeat Contracting — Interpretation
+#### Repeat Contracting — Interpretation
 
 ✓ Most consultants appear only once or twice across the dataset  
 ✓ A small subset receives multiple contract awards  
@@ -842,7 +842,7 @@ ggplot(contracts_per_person, aes(x = `Number of Contracts`, y = `Median Daily Ra
 
 → Repeat contracting reflects continuity and institutional familiarity rather than pricing escalation.
 
-### 💳 Concentration of Total Spend *(Pareto-style risk view)*
+### Concentration of Total Spend *(Pareto-style risk view)*
 
 ✓ A small number of consultants can account for a disproportionate share of total spending  
 ✓ Concentration is assessed by cumulative share of PO UAC AMOUNT (contract-level)  
@@ -891,7 +891,7 @@ ggplot(spend_by_person, aes(x = rank, y = cum_share)) +
   )
 ```
 
-#### 💳 Spend Concentration — Interpretation
+#### Spend Concentration — Interpretation
 
 ✓ Total spend is more concentrated than contract counts  
 ✓ A small number of consultants account for a disproportionate share of expenditure  
@@ -899,7 +899,7 @@ ggplot(spend_by_person, aes(x = rank, y = cum_share)) +
 
 → Concentration metrics provide an **audit-relevant view of dependency risk**, complementing earlier pricing analyses.
 
-### 🧱 WBS Focus: Supervision – Private Sector *(social & environmental oversight)*
+### WBS Focus: Supervision – Private Sector *(social & environmental oversight)*
 
 ✓ Contracts under **Supervision – Private Sector** are concentrated in oversight functions  
 ✓ Activities align primarily with **social, environmental, and safeguards supervision**  
@@ -948,7 +948,7 @@ gt::gt(wbs_summary) %>%
   )
 ```
 
-#### 🚨 WBS Anomaly Scan *(within Supervision – Private Sector)*
+#### WBS Anomaly Scan *(within Supervision – Private Sector)*
 
 ✓ No WBS subgroup exhibits systematically elevated daily rates  
 ✓ Observed outliers are limited to a small number of niche technical engagements  
@@ -969,7 +969,7 @@ ggplot(wbs_supervision, aes(x = daily_rate)) +
 
 ## Time Dynamics
 
-### 📅 Time trends (spend + median rate over time)
+### Time trends (spend + median rate over time)
 
 ```{r}
 ind_time <- ind %>%
@@ -1012,7 +1012,7 @@ ggplot(monthly, aes(x = month, y = median_rate)) +
 
 ## Conclusions & Appendices
 
-### 🧠 Overall Conclusion
+### Overall Conclusion
 
 ✓ Consultancy spending is dominated by **individual-level engagements**  
 ✓ Daily rates are highly heterogeneous, with medians more informative than means  
@@ -1022,12 +1022,12 @@ ggplot(monthly, aes(x = month, y = median_rate)) +
 
 → Overall, the consultancy portfolio reflects disciplined pricing, functional specialization, and sustained engagement with proven experts.
 
-### 🧪 Data Integrity Appendix — How to Interpret
+### Data Integrity Appendix — How to Interpret
 
 The diagnostics below are included to demonstrate audit diligence.  
 They flag records for review but do **not** represent inferred pricing behavior or typical consultancy rates.
 
-#### 🧪 Appendix: Data Integrity Checks *(zero rates & extreme outliers)*
+#### Appendix: Data Integrity Checks *(zero rates & extreme outliers)*
 
 ✓ Minimum daily rates of $0 can arise from $0-valued amounts or placeholder entries  
 ✓ Extremely high daily rates often occur in short-duration contracts (small workdays)  
@@ -1064,7 +1064,7 @@ gt(top_rates) %>%
   tab_header(title = "Table. Top 20 Daily Rates (Individuals) — For Review")
 ```
 
-### 📎 Appendix: Reproducibility & Interpretation Notes
+### Appendix: Reproducibility & Interpretation Notes
 
 ✓ All analyses are fully reproducible from the provided spreadsheet  
 ✓ Results are sensitive to definitions (e.g., individual vs firm, travel exclusion) but robust to scale  

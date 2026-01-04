@@ -1,0 +1,1277 @@
+---
+title: "AfDB Awarded Contracts"
+author: "Tanmay Sharma"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  warning: false
+  message: false
+---
+
+```{r}
+rm(list = ls())
+gc()
+
+library(readxl)
+library(dplyr)
+library(janitor)
+library(stringr)
+library(readr)
+
+path <- "C:/Users/tanma/Downloads/listing_of_awarded_contracts_from_2020_to_2025_-_october_2025 (3).xlsx"
+
+raw <- read_excel(path, skip = 2)  # <-- KEY FIX
+
+to_num <- function(x){
+  if (is.numeric(x)) return(x)
+  readr::parse_number(as.character(x))
+}
+
+df <- raw %>%
+  clean_names() %>%
+  select(where(~ !all(is.na(.)))) %>%
+  mutate(
+    year = as.integer(year),
+    spend_usd = to_num(equiv_usd),
+    cont_uac  = to_num(cont_am_uac),
+
+    project_def = str_squish(as.character(project_def)),
+    loan_number = str_squish(as.character(loan_number)),
+    bidder_name = str_squish(as.character(bidder_name)),
+    bidder_nationality = str_squish(as.character(bidder_nationality)),
+    project_country = str_squish(as.character(project_country)),
+    sector = str_squish(as.character(sector)),
+    proc_mode = str_squish(as.character(proc_mode)),
+    expense_category = str_squish(as.character(expense_category)),
+
+    domestic_award = (str_to_upper(bidder_nationality) == str_to_upper(project_country))
+  ) %>%
+  filter(!is.na(year), !is.na(spend_usd)) %>%
+  filter(year >= 2020, year <= 2025)
+
+glimpse(df)
+```
+
+#### Cleanup Chunk
+
+```{r}
+df <- df %>%
+  select(-matches("^x\\d+$")) %>%   # drops x18, x19, x20 etc
+  mutate(
+    proc_mode = str_to_upper(str_squish(proc_mode)),
+    expense_category = str_to_upper(str_squish(expense_category)),
+    sector = str_squish(sector),
+    project_country = str_squish(project_country),
+    bidder_nationality = str_squish(bidder_nationality)
+  )
+
+glimpse(df)
+```
+
+## Method Mix vs Value
+
+Goal: distribution of contract sizes by procurement mode, plus total USD share, plus high-value under low-competition list
+
+2A) Percentile table by proc_mode (P25/P50/P75/P90) + total USD share
+
+```{r}
+library(scales)
+
+pct_tbl <- df %>%
+  group_by(proc_mode) %>%
+  summarise(
+    awards = n(),
+    usd_total = sum(spend_usd, na.rm = TRUE),
+    usd_share = usd_total / sum(spend_usd, na.rm = TRUE),
+    p25 = quantile(spend_usd, 0.25, na.rm = TRUE),
+    p50 = quantile(spend_usd, 0.50, na.rm = TRUE),
+    p75 = quantile(spend_usd, 0.75, na.rm = TRUE),
+    p90 = quantile(spend_usd, 0.90, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(usd_total))
+
+pct_tbl
+```
+
+### Method-mix vs value (by procurement mode)
+
+- Procurement modes differ strongly by **typical contract size** (P50) and **upper-tail size** (P90), which is where governance and VfM stakes are highest.
+- The **USD share** column shows which methods carry most of the portfolio’s value (not just volume), helping assess whether high-value contracting is concentrated in appropriately competitive methods.
+
+2B) Boxplot/violin of award sizes by proc_mode (log scale)
+
+```{r}
+library(ggplot2)
+
+ggplot(df, aes(x = proc_mode, y = spend_usd)) +
+  geom_violin(trim = TRUE) +
+  geom_boxplot(width = 0.15, outlier.alpha = 0.2) +
+  scale_y_log10(labels = label_dollar()) +
+  labs(
+    title = "Award Size Distribution by Procurement Mode (log scale)",
+    x = "Procurement mode",
+    y = "Award size (USD, log scale)"
+  )
+```
+### Contract-size distribution (visual)
+
+- The log-scale plot makes the **long right tail** visible: a small number of high-value awards can sit far above the typical range.
+- Modes with systematically higher distributions (higher median and wider upper tail) are the ones to scrutinize for whether competition levels align with value.
+
+2C) “High-value under non-competitive” list
+
+```{r}
+low_comp_modes <- c("DNP", "SHL")  # adjust later if needed
+
+high_value_noncomp <- df %>%
+  filter(proc_mode %in% low_comp_modes) %>%
+  arrange(desc(spend_usd)) %>%
+  select(
+    year, project_country, sector, expense_category, proc_mode,
+    bidder_name, bidder_nationality,
+    project_def, loan_number, tender_num, contr_no,
+    spend_usd
+  ) %>%
+  slice_head(n = 50)
+
+high_value_noncomp
+```
+
+### High-value awards under lower-competition methods (screening list)
+
+- This list flags the **largest awards** executed under `r paste(low_comp_modes, collapse = ", ")`.
+- These are not automatically non-compliant, but they are the most efficient starting point for follow-up questions on justification, approvals, and documentation quality.
+
+3) Domestic vs Cross-Border Sourcing
+
+3A) Country League Table (Domestic vs Cross-Border Share)
+
+```{r}
+dom_country <- df %>%
+  group_by(project_country) %>%
+  summarise(
+    awards = n(),
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    domestic_spend = sum(spend_usd[domestic_award], na.rm = TRUE),
+    domestic_share = domestic_spend / spend_total,
+    cross_border_share = 1 - domestic_share,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(spend_total))
+
+dom_country
+```
+
+### Domestic vs cross-border sourcing (country view)
+
+- Domestic sourcing is defined as **Bidder Nationality = Project Country**, which provides a clear and explainable proxy for local content.
+- Countries vary widely: higher domestic shares typically indicate deeper local supplier markets, while low domestic shares reflect reliance on cross-border or international firms.
+
+3B) Sector view: domestic share by expense category
+
+```{r}
+dom_sector <- df %>%
+  group_by(expense_category) %>%
+  summarise(
+    awards = n(),
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    domestic_share = sum(spend_usd[domestic_award], na.rm = TRUE) / sum(spend_usd),
+    cross_border_share = 1 - domestic_share,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(spend_total))
+
+dom_sector
+
+library(ggplot2)
+library(scales)
+
+ggplot(dom_sector, aes(x = expense_category, y = domestic_share)) +
+  geom_col() +
+  scale_y_continuous(labels = percent) +
+  labs(
+    title = "Domestic Share of Spend by Expense Category",
+    x = "Expense category",
+    y = "Domestic share (%)"
+  )
+```
+
+### Domestic sourcing by expense category
+
+- Domestic sourcing differs structurally by category: **Works** often show higher domestic participation, while **Goods** and **Services** tend to be more cross-border.
+- These patterns are consistent with differences in capital intensity, technology requirements, and local market depth.
+
+3C) Trend over time: is cross-border rising in 2025?
+
+```{r}
+dom_trend <- df %>%
+  group_by(year) %>%
+  summarise(
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    cross_border_share = sum(spend_usd[!domestic_award], na.rm = TRUE) / sum(spend_usd),
+    .groups = "drop"
+  )
+
+dom_trend
+
+ggplot(dom_trend, aes(x = year, y = cross_border_share)) +
+  geom_line() + geom_point() +
+  scale_y_continuous(labels = percent) +
+  labs(
+    title = "Cross-border Share of Spend by Year",
+    x = NULL,
+    y = "Cross-border share (%)"
+  )
+```
+
+### Cross-border sourcing trend
+
+- The year-by-year trend shows whether cross-border sourcing has increased in 2025 relative to earlier years.
+- A rising cross-border share can reflect either expanded competition and regional integration or limited domestic supplier capacity in high-value sectors.
+
+4) Supplier concentration & diversification
+
+4A) Defining HHI
+```{r}
+hhi_calc <- function(x){
+  s <- x / sum(x, na.rm = TRUE)
+  sum(s^2, na.rm = TRUE)
+}
+```
+
+HHI interpretation bands (standard, explainable):
+
+Less than 0.10 → unconcentrated / competitive
+
+0.10–0.18 → moderately concentrated
+
+Greater than 0.18 → highly concentrated
+
+4B) Concentration by Project Country
+
+```{r}
+conc_country <- df %>%
+  group_by(project_country, bidder_name) %>%
+  summarise(spend = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  group_by(project_country) %>%
+  summarise(
+    spend_total = sum(spend),
+    suppliers = n(),
+    hhi = hhi_calc(spend),
+    top1_share = max(spend) / sum(spend),
+    top5_share = sum(sort(spend, decreasing = TRUE)[1:min(5, n())]) / sum(spend),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(hhi))
+
+conc_country
+
+library(ggplot2)
+library(scales)
+
+ggplot(conc_country, aes(x = reorder(project_country, hhi), y = hhi)) +
+  geom_col() +
+  coord_flip() +
+  geom_hline(yintercept = c(0.10, 0.18), linetype = "dashed", color = "grey40") +
+  scale_y_continuous(labels = number_format(accuracy = 0.01)) +
+  labs(
+    title = "Supplier Concentration by Project Country (HHI)",
+    x = "Project country",
+    y = "HHI"
+  )
+```
+
+### Supplier concentration by country
+
+- Supplier concentration varies widely across countries, as measured by the **Herfindahl–Hirschman Index (HHI)**.
+- Countries with **high HHI or very large Top-1 / Top-5 shares** indicate thin supplier markets or repeated reliance on a small number of firms.
+- High concentration is not automatically problematic, but it raises **market health and probity-relevant questions** in high-value portfolios.
+
+4C) Concentration by Sector
+
+```{r}
+conc_sector <- df %>%
+  group_by(sector, bidder_name) %>%
+  summarise(spend = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  group_by(sector) %>%
+  summarise(
+    spend_total = sum(spend),
+    suppliers = n(),
+    hhi = hhi_calc(spend),
+    top1_share = max(spend) / sum(spend),
+    top5_share = sum(sort(spend, decreasing = TRUE)[1:min(5, n())]) / sum(spend),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(hhi))
+
+conc_sector
+```
+
+### Supplier concentration by sector
+
+- Some sectors exhibit structurally higher concentration, reflecting specialization, capital intensity, or limited qualified suppliers.
+- Sectors with **high spend and high concentration** are priority candidates for deeper value-for-money and competition analysis.
+
+4D) Watchlists
+
+Countries where Top-1 ≥ 50% or Top-5 ≥ 80%
+
+```{r}
+country_watchlist <- conc_country %>%
+  filter(top1_share >= 0.50 | top5_share >= 0.80)
+
+country_watchlist
+```
+
+Sectors with high dominance
+
+```{r}
+sector_watchlist <- conc_sector %>%
+  filter(top1_share >= 0.50 | top5_share >= 0.80)
+
+sector_watchlist
+```
+
+### Concentration watchlist
+
+- The watchlists identify **countries and sectors where spend is dominated by very few suppliers**.
+- These cases warrant closer examination of market structure, entry barriers, framework arrangements, or repeated award dynamics.
+
+5) Repeat-award & “incumbency” patterns
+
+5A) Top repeat winners by Country × Sector (# awards + total USD + years active)
+
+```{r}
+repeat_cs <- df %>%
+  group_by(project_country, sector, bidder_name) %>%
+  summarise(
+    awards = n(),
+    spend_usd = sum(spend_usd, na.rm = TRUE),
+    years_active = n_distinct(year),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(awards), desc(spend_usd))
+
+# Top 10 repeat winners within each country (by award count)
+top_repeat_by_country <- repeat_cs %>%
+  group_by(project_country) %>%
+  slice_max(order_by = awards, n = 10, with_ties = FALSE) %>%
+  ungroup()
+
+# Top 10 repeat winners within each sector (by award count)
+top_repeat_by_sector <- repeat_cs %>%
+  group_by(sector) %>%
+  slice_max(order_by = awards, n = 10, with_ties = FALSE) %>%
+  ungroup()
+
+top_repeat_by_country
+top_repeat_by_sector
+```
+
+### Repeat-award patterns (country/sector)
+
+- Repeat awarding is visible when a small set of suppliers accumulate many contracts within the same country and sector.
+- This is not inherently negative (e.g., frameworks, long programs, specialized expertise), but it is a **probity-relevant** signal and a high-value starting point for targeted review.
+
+5B) Repeat winners by Project (incumbency within a project/loan)
+
+```{r}
+repeat_project <- df %>%
+  group_by(project_def, loan_number, bidder_name) %>%
+  summarise(
+    awards = n(),
+    spend_usd = sum(spend_usd, na.rm = TRUE),
+    years_active = n_distinct(year),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(awards), desc(spend_usd))
+
+repeat_project %>% slice_head(n = 100)
+```
+
+Flag “single supplier dominates a project” (spend share ≥ 80%)
+
+```{r}
+proj_dom <- df %>%
+  group_by(project_def, loan_number, bidder_name) %>%
+  summarise(spend = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  group_by(project_def, loan_number) %>%
+  mutate(share = spend / sum(spend)) %>%
+  ungroup() %>%
+  filter(share >= 0.80) %>%
+  arrange(desc(share), desc(spend))
+
+proj_dom %>% slice_head(n = 200)
+```
+
+### Project-level incumbency / dominance
+
+- Project-level repeat awarding highlights cases where suppliers repeatedly win within a single project/loan.
+- Projects where one supplier captures an extreme share of spend should be treated as **screening flags** for closer governance review (competition history, justification, and contract management).
+
+5C) Supplier “footprint” summary (# countries served, # sectors, total awards, total USD)
+
+```{r}
+supplier_footprint <- df %>%
+  group_by(bidder_name) %>%
+  summarise(
+    awards = n(),
+    spend_usd = sum(spend_usd, na.rm = TRUE),
+    countries_served = n_distinct(project_country),
+    sectors_served = n_distinct(sector),
+    years_active = n_distinct(year),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(spend_usd))
+
+supplier_footprint %>% slice_head(n = 50)
+
+supplier_profile <- supplier_footprint %>%
+  mutate(
+    footprint_type = case_when(
+      countries_served == 1 & sectors_served == 1 ~ "Single-country, single-sector",
+      countries_served == 1 & sectors_served > 1  ~ "Single-country, multi-sector",
+      countries_served > 1  & sectors_served == 1 ~ "Multi-country, single-sector",
+      TRUE                                        ~ "Multi-country, multi-sector"
+    )
+  )
+
+supplier_profile %>% count(footprint_type, sort = TRUE)
+supplier_profile %>% slice_head(n = 50)
+```
+
+### Supplier footprint (breadth vs dependence)
+
+- The supplier footprint view distinguishes between suppliers that are **broadly active** (multi-country and/or multi-sector) and those that are **highly concentrated** (single-country/sector dependence).
+- High spend with a narrow footprint can indicate specialization or market thinness; it is also where **incumbency risk** is most relevant.
+
+6) Contract fragmentation / “threshold clustering”
+
+6A) Project/Loan fragmentation table
+
+```{r}
+frag_proj <- df %>%
+  group_by(project_def, loan_number) %>%
+  summarise(
+    awards = n(),
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    median_usd = median(spend_usd, na.rm = TRUE),
+    p_below_50k  = mean(spend_usd <  50000, na.rm = TRUE),
+    p_below_100k = mean(spend_usd < 100000, na.rm = TRUE),
+    p_below_250k = mean(spend_usd < 250000, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(awards), desc(spend_total))
+
+frag_proj %>% slice_head(n = 100)
+```
+
+“Fragmentation watchlist” (many awards + lots of micro-contracts)
+
+```{r}
+frag_watchlist <- frag_proj %>%
+  filter(awards >= 30 & (p_below_50k >= 0.50 | p_below_100k >= 0.70)) %>%
+  arrange(desc(awards))
+
+frag_watchlist
+```
+
+### Contract fragmentation by project/loan
+
+- Fragmentation is proxied using the **count of awards per project/loan** and the **share of awards below common micro-procurement thresholds** (USD 50k / 100k / 250k).
+- Projects with **high award counts** and **high shares of small awards** may indicate packaging/splitting patterns, capacity constraints, or weak procurement planning (screening signal, not proof).
+
+6B) “Near-threshold” clustering charts (histograms)
+
+6B(i) Global histogram (linear)
+
+```{r}
+library(ggplot2)
+library(scales)
+
+ggplot(df, aes(x = spend_usd)) +
+  geom_histogram(bins = 120) +
+  scale_x_continuous(labels = label_dollar()) +
+  labs(
+    title = "Award Size Histogram (linear scale)",
+    x = "Award size (USD)",
+    y = "Count of awards"
+  )
+```
+
+6B(ii) Global histogram (log)
+
+```{r}
+ggplot(df, aes(x = spend_usd)) +
+  geom_histogram(bins = 120) +
+  scale_x_log10(labels = label_dollar()) +
+  labs(
+    title = "Award Size Histogram (log scale)",
+    x = "Award size (USD, log scale)",
+    y = "Count of awards"
+  )
+```
+
+Adding reference lines at common thresholds
+
+```{r}
+ggplot(df, aes(x = spend_usd)) +
+  geom_histogram(bins = 120) +
+  geom_vline(xintercept = c(50000, 100000, 250000), linetype = "dashed") +
+  scale_x_continuous(labels = label_dollar()) +
+  labs(
+    title = "Award Size Histogram with Threshold Markers",
+    x = "Award size (USD)",
+    y = "Count of awards"
+  )
+```
+
+### Near-threshold clustering (spike detection)
+
+- Histograms help detect **spikes** at or just below common thresholds, which can be consistent with threshold-driven packaging behavior.
+- Visible “heaping” near thresholds should be treated as a **screening indicator** and paired with follow-up questions (e.g., procurement plan rationale, lots, and approvals).
+
+6C) “Heaping Score” near thresholds: This quantifies whether values cluster within a narrow band just below thresholds.
+
+```{r}
+band_share <- function(thresh, width = 0.05){
+  lo <- thresh * (1 - width)
+  hi <- thresh
+  mean(df$spend_usd >= lo & df$spend_usd < hi, na.rm = TRUE)
+}
+
+heaping <- tibble::tibble(
+  threshold = c(50000, 100000, 250000),
+  share_in_last_5pct = c(band_share(50000), band_share(100000), band_share(250000))
+)
+
+heaping
+```
+
+### Heaping metric (quantitative check)
+
+- The “heaping share” measures what fraction of awards fall in the **last 5% band below each threshold**.
+- Elevated heaping shares strengthen the case that observed spikes are not random noise and warrant targeted review.
+
+7) Project procurement intensity & implementation proxy
+
+7A) Project-level procurement intensity table
+
+```{r}
+proj_intensity <- df %>%
+  group_by(project_def) %>%
+  summarise(
+    awards = n(),
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    avg_award = mean(spend_usd, na.rm = TRUE),
+    suppliers = n_distinct(bidder_name),
+    methods = n_distinct(proc_mode),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(awards))
+
+proj_intensity %>% slice_head(n = 50)
+```
+
+Looking at largest products by spend
+
+```{r}
+proj_intensity %>%
+  arrange(desc(spend_total)) %>%
+  slice_head(n = 50)
+```
+
+### Project procurement intensity
+
+- Projects differ significantly in how procurement activity is structured, ranging from a few large awards to many small contracts.
+- Projects with **very high award counts**, many suppliers, and multiple procurement methods often indicate **implementation complexity** or capacity constraints.
+
+7B) “Complexity index”
+
+```{r}
+proj_complexity <- proj_intensity %>%
+  mutate(
+    complexity_index =
+      scale(awards)[,1] +
+      scale(suppliers)[,1] +
+      scale(methods)[,1]
+  ) %>%
+  arrange(desc(complexity_index))
+
+proj_complexity %>% slice_head(n = 50)
+
+library(ggplot2)
+
+ggplot(proj_complexity, aes(x = reorder(project_def, complexity_index),
+                            y = complexity_index)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Project Procurement Complexity Index",
+    x = "Project",
+    y = "Composite complexity score"
+  )
+```
+
+### Project complexity index
+
+- The complexity index combines **award volume**, **supplier diversity**, and **method diversity** into a single screening metric.
+- High scores flag projects that may require stronger procurement planning, contract management capacity, or supervision.
+
+7C) Micro-contract intensity
+
+```{r}
+proj_micro <- df %>%
+  group_by(project_def) %>%
+  summarise(
+    awards = n(),
+    p_below_100k = mean(spend_usd < 100000, na.rm = TRUE),
+    p_below_50k  = mean(spend_usd < 50000,  na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(p_below_50k))
+
+proj_micro %>% slice_head(n = 50)
+```
+
+### Micro-contract intensity
+
+- A high share of micro-contracts within a project can signal **transactional overload**, weak packaging, or design issues.
+- These projects are strong candidates for deeper implementation review.
+
+8) Country procurement profile “fingerprints” (Country Cards)
+
+8A) Helper functions
+
+```{r}
+library(dplyr)
+library(scales)
+
+hhi_calc <- function(x){
+  s <- x / sum(x, na.rm = TRUE)
+  sum(s^2, na.rm = TRUE)
+}
+
+country_card_tables <- function(cty, top_n = 10){
+  d <- df %>% filter(project_country == cty)
+
+  headline <- d %>%
+    summarise(
+      awards = n(),
+      spend_total = sum(spend_usd, na.rm = TRUE),
+      domestic_share = sum(spend_usd[domestic_award], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  trend <- d %>%
+    group_by(year) %>%
+    summarise(
+      awards = n(),
+      spend_total = sum(spend_usd, na.rm = TRUE),
+      cross_border_share = sum(spend_usd[!domestic_award], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    arrange(year)
+
+  top_sectors <- d %>%
+    group_by(sector) %>%
+    summarise(spend_total = sum(spend_usd, na.rm = TRUE), awards = n(), .groups = "drop") %>%
+    arrange(desc(spend_total)) %>%
+    slice_head(n = top_n)
+
+  method_mix <- d %>%
+    group_by(proc_mode) %>%
+    summarise(spend_total = sum(spend_usd, na.rm = TRUE), awards = n(), .groups = "drop") %>%
+    mutate(share = spend_total / sum(spend_total)) %>%
+    arrange(desc(spend_total))
+
+  suppliers_tbl <- d %>%
+    group_by(bidder_name) %>%
+    summarise(
+      spend = sum(spend_usd, na.rm = TRUE),
+      awards = n(),
+      .groups = "drop"
+    ) %>%
+    arrange(desc(spend))
+
+  spend_vec <- suppliers_tbl %>% pull(spend)
+
+  concentration <- tibble::tibble(
+    suppliers = nrow(suppliers_tbl),
+    hhi = hhi_calc(spend_vec),
+    top1_share = max(spend_vec, na.rm = TRUE) / sum(spend_vec, na.rm = TRUE),
+    top5_share = sum(head(spend_vec, 5), na.rm = TRUE) / sum(spend_vec, na.rm = TRUE)
+  )
+
+  top_suppliers <- suppliers_tbl %>% slice_head(n = top_n)
+
+  list(
+    country = cty,
+    headline = headline,
+    trend = trend,
+    top_sectors = top_sectors,
+    method_mix = method_mix,
+    concentration = concentration,
+    top_suppliers = top_suppliers
+  )
+}
+```
+
+8B) Generating a card for one country (Can replace any country for Ghana)
+
+```{r}
+cty <- "Ghana"
+card <- country_card_tables(cty)
+
+card$headline
+card$trend
+card$top_sectors
+card$method_mix
+card$concentration
+card$top_suppliers
+```
+
+8C) Optional charts for the card
+
+```{r}
+library(ggplot2)
+
+# Spend trend
+ggplot(card$trend, aes(x = year, y = spend_total)) +
+  geom_line() + geom_point() +
+  scale_y_continuous(labels = label_dollar()) +
+  labs(title = paste("Spend Trend —", cty), x = NULL, y = "Spend (USD)")
+
+# Award count trend
+ggplot(card$trend, aes(x = year, y = awards)) +
+  geom_line() + geom_point() +
+  scale_y_continuous(labels = label_comma()) +
+  labs(title = paste("Award Count Trend —", cty), x = NULL, y = "Awards")
+
+# Cross-border share trend
+ggplot(card$trend, aes(x = year, y = cross_border_share)) +
+  geom_line() + geom_point() +
+  scale_y_continuous(labels = percent) +
+  labs(title = paste("Cross-border Share Trend —", cty), x = NULL, y = "Cross-border share")
+```
+
+8D) Producing cards for top 10 countries by spend
+
+```{r}
+top_countries <- df %>%
+  group_by(project_country) %>%
+  summarise(spend_total = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(spend_total)) %>%
+  slice_head(n = 10) %>%
+  pull(project_country)
+
+cards <- lapply(top_countries, country_card_tables)
+
+names(cards) <- top_countries
+top_countries
+```
+
+### Country procurement fingerprint — `r cty`
+
+- Total procurement in this country (2020–2025): **`r scales::comma(card$headline$awards)` awards** and **`r scales::dollar(card$headline$spend_total)`** in spend.
+- Domestic sourcing share is **`r scales::percent(card$headline$domestic_share)`**, implying a cross-border share of **`r scales::percent(1 - card$headline$domestic_share)`**.
+- Top sectors and method mix show where procurement activity concentrates and which approaches carry the most value.
+- Supplier concentration is **HHI = `r round(card$concentration$hhi, 3)`**, with Top-1 share **`r scales::percent(card$concentration$top1_share)`** and Top-5 share **`r scales::percent(card$concentration$top5_share)`**.
+
+9) Sector deep-dives
+
+9A) Identifying priority sectors
+
+```{r}
+top_sectors <- df %>%
+  group_by(sector) %>%
+  summarise(
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    awards = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(spend_total))
+
+top_sectors
+```
+
+9B) Method mix by sector (value-weighted)
+
+```{r}
+
+# Choosing priority sectors explicitly
+priority_sectors <- c("Transport", "Power")
+priority_sectors
+
+sector_method <- df %>%
+  filter(sector %in% priority_sectors) %>%
+  group_by(sector, proc_mode) %>%
+  summarise(
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    awards = n(),
+    .groups = "drop"
+  ) %>%
+  group_by(sector) %>%
+  mutate(share = spend_total / sum(spend_total))
+
+sector_method
+
+library(ggplot2)
+library(scales)
+
+ggplot(sector_method,
+       aes(x = proc_mode, y = spend_total, fill = proc_mode)) +
+  geom_col(show.legend = FALSE) +
+  scale_y_continuous(labels = label_dollar()) +
+  facet_wrap(~ sector, scales = "free_y") +
+  labs(
+    title = "Procurement Method Mix by Sector",
+    x = "Procurement mode",
+    y = "Spend (USD)"
+  )
+```
+
+### Method mix within priority sectors
+
+- High-value sectors such as Transport and Power show distinct procurement profiles, with a larger share of spend typically flowing through more competitive methods.
+- Any material use of lower-competition methods in these sectors carries heightened VfM and governance relevance.
+
+9C) Supplier nationality mix (domestic vs cross-border)
+
+```{r}
+sector_nationality <- df %>%
+  filter(sector %in% priority_sectors) %>%
+  group_by(sector, domestic_award) %>%
+  summarise(
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  group_by(sector) %>%
+  mutate(share = spend_total / sum(spend_total))
+
+sector_nationality
+
+ggplot(sector_nationality,
+       aes(x = domestic_award, y = spend_total, fill = domestic_award)) +
+  geom_col(show.legend = FALSE) +
+  scale_y_continuous(labels = label_dollar()) +
+  facet_wrap(~ sector) +
+  scale_x_discrete(labels = c("FALSE" = "Cross-border", "TRUE" = "Domestic")) +
+  labs(
+    title = "Domestic vs Cross-border Spend by Sector",
+    x = NULL,
+    y = "Spend (USD)"
+  )
+```
+
+### Supplier nationality mix
+
+- Priority sectors differ in their reliance on domestic versus cross-border suppliers.
+- Higher cross-border shares often reflect technology intensity and limited local capacity, particularly in capital-intensive sectors.
+
+9D) Top suppliers in each sector + cross-country footprint
+
+```{r}
+sector_suppliers <- df %>%
+  filter(sector %in% priority_sectors) %>%
+  group_by(sector, bidder_name) %>%
+  summarise(
+    spend_usd = sum(spend_usd, na.rm = TRUE),
+    awards = n(),
+    countries_served = n_distinct(project_country),
+    .groups = "drop"
+  ) %>%
+  arrange(sector, desc(spend_usd))
+
+sector_suppliers %>%
+  group_by(sector) %>%
+  slice_head(n = 10)
+```
+
+### Top suppliers and footprint
+
+- Sector-level supplier rankings highlight firms with repeated high-value awards.
+- Suppliers operating across multiple countries within a sector often reflect global or regional specialization; dominance by a small number of firms raises concentration considerations.
+
+9E) Contract size distribution by sector
+
+```{r}
+ggplot(df %>% filter(sector %in% priority_sectors),
+       aes(x = spend_usd)) +
+  geom_histogram(bins = 80) +
+  scale_x_log10(labels = label_dollar()) +
+  facet_wrap(~ sector, scales = "free_y") +
+  labs(
+    title = "Contract Size Distribution by Sector (log scale)",
+    x = "Award size (USD)",
+    y = "Count"
+  )
+```
+
+### Contract size distribution
+
+- Contract sizes in priority sectors are highly right-skewed, with a small number of very large awards driving total spend.
+- This reinforces the importance of focusing governance and VfM scrutiny on the upper tail of the distribution.
+
+10) — Integrity / probity risk flags (Red-flag registry)
+
+10A) Helper: concentration tables (country/sector) used as flags
+
+```{r}
+hhi_calc <- function(x){
+  s <- x / sum(x, na.rm = TRUE)
+  sum(s^2, na.rm = TRUE)
+}
+
+conc_country <- df %>%
+  group_by(project_country, bidder_name) %>%
+  summarise(spend = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  group_by(project_country) %>%
+  summarise(
+    country_hhi = hhi_calc(spend),
+    country_top1 = max(spend)/sum(spend),
+    country_top5 = sum(sort(spend, decreasing=TRUE)[1:min(5, n())])/sum(spend),
+    .groups = "drop"
+  )
+
+conc_sector <- df %>%
+  group_by(sector, bidder_name) %>%
+  summarise(spend = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  group_by(sector) %>%
+  summarise(
+    sector_hhi = hhi_calc(spend),
+    sector_top1 = max(spend)/sum(spend),
+    sector_top5 = sum(sort(spend, decreasing=TRUE)[1:min(5, n())])/sum(spend),
+    .groups = "drop"
+  )
+```
+
+10B) Flag 1 — High-value awards under low-competition methods
+
+```{r}
+hv_cut <- quantile(df$spend_usd, 0.95, na.rm = TRUE)
+
+flag_hv_lowcomp <- df %>%
+  filter(proc_mode %in% low_comp_modes, spend_usd >= hv_cut) %>%
+  transmute(
+    flag = "High-value under low-competition method",
+    year, project_country, sector, expense_category, proc_mode,
+    bidder_name, bidder_nationality,
+    project_def, loan_number, tender_num, contr_no,
+    spend_usd
+  )
+```
+
+10C) Flag 2 — Single supplier dominates a project/loan (≥ 80% of spend)
+
+```{r}
+proj_supplier_share <- df %>%
+  group_by(project_def, loan_number, bidder_name) %>%
+  summarise(spend = sum(spend_usd, na.rm = TRUE), .groups="drop") %>%
+  group_by(project_def, loan_number) %>%
+  mutate(project_total = sum(spend),
+         share = spend / project_total) %>%
+  ungroup()
+
+flag_project_dom <- proj_supplier_share %>%
+  filter(share >= 0.80) %>%
+  transmute(
+    flag = "Single supplier dominates project/loan (>=80% spend)",
+    year = NA_integer_,
+    project_country = NA_character_,
+    sector = NA_character_,
+    expense_category = NA_character_,
+    proc_mode = NA_character_,
+    bidder_name,
+    bidder_nationality = NA_character_,
+    project_def, loan_number,
+    tender_num = NA_character_,
+    contr_no = NA_character_,
+    spend_usd = spend,
+    extra = paste0("Share=", scales::percent(share))
+  )
+```
+
+10D) Flag 3 — Fragmentation (many awards + high micro-award share)
+
+```{r}
+frag_proj <- df %>%
+  group_by(project_def, loan_number) %>%
+  summarise(
+    awards = n(),
+    spend_total = sum(spend_usd, na.rm = TRUE),
+    p_below_50k  = mean(spend_usd <  50000, na.rm = TRUE),
+    p_below_100k = mean(spend_usd < 100000, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+flag_frag <- frag_proj %>%
+  filter(awards >= 30 & (p_below_50k >= 0.50 | p_below_100k >= 0.70)) %>%
+  transmute(
+    flag = "Fragmentation: many awards + high micro-award share",
+    year = NA_integer_,
+    project_country = NA_character_,
+    sector = NA_character_,
+    expense_category = NA_character_,
+    proc_mode = NA_character_,
+    bidder_name = NA_character_,
+    bidder_nationality = NA_character_,
+    project_def, loan_number,
+    tender_num = NA_character_,
+    contr_no = NA_character_,
+    spend_usd = spend_total,
+    extra = paste0("awards=", awards,
+                   "; <50k=", scales::percent(p_below_50k),
+                   "; <100k=", scales::percent(p_below_100k))
+  )
+```
+
+10E) Flag 4 — Extreme concentration contexts (country/sector)
+
+We’ll mark countries/sectors with HHI > 0.18 OR Top-1 ≥ 50% OR Top-5 ≥ 80% as “high concentration environments”.
+
+```{r}
+high_conc_countries <- conc_country %>%
+  filter(country_hhi > 0.18 | country_top1 >= 0.50 | country_top5 >= 0.80) %>%
+  mutate(extra = paste0("HHI=", round(country_hhi,3),
+                        "; Top1=", scales::percent(country_top1),
+                        "; Top5=", scales::percent(country_top5))) %>%
+  select(project_country, extra)
+
+high_conc_sectors <- conc_sector %>%
+  filter(sector_hhi > 0.18 | sector_top1 >= 0.50 | sector_top5 >= 0.80) %>%
+  mutate(extra = paste0("HHI=", round(sector_hhi,3),
+                        "; Top1=", scales::percent(sector_top1),
+                        "; Top5=", scales::percent(sector_top5))) %>%
+  select(sector, extra)
+
+flag_high_conc_context <- df %>%
+  left_join(high_conc_countries, by = "project_country") %>%
+  rename(country_extra = extra) %>%
+  left_join(high_conc_sectors, by = "sector") %>%
+  rename(sector_extra = extra) %>%
+  filter(!is.na(country_extra) | !is.na(sector_extra)) %>%
+  transmute(
+    flag = "Award occurs in high-concentration country/sector (context)",
+    year, project_country, sector, expense_category, proc_mode,
+    bidder_name, bidder_nationality,
+    project_def, loan_number, tender_num, contr_no,
+    spend_usd,
+    extra = paste(
+      ifelse(is.na(country_extra), "", paste0("Country: ", country_extra)),
+      ifelse(is.na(sector_extra), "", paste0("Sector: ", sector_extra)),
+      sep = " | "
+    )
+  ) %>%
+  arrange(desc(spend_usd)) %>%
+  slice_head(n = 200)  # keep registry manageable
+```
+
+10F) Combine into one registry
+
+```{r}
+red_flag_registry <- bind_rows(
+  flag_hv_lowcomp,
+  flag_project_dom,
+  flag_frag,
+  flag_high_conc_context
+) %>%
+  arrange(desc(spend_usd))
+
+red_flag_registry %>% slice_head(n = 250)
+```
+
+### Integrity / probity screening registry (evidence-based)
+
+This dataset does not include bidder counts, evaluation scores, or timing, so the “red flags” below are **screening indicators** rather than proof of wrongdoing. They are designed to prioritize follow-up questions and document review.
+
+Flags used:
+- **High-value awards under low-competition methods** (top 5% of award sizes within DNP/SHL/NSH/ISH-type modes)
+- **Single supplier dominance** within a project/loan (≥ 80% of project spend)
+- **Fragmentation** (projects/loans with many awards and high shares of micro-awards under common thresholds)
+- **High concentration context** (awards occurring in countries/sectors with high HHI or high top-supplier dominance)
+
+These indicators provide a practical, defensible starting point for deeper governance and value-for-money review.
+
+11) Currency conversion sanity check (data quality / assurance)
+Goal: compare Cont. Am. (UAC) vs Equiv. (USD) to compute an implied conversion rate and flag anomalies.
+
+11A) Compute implied conversion rate at award level
+
+```{r}
+fx_award <- df %>%
+  filter(!is.na(cont_uac), cont_uac > 0,
+         !is.na(spend_usd), spend_usd > 0) %>%
+  mutate(implied_rate = spend_usd / cont_uac)
+
+summary(fx_award$implied_rate)
+```
+
+11B) Summarize implied rates by Year × Country (median + p10/p90)
+
+```{r}
+fx_summary <- fx_award %>%
+  group_by(year, project_country) %>%
+  summarise(
+    n = n(),
+    rate_median = median(implied_rate, na.rm = TRUE),
+    rate_p10 = quantile(implied_rate, 0.10, na.rm = TRUE),
+    rate_p90 = quantile(implied_rate, 0.90, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(n))
+
+fx_summary %>% slice_head(n = 50)
+
+library(ggplot2)
+
+fx_year <- fx_award %>%
+  group_by(year) %>%
+  summarise(
+    rate_median = median(implied_rate, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+ggplot(fx_year, aes(x = year, y = rate_median)) +
+  geom_line() + geom_point() +
+  labs(
+    title = "Median Implied Conversion Factor by Year",
+    x = NULL,
+    y = "USD / UAC (implied)"
+  )
+```
+
+11C) Outlier report (award-level)
+
+We flag extreme implied rates using robust quantiles (1st/99th percentiles).
+
+```{r}
+lo <- quantile(fx_award$implied_rate, 0.01, na.rm = TRUE)
+hi <- quantile(fx_award$implied_rate, 0.99, na.rm = TRUE)
+
+fx_outliers <- fx_award %>%
+  filter(implied_rate < lo | implied_rate > hi) %>%
+  transmute(
+    year, project_country, sector, expense_category, proc_mode,
+    bidder_name, bidder_nationality,
+    project_def, loan_number, tender_num, contr_no,
+    cont_uac, spend_usd,
+    implied_rate
+  ) %>%
+  arrange(desc(implied_rate))
+
+fx_outliers %>% slice_head(n = 200)
+```
+
+11D) Country/year “instability” flags (wide p10–p90 bands)
+
+```{r}
+fx_instability <- fx_summary %>%
+  mutate(spread = rate_p90 - rate_p10) %>%
+  arrange(desc(spread))
+
+fx_instability %>% slice_head(n = 50)
+```
+
+### Currency conversion sanity check (UAC → USD)
+
+- We compute an implied conversion factor as **USD-equivalent / UAC amount** for each award, then summarize patterns by year and country.
+- Stable implied rates within a year-country group are a basic signal of consistent conversion; unusually wide spreads or extreme outliers may indicate data issues (e.g., wrong currency tagging, decimal shifts, or conversion errors).
+- The outlier list is intended as a **data quality follow-up** tool and supports a transparent “assurance notes” section in reporting.
+
+12) Network view (“who supplies whom”)
+
+12A) Core supply corridors (Country → Supplier Nationality)
+
+```{r}
+corridors <- df %>%
+  filter(!is.na(bidder_nationality), bidder_nationality != "") %>%
+  group_by(project_country, bidder_nationality) %>%
+  summarise(
+    spend_usd = sum(spend_usd, na.rm = TRUE),
+    awards = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(spend_usd))
+
+corridors %>% slice_head(n = 50)
+```
+
+“Top corridors” table (management-ready)
+
+```{r}
+top_corridors <- corridors %>%
+  slice_head(n = 25)
+
+top_corridors
+```
+
+### Procurement supply corridors (country → supplier nationality)
+
+- This table shows the strongest **procurement corridors**, linking project countries to the nationalities of winning suppliers.
+- Heavy reliance on a small number of external source countries can indicate specialization or regional integration, but also highlights **dependence risks** if supplier bases are narrow.
+
+12B) Country-centric corridor view (who supplies each country)
+
+```{r}
+country_corridors <- corridors %>%
+  group_by(project_country) %>%
+  mutate(share = spend_usd / sum(spend_usd)) %>%
+  arrange(project_country, desc(spend_usd))
+
+country_corridors %>% slice_head(n = 50)
+```
+
+Top 5 Supplier Nationalities per country
+
+```{r}
+country_corridors %>%
+  group_by(project_country) %>%
+  slice_head(n = 5) %>%
+  ungroup()
+```
+
+### Country sourcing profiles
+
+- Each project country exhibits a distinct sourcing profile, combining domestic suppliers and a small number of key external supplier nationalities.
+- Concentration in a few supplier countries strengthens the case for targeted supplier-market development or diversification strategies.
+
+12C) Network visualization
+
+```{r}
+library(ggplot2)
+library(scales)
+
+ggplot(
+  country_corridors %>%
+    group_by(project_country) %>%
+    slice_head(n = 5),
+  aes(x = bidder_nationality, y = spend_usd)
+) +
+  geom_col() +
+  coord_flip() +
+  facet_wrap(~ project_country, scales = "free_y") +
+  scale_y_continuous(labels = label_dollar()) +
+  labs(
+    title = "Top Supplier Nationalities by Project Country",
+    x = "Supplier nationality",
+    y = "Spend (USD)"
+  )
+```
+
+### Network view: who supplies whom
+
+- The supply-network view highlights the structure of procurement relationships across countries and supplier nationalities.
+- Strong corridors reflect specialization and regional trade patterns, while sparse networks may indicate thin markets or limited competition.
+- This perspective complements concentration and domestic-share analysis by showing **dependency paths**, not just aggregate shares.
+
+
+
+

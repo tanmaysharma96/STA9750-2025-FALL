@@ -1271,7 +1271,3 @@ ggplot(
 - The supply-network view highlights the structure of procurement relationships across countries and supplier nationalities.
 - Strong corridors reflect specialization and regional trade patterns, while sparse networks may indicate thin markets or limited competition.
 - This perspective complements concentration and domestic-share analysis by showing **dependency paths**, not just aggregate shares.
-
-
-
-

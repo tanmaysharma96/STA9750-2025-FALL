@@ -1797,5 +1797,3 @@ Section 12 visualizes **procurement supply corridors**, defined as the linkage b
 - Countries shown here are the **top spenders** in the portfolio; patterns for smaller portfolios may differ and should be interpreted cautiously.
 
 Supply corridors should be interpreted **alongside domestic share and supplier concentration metrics**. A strong external corridor is not inherently problematic, but when combined with **high concentration, repeat awards, or low-competition procurement methods**, it becomes a relevant signal for deeper market and governance review.
-
-

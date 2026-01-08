@@ -1,0 +1,126 @@
+---
+title: "AfDB Awarded Contracts (2020–2025)"
+subtitle: "Procurement method mix, sourcing patterns, concentration, fragmentation, and integrity screening"
+author: "Tanmay Sharma"
+date: last-modified
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+    code-summary: "Show code"
+    smooth-scroll: true
+    anchor-sections: true
+    page-layout: full
+execute:
+  warning: false
+  message: false
+params:
+  data_path: "C:/Users/tanma/Downloads/listing_of_awarded_contracts_from_2020_to_2025_-_october_2025 (3).xlsx"
+  low_comp_modes: ["DNP", "SHL", "NSH", "ISH"]
+  top_n_tables: 15
+---
+
+## 1.1 Overview
+
+::: {.callout-note}
+### Purpose  
+This report analyzes AfDB awarded contracts (2020–2025) to understand (i) procurement method mix and value concentration, (ii) domestic vs cross-border sourcing patterns, (iii) supplier concentration and repeat-award dynamics, and (iv) integrity-oriented screening flags.
+
+### What this section does  
+We (1) load required packages, (2) define small helper functions for numeric parsing and formatting, and (3) import and clean the raw Excel file into a single analysis dataset (`df`) used throughout the report.
+
+### Outputs  
+A short “data snapshot” confirms row counts, spend totals, and basic coverage before analysis begins.
+:::
+
+## 1.2 Setup + Ingestion
+
+```{r}
+rm(list = ls())
+gc()
+
+--- Libraries ---
+
+library(readxl)
+library(dplyr)
+library(janitor)
+library(stringr)
+library(readr)
+library(tidyr)
+library(forcats)
+library(ggplot2)
+library(scales)
+library(gt)
+
+# --- File path (EDIT THIS) ---
+
+path <- "C:/Users/tanma/Downloads/listing_of_awarded_contracts_from_2020_to_2025_-_october_2025 (3).xlsx"
+
+# --- Helpers ---
+
+to_num <- function(x){
+if (is.numeric(x)) return(x)
+readr::parse_number(as.character(x))
+}
+
+theme_report <- function(){
+theme_minimal(base_size = 12) +
+theme(
+plot.title.position = "plot",
+plot.title = element_text(face = "bold"),
+axis.title.y = element_text(margin = margin(r = 8)),
+axis.title.x = element_text(margin = margin(t = 8)),
+panel.grid.minor = element_blank()
+)
+}
+
+# --- Read + clean ---
+
+raw <- read_excel(path, skip = 2)
+
+df <- raw %>%
+clean_names() %>%
+select(where(~ !all(is.na(.)))) %>%
+mutate(
+year = as.integer(year),
+spend_usd = to_num(equiv_usd),
+cont_uac = to_num(cont_am_uac),
+
+project_def = str_squish(as.character(project_def)),
+loan_number = str_squish(as.character(loan_number)),
+bidder_name = str_squish(as.character(bidder_name)),
+bidder_nationality = str_squish(as.character(bidder_nationality)),
+project_country = str_squish(as.character(project_country)),
+sector = str_squish(as.character(sector)),
+proc_mode = str_to_upper(str_squish(as.character(proc_mode))),
+expense_category = str_to_upper(str_squish(as.character(expense_category))),
+
+domestic_award = (str_to_upper(bidder_nationality) == str_to_upper(project_country))
+
+) %>%
+filter(!is.na(year), !is.na(spend_usd)) %>%
+filter(year >= 2020, year <= 2025) %>%
+select(-matches("^x[0-9]+$"))
+
+# --- Snapshot (management-friendly) ---
+
+snapshot <- df %>%
+summarise(
+awards = n(),
+spend_total = sum(spend_usd, na.rm = TRUE),
+countries = n_distinct(project_country),
+sectors = n_distinct(sector),
+domestic_share = sum(spend_usd[domestic_award], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE)
+)
+
+snapshot %>%
+gt() %>%
+fmt_number(columns = c(awards, countries, sectors), decimals = 0) %>%
+fmt_currency(columns = spend_total, currency = "USD", decimals = 0) %>%
+fmt_percent(columns = domestic_share, decimals = 1) %>%
+tab_header(title = "Dataset Snapshot (2020–2025)") %>%
+tab_options(table.font.size = px(13))
+```

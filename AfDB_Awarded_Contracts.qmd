@@ -216,42 +216,46 @@ library(gt)
 library(scales)
 
 method_value_tbl <- df %>%
-group_by(proc_mode) %>%
-summarise(
-awards = n(),
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-usd_share = total_spend_usd / sum(spend_usd, na.rm = TRUE),
-p25 = quantile(spend_usd, 0.25, na.rm = TRUE),
-p50 = quantile(spend_usd, 0.50, na.rm = TRUE),
-p75 = quantile(spend_usd, 0.75, na.rm = TRUE),
-p90 = quantile(spend_usd, 0.90, na.rm = TRUE),
-.groups = "drop"
-) %>%
-arrange(desc(total_spend_usd))
+  group_by(proc_mode) %>%
+  summarise(
+    awards = n(),
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    p25 = quantile(spend_usd, 0.25, na.rm = TRUE),
+    p50 = quantile(spend_usd, 0.50, na.rm = TRUE),
+    p75 = quantile(spend_usd, 0.75, na.rm = TRUE),
+    p90 = quantile(spend_usd, 0.90, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    usd_share = total_spend_usd / sum(total_spend_usd, na.rm = TRUE),
+    award_share = awards / sum(awards, na.rm = TRUE)
+  ) %>%
+  arrange(desc(total_spend_usd))
 
 method_value_tbl %>%
-gt() %>%
-cols_label(
-proc_mode = "Procurement mode",
-awards = "Awards (count)",
-total_spend_usd = "Total spend (USD)",
-usd_share = "Share of total spend",
-p25 = "P25 award (USD)",
-p50 = "Median award (USD)",
-p75 = "P75 award (USD)",
-p90 = "P90 award (USD)"
-) %>%
-fmt_number(columns = awards, decimals = 0) %>%
-fmt_currency(
-columns = c(total_spend_usd, p25, p50, p75, p90),
-currency = "USD",
-decimals = 0
-) %>%
-fmt_percent(columns = usd_share, decimals = 1) %>%
-tab_header(
-title = "Procurement Method Mix — Contract Value Distribution",
-subtitle = "Award percentiles and value-weighted share (2020–2025)"
-)
+  gt() %>%
+  cols_label(
+    proc_mode = "Procurement mode",
+    awards = "Awards (count)",
+    award_share = "Share of contract awards",
+    total_spend_usd = "Total spend (USD)",
+    usd_share = "Share of total spend",
+    p25 = "P25 award (USD)",
+    p50 = "Median award (USD)",
+    p75 = "P75 award (USD)",
+    p90 = "P90 award (USD)"
+  ) %>%
+  fmt_number(columns = awards, decimals = 0) %>%
+  fmt_currency(
+    columns = c(total_spend_usd, p25, p50, p75, p90),
+    currency = "USD",
+    decimals = 0
+  ) %>%
+  fmt_percent(columns = c(award_share, usd_share), decimals = 1) %>%
+  tab_header(
+    title = "Procurement Method Mix — Contract Value Distribution",
+    subtitle = "Award percentiles and value-weighted share (2020–2025)"
+  )
 ```
 
 **Interpretation.**  
@@ -261,18 +265,54 @@ Modes carrying a disproportionate share of total spend warrant closer scrutiny t
 ### Distribution Visual (Log Scale)
 
 ```{r}
+library(dplyr)
 library(ggplot2)
 library(scales)
 
-ggplot(df, aes(x = proc_mode, y = spend_usd)) +
-geom_violin(trim = TRUE, fill = "grey85") +
-geom_boxplot(width = 0.15, outlier.alpha = 0.2) +
-scale_y_log10(labels = label_dollar()) +
-labs(
-title = "Award Size Distribution by Procurement Mode (log scale)",
-x = "Procurement mode",
-y = "Award size (USD, log scale)"
+# Desired order (codes remain unchanged in df)
+mode_order <- c("ICB","NCB","LIC","ISH","NSH","SHL","DNP")
+
+# Full-form labels for plotting ONLY (does not modify df$proc_mode)
+mode_labels <- c(
+  ICB = "ICB — International Competitive Bidding",
+  NCB = "NCB — National Competitive Bidding",
+  LIC = "LIC — Limited International Competitive Bidding",
+  ISH = "ISH — International Shopping",
+  NSH = "NSH — National Shopping",
+  SHL = "SHL — Short List",
+  DNP = "DNP — Direct Negotiation / Procurement"
 )
+
+df_plot <- df %>%
+  filter(!is.na(proc_mode), proc_mode != "") %>%                 # drop NA/blank
+  mutate(proc_mode = toupper(proc_mode)) %>%                     # safety: standardize case
+  filter(proc_mode %in% mode_order) %>%                          # keep only the 7 modes
+  mutate(proc_mode = factor(proc_mode, levels = mode_order))     # enforce x order
+
+ggplot(df_plot, aes(x = proc_mode, y = spend_usd, fill = proc_mode)) +
+  geom_violin(trim = TRUE, alpha = 0.70, color = NA) +
+  geom_boxplot(width = 0.18, outlier.alpha = 0.12, color = "grey20", fill = "white") +
+  stat_summary(fun = median, geom = "point", size = 2.2, color = "grey10") +
+  scale_y_log10(
+    labels = label_dollar(),
+    breaks = c(1e3, 1e4, 1e5, 1e6, 1e7, 1e8)
+  ) +
+  scale_x_discrete(labels = mode_labels) +
+  scale_fill_brewer(palette = "Set2", guide = "none") +
+  annotation_logticks(sides = "l", color = "grey60") +
+  labs(
+    title = "Award Size Distribution by Procurement Mode",
+    subtitle = "Violin = distribution; box = IQR; point = median (log scale)",
+    x = NULL,
+    y = "Award size (USD, log scale)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    axis.text.x = element_text(angle = 25, hjust = 1),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank()
+  )
 ```
 
 ## Domestic vs Cross-Border Sourcing
@@ -291,113 +331,268 @@ Results are presented at the **country**, **expense-category**, and **time-serie
 library(dplyr)
 library(gt)
 library(scales)
+library(stringr)
 
-country_domestic_tbl <- df %>%
-group_by(project_country) %>%
-summarise(
-awards = n(),
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-domestic_spend_usd = sum(spend_usd[domestic_award], na.rm = TRUE),
-domestic_share = domestic_spend_usd / total_spend_usd,
-cross_border_share = 1 - domestic_share,
-.groups = "drop"
-) %>%
-arrange(desc(total_spend_usd))
+# Define "Infrastructure" sectors (per your definition)
+infra_sectors <- c("WATER SUPPLY", "POWER", "TRANSPORT", "COMMUNICATIONS")
+
+# Clean sector just for this section's logic (does not overwrite df)
+df_country <- df %>%
+  mutate(
+    sector_std = str_to_upper(str_squish(as.character(sector))),
+    project_country_std = str_squish(as.character(project_country))
+  )
+
+# --- Main table: EXCLUDE Multi-Countries ---
+country_domestic_tbl <- df_country %>%
+  filter(!is.na(project_country_std), project_country_std != "") %>%
+  filter(str_to_upper(project_country_std) != "MULTI-COUNTRIES") %>%
+  group_by(project_country = project_country_std) %>%
+  summarise(
+    awards = n(),
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    median_award_usd = median(spend_usd, na.rm = TRUE),
+    domestic_spend_usd = sum(spend_usd[domestic_award], na.rm = TRUE),
+    domestic_share = domestic_spend_usd / total_spend_usd,
+    cross_border_share = 1 - domestic_share,
+    infra_spend_usd = sum(spend_usd[sector_std %in% infra_sectors], na.rm = TRUE),
+    infra_share = infra_spend_usd / total_spend_usd,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_spend_usd))
 
 country_domestic_tbl %>%
-gt() %>%
-cols_label(
-project_country = "Project country",
-awards = "Awards (count)",
-total_spend_usd = "Total spend (USD)",
-domestic_spend_usd = "Domestic spend (USD)",
-domestic_share = "Domestic share",
-cross_border_share = "Cross-border share"
-) %>%
-fmt_number(columns = awards, decimals = 0) %>%
-fmt_currency(
-columns = c(total_spend_usd, domestic_spend_usd),
-currency = "USD",
-decimals = 0
-) %>%
-fmt_percent(
-columns = c(domestic_share, cross_border_share),
-decimals = 1
-) %>%
-tab_header(
-title = "Domestic vs Cross-Border Sourcing by Country",
-subtitle = "Share of procurement spend by supplier nationality (2020–2025)"
-)
+  gt() %>%
+  cols_label(
+    project_country = "Project country",
+    awards = "Awards (count)",
+    total_spend_usd = "Total spend (USD)",
+    median_award_usd = "Median award (USD)",
+    infra_spend_usd = "Infrastructure spend (USD)",
+    infra_share = "Infrastructure share of total spend",
+    domestic_spend_usd = "Domestic spend (USD)",
+    domestic_share = "Domestic share",
+    cross_border_share = "Cross-border share"
+  ) %>%
+  fmt_number(columns = awards, decimals = 0) %>%
+  fmt_currency(
+    columns = c(total_spend_usd, domestic_spend_usd, median_award_usd, infra_spend_usd),
+    currency = "USD",
+    decimals = 0
+  ) %>%
+  fmt_percent(columns = c(infra_share, domestic_share, cross_border_share), decimals = 1) %>%
+  tab_header(
+    title = "Domestic vs Cross-Border Sourcing by Country (Excluding Multi-Countries)",
+    subtitle = "Adds award-size context and infrastructure dependence (2020–2025)"
+  ) %>%
+  tab_source_note(
+    source_note = md("Infrastructure = **Water Supply + Power + Transport + Communications**.")
+  )
+```
+
+### Cross-Border Share Heat Map (Country × Year)
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(stringr)
+library(sf)
+library(rnaturalearth)
+library(countrycode)
+library(plotly)
+
+# --- Compute cross-border share by country (exclude Multi-Countries) ---
+cross_border_country <- df %>%
+  mutate(project_country_std = str_squish(as.character(project_country))) %>%
+  filter(!is.na(project_country_std), project_country_std != "") %>%
+  filter(str_to_upper(project_country_std) != "MULTI-COUNTRIES") %>%
+  group_by(project_country = project_country_std) %>%
+  summarise(
+    awards = n(),
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    cross_border_share = sum(spend_usd[!domestic_award], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(iso3 = countrycode(project_country, origin = "country.name", destination = "iso3c"))
+
+# --- Africa map + join ---
+africa_sf <- ne_countries(scale = "medium", returnclass = "sf") %>%
+  filter(continent == "Africa")
+
+africa_map_df <- africa_sf %>%
+  left_join(cross_border_country, by = c("iso_a3" = "iso3")) %>%
+  mutate(
+    hover = ifelse(
+      is.na(cross_border_share),
+      paste0("<b>", name, "</b><br>No data in extract"),
+      paste0(
+        "<b>", name, "</b>",
+        "<br>Cross-border share: ", scales::percent(cross_border_share, accuracy = 0.1),
+        "<br>Total spend: ", scales::dollar(total_spend_usd, accuracy = 1),
+        "<br>Awards: ", format(awards, big.mark = ",")
+      )
+    )
+  )
+
+# --- Static ggplot base (with hover text) ---
+p <- ggplot(africa_map_df) +
+  geom_sf(aes(fill = cross_border_share, text = hover), color = "white", linewidth = 0.25) +
+  scale_fill_viridis_c(
+    option = "C",
+    labels = percent_format(accuracy = 1),
+    limits = c(0, 1),
+    na.value = "grey92",
+    name = "Cross-border share"
+  ) +
+  labs(
+    title = "Cross-Border Share of Procurement Spend (Africa Map)",
+    subtitle = "Hover to see country name + metrics (2020–2025). Multi-Countries excluded."
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    panel.grid = element_blank(),
+    axis.text = element_blank(),
+    axis.title = element_blank()
+  )
+
+# --- Convert to interactive plotly ---
+ggplotly(p, tooltip = "text") %>%
+  layout(margin = list(l = 10, r = 10, b = 10, t = 60))
 ```
 
 ### Domestic Share by Expense Category
 
 ```{r}
+expense_keep <- c("WORKS", "GOODS", "SERVICES")
+
 expense_domestic_tbl <- df %>%
-group_by(expense_category) %>%
-summarise(
-awards = n(),
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-domestic_share = sum(spend_usd[domestic_award], na.rm = TRUE) / sum(spend_usd),
-cross_border_share = 1 - domestic_share,
-.groups = "drop"
-) %>%
-arrange(desc(total_spend_usd))
+  mutate(expense_category = toupper(trimws(as.character(expense_category)))) %>%
+  filter(!is.na(expense_category), expense_category %in% expense_keep) %>%
+  group_by(expense_category) %>%
+  summarise(
+    awards = n(),
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    domestic_share = sum(spend_usd[domestic_award], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+    cross_border_share = 1 - domestic_share,
+    .groups = "drop"
+  ) %>%
+  arrange(match(expense_category, expense_keep))  # WORKS, GOODS, SERVICES order
 
 expense_domestic_tbl %>%
-gt() %>%
-cols_label(
-expense_category = "Expense category",
-awards = "Awards (count)",
-total_spend_usd = "Total spend (USD)",
-domestic_share = "Domestic share",
-cross_border_share = "Cross-border share"
-) %>%
-fmt_number(columns = awards, decimals = 0) %>%
-fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
-fmt_percent(columns = c(domestic_share, cross_border_share), decimals = 1) %>%
-tab_header(
-title = "Domestic vs Cross-Border Sourcing by Expense Category",
-subtitle = "Structural sourcing patterns by contract type"
-)
+  gt() %>%
+  cols_label(
+    expense_category = "Expense category",
+    awards = "Awards (count)",
+    total_spend_usd = "Total spend (USD)",
+    domestic_share = "Domestic share",
+    cross_border_share = "Cross-border share"
+  ) %>%
+  fmt_number(columns = awards, decimals = 0) %>%
+  fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
+  fmt_percent(columns = c(domestic_share, cross_border_share), decimals = 1) %>%
+  tab_header(
+    title = "Domestic vs Cross-Border Sourcing by Expense Category",
+    subtitle = "Structural sourcing patterns by contract type (Works, Goods, Services only)"
+  )
 ```
 
 ### Trend Over Time — Is Cross-Border Sourcing Increasing?
 
 ```{r}
+library(dplyr)
+library(stringr)
+library(countrycode)
+library(gt)
+library(scales)
 library(ggplot2)
+library(tidyr)
 
-domestic_trend <- df %>%
-group_by(year) %>%
-summarise(
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-cross_border_share = sum(spend_usd[!domestic_award], na.rm = TRUE) / sum(spend_usd),
-.groups = "drop"
-)
+# --- Prep: classify supplier nationality by continent, drop 2025 ---
+df_trend <- df %>%
+  filter(!is.na(year), year <= 2024) %>%     # REMOVE 2025
+  mutate(
+    bidder_nat_std = str_squish(as.character(bidder_nationality)),
+    bidder_continent = countrycode(bidder_nat_std, origin = "country.name", destination = "continent"),
+    supplier_in_africa = (bidder_continent == "Africa")
+  )
 
+# --- Build trend table ---
+domestic_trend <- df_trend %>%
+  group_by(year) %>%
+  summarise(
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+
+    cross_border_share =
+      sum(spend_usd[!domestic_award], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+
+    cross_border_within_africa_share =
+      sum(spend_usd[!domestic_award & supplier_in_africa %in% TRUE], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+
+    cross_border_outside_africa_share =
+      sum(spend_usd[!domestic_award & supplier_in_africa %in% FALSE], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+
+    .groups = "drop"
+  )
+
+# --- Table output ---
 domestic_trend %>%
-gt() %>%
-cols_label(
-year = "Year",
-total_spend_usd = "Total spend (USD)",
-cross_border_share = "Cross-border share"
-) %>%
-fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
-fmt_percent(columns = cross_border_share, decimals = 1) %>%
-tab_header(
-title = "Cross-Border Sourcing Trend Over Time",
-subtitle = "Value-weighted share of cross-border awards"
-)
+  gt() %>%
+  cols_label(
+    year = "Year",
+    total_spend_usd = "Total spend (USD)",
+    cross_border_share = "Cross-border share (total)",
+    cross_border_within_africa_share = "Cross-border share (within Africa)",
+    cross_border_outside_africa_share = "Cross-border share (outside Africa)"
+  ) %>%
+  fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
+  fmt_percent(
+    columns = c(
+      cross_border_share,
+      cross_border_within_africa_share,
+      cross_border_outside_africa_share
+    ),
+    decimals = 1
+  ) %>%
+  tab_header(
+    title = "Cross-Border Sourcing Trend Over Time (Africa vs Outside Africa)",
+    subtitle = "2020–2024 only; cross-border split by supplier nationality continent"
+  )
 
-ggplot(domestic_trend, aes(x = year, y = cross_border_share)) +
-geom_line() +
-geom_point() +
-scale_y_continuous(labels = percent) +
-labs(
-title = "Cross-Border Share of Procurement Spend by Year",
-x = NULL,
-y = "Cross-border share"
-)
+# --- Prepare data for plotting ---
+trend_long <- domestic_trend %>%
+  select(year, cross_border_within_africa_share, cross_border_outside_africa_share) %>%
+  pivot_longer(
+    cols = -year,
+    names_to = "series",
+    values_to = "share"
+  ) %>%
+  mutate(
+    series = recode(
+      series,
+      cross_border_within_africa_share = "Cross-border (within Africa)",
+      cross_border_outside_africa_share = "Cross-border (outside Africa)"
+    )
+  )
+
+# --- Trend chart ---
+ggplot(trend_long, aes(x = year, y = share, color = series)) +
+  geom_line(linewidth = 1.1) +
+  geom_point(size = 2) +
+  scale_y_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Cross-Border Share of Procurement Spend by Year",
+    subtitle = "Within Africa vs Outside Africa (2020–2024)",
+    x = NULL,
+    y = "Share of total spend",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    legend.position = "bottom"
+  )
 ```
 
 **Interpretation.**  
@@ -431,88 +626,125 @@ sum(s^2, na.rm = TRUE)
 ### Concentration by Project Country
 
 ```{r, fig.height=12, fig.width=8}
+library(dplyr)
+library(gt)
+library(scales)
+library(ggplot2)
+
+# Helper: Herfindahl–Hirschman Index (HHI)
+hhi_calc <- function(x) {
+  s <- x / sum(x, na.rm = TRUE)
+  sum(s^2, na.rm = TRUE)
+}
+
 conc_country <- df %>%
-group_by(project_country, bidder_name) %>%
-summarise(spend_usd = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
-group_by(project_country) %>%
-summarise(
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-suppliers = n(),
-hhi = hhi_calc(spend_usd),
-top1_share = max(spend_usd, na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
-top5_share = sum(sort(spend_usd, decreasing = TRUE)[seq_len(min(5, dplyr::n()))], na.rm = TRUE) /
-             sum(spend_usd, na.rm = TRUE),
+  filter(!is.na(project_country), project_country != "") %>%
+  group_by(project_country, bidder_name) %>%
+  summarise(spend_usd = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  group_by(project_country) %>%
+  summarise(
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    suppliers = n(),
+    hhi = hhi_calc(spend_usd),
+    top1_share = max(spend_usd, na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+    top5_share = sum(sort(spend_usd, decreasing = TRUE)[seq_len(min(5, dplyr::n()))], na.rm = TRUE) /
+      sum(spend_usd, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(total_spend_usd))
 
-.groups = "drop"
-) %>%
-arrange(desc(hhi))
-
+# Table (sorted by total spend)
 conc_country %>%
-gt() %>%
-cols_label(
-project_country = "Project country",
-total_spend_usd = "Total spend (USD)",
-suppliers = "Suppliers (count)",
-hhi = "HHI",
-top1_share = "Top-1 share",
-top5_share = "Top-5 share"
-) %>%
-fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
-fmt_number(columns = suppliers, decimals = 0) %>%
-fmt_number(columns = hhi, decimals = 3) %>%
-fmt_percent(columns = c(top1_share, top5_share), decimals = 1) %>%
-tab_header(
-title = "Supplier Concentration by Project Country",
-subtitle = "HHI and top-supplier dominance (value-weighted)"
-)
+  gt() %>%
+  cols_label(
+    project_country = "Project country",
+    total_spend_usd = "Total spend (USD)",
+    suppliers = "Suppliers (count)",
+    hhi = "HHI",
+    top1_share = "Top-1 share",
+    top5_share = "Top-5 share"
+  ) %>%
+  fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
+  fmt_number(columns = suppliers, decimals = 0) %>%
+  fmt_number(columns = hhi, decimals = 3) %>%
+  fmt_percent(columns = c(top1_share, top5_share), decimals = 1) %>%
+  tab_header(
+    title = "Supplier Concentration by Project Country",
+    subtitle = "Sorted by total spend (highest first); HHI and top-supplier dominance (value-weighted)"
+  )
 
+# HHI graph (keep)
 ggplot(conc_country, aes(x = reorder(project_country, hhi), y = hhi)) +
-geom_col() +
-coord_flip() +
-geom_hline(yintercept = c(0.10, 0.18), linetype = "dashed", color = "grey40") +
-scale_y_continuous(labels = number_format(accuracy = 0.01)) +
-labs(
-title = "Supplier Concentration by Project Country (HHI)",
-x = "Project country",
-y = "HHI"
-)
+  geom_col(fill = "grey50") +
+  coord_flip() +
+  geom_hline(yintercept = c(0.10, 0.18), linetype = "dashed", color = "grey40") +
+  scale_y_continuous(labels = number_format(accuracy = 0.01)) +
+  labs(
+    title = "Supplier Concentration by Project Country (HHI)",
+    subtitle = "Dashed lines at HHI = 0.10 and 0.18 (screening thresholds)",
+    x = "Project country",
+    y = "HHI"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    panel.grid.major.y = element_blank()
+  )
 ```
 
 ### Concentration by Sector
 
 ```{r}
+library(dplyr)
+library(stringr)
+library(gt)
+library(scales)
+
+# Helper if not already defined in an earlier chunk
+hhi_calc <- function(x) {
+  s <- x / sum(x, na.rm = TRUE)
+  sum(s^2, na.rm = TRUE)
+}
+
+infra_sectors <- c("WATER SUPPLY", "POWER", "TRANSPORT", "COMMUNICATIONS")
+
 conc_sector <- df %>%
-group_by(sector, bidder_name) %>%
-summarise(spend_usd = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
-group_by(sector) %>%
-summarise(
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-suppliers = n(),
-hhi = hhi_calc(spend_usd),
-top1_share = max(spend_usd, na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
-top5_share = sum(sort(spend_usd, decreasing = TRUE)[1:min(5, n())], na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
-.groups = "drop"
-) %>%
-arrange(desc(hhi))
+  mutate(
+    sector_std = str_to_upper(str_squish(as.character(sector))),
+    sector_group = if_else(sector_std %in% infra_sectors, "INFRASTRUCTURE", sector_std)
+  ) %>%
+  group_by(sector = sector_group, bidder_name) %>%
+  summarise(spend_usd = sum(spend_usd, na.rm = TRUE), .groups = "drop") %>%
+  group_by(sector) %>%
+  summarise(
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    suppliers = n(),
+    hhi = hhi_calc(spend_usd),
+    top1_share = max(spend_usd, na.rm = TRUE) / sum(spend_usd, na.rm = TRUE),
+    top5_share = sum(sort(spend_usd, decreasing = TRUE)[1:min(5, dplyr::n())], na.rm = TRUE) /
+      sum(spend_usd, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(hhi))
 
 conc_sector %>%
-gt() %>%
-cols_label(
-sector = "Sector",
-total_spend_usd = "Total spend (USD)",
-suppliers = "Suppliers (count)",
-hhi = "HHI",
-top1_share = "Top-1 share",
-top5_share = "Top-5 share"
-) %>%
-fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
-fmt_number(columns = suppliers, decimals = 0) %>%
-fmt_number(columns = hhi, decimals = 3) %>%
-fmt_percent(columns = c(top1_share, top5_share), decimals = 1) %>%
-tab_header(
-title = "Supplier Concentration by Sector",
-subtitle = "HHI and top-supplier dominance (value-weighted)"
-)
+  gt() %>%
+  cols_label(
+    sector = "Sector",
+    total_spend_usd = "Total spend (USD)",
+    suppliers = "Suppliers (count)",
+    hhi = "HHI",
+    top1_share = "Top-1 share",
+    top5_share = "Top-5 share"
+  ) %>%
+  fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
+  fmt_number(columns = suppliers, decimals = 0) %>%
+  fmt_number(columns = hhi, decimals = 3) %>%
+  fmt_percent(columns = c(top1_share, top5_share), decimals = 1) %>%
+  tab_header(
+    title = "Supplier Concentration by Sector",
+    subtitle = "Infrastructure = Water Supply + Power + Transport + Communications (value-weighted)"
+  )
 ```
 
 ### Concentration Watchlists (Countries/Sectors with Dominance Thresholds)
@@ -607,66 +839,78 @@ These results are **screening indicators**: repeat engagement may reflect specia
 library(dplyr)
 library(gt)
 library(scales)
+library(stringr)
+
+# helper: most frequent (mode) value
+mode_chr <- function(x){
+  x <- str_squish(as.character(x))
+  x <- x[!is.na(x) & x != ""]
+  if (length(x) == 0) return(NA_character_)
+  names(sort(table(x), decreasing = TRUE))[1]
+}
 
 repeat_cs <- df %>%
-group_by(project_country, sector, bidder_name) %>%
-summarise(
-awards = dplyr::n(),
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-years_active = n_distinct(year),
-.groups = "drop"
-) %>%
-arrange(desc(awards), desc(total_spend_usd))
+  group_by(project_country, sector, bidder_name) %>%
+  summarise(
+    bidder_nationality = mode_chr(bidder_nationality),   # ✅ add nationality
+    awards = dplyr::n(),
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    years_active = n_distinct(year),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(awards), desc(total_spend_usd))
 
 # Top 10 within each country
-
 top_repeat_by_country <- repeat_cs %>%
-group_by(project_country) %>%
-slice_max(order_by = awards, n = 10, with_ties = FALSE) %>%
-ungroup() %>%
-arrange(project_country, desc(awards), desc(total_spend_usd))
+  group_by(project_country) %>%
+  slice_max(order_by = awards, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  arrange(project_country, desc(awards), desc(total_spend_usd))
 
 # Top 10 within each sector
-
 top_repeat_by_sector <- repeat_cs %>%
-group_by(sector) %>%
-slice_max(order_by = awards, n = 10, with_ties = FALSE) %>%
-ungroup() %>%
-arrange(sector, desc(awards), desc(total_spend_usd))
+  group_by(sector) %>%
+  slice_max(order_by = awards, n = 10, with_ties = FALSE) %>%
+  ungroup() %>%
+  arrange(sector, desc(awards), desc(total_spend_usd))
 
+# ---- Table: Top repeat winners within each country ----
 top_repeat_by_country %>%
-gt(groupname_col = "project_country") %>%
-cols_label(
-sector = "Sector",
-bidder_name = "Supplier",
-awards = "Awards (count)",
-total_spend_usd = "Total spend (USD)",
-years_active = "Years active"
-) %>%
-fmt_number(columns = awards, decimals = 0) %>%
-fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
-fmt_number(columns = years_active, decimals = 0) %>%
-tab_header(
-title = "Top Repeat Winners Within Each Country",
-subtitle = "Top 10 suppliers by award count (with spend and persistence)"
-)
+  gt(groupname_col = "project_country") %>%
+  cols_label(
+    sector = "Sector",
+    bidder_name = "Supplier",
+    bidder_nationality = "Supplier nationality",
+    awards = "Awards (count)",
+    total_spend_usd = "Total spend (USD)",
+    years_active = "Years active"
+  ) %>%
+  fmt_number(columns = awards, decimals = 0) %>%
+  fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
+  fmt_number(columns = years_active, decimals = 0) %>%
+  tab_header(
+    title = "Top Repeat Winners Within Each Country",
+    subtitle = "Top 10 suppliers by award count (with nationality, spend, and persistence)"
+  )
 
+# ---- Table: Top repeat winners within each sector ----
 top_repeat_by_sector %>%
-gt(groupname_col = "sector") %>%
-cols_label(
-project_country = "Project country",
-bidder_name = "Supplier",
-awards = "Awards (count)",
-total_spend_usd = "Total spend (USD)",
-years_active = "Years active"
-) %>%
-fmt_number(columns = awards, decimals = 0) %>%
-fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
-fmt_number(columns = years_active, decimals = 0) %>%
-tab_header(
-title = "Top Repeat Winners Within Each Sector",
-subtitle = "Top 10 suppliers by award count (with spend and persistence)"
-)
+  gt(groupname_col = "sector") %>%
+  cols_label(
+    project_country = "Project country",
+    bidder_name = "Supplier",
+    bidder_nationality = "Supplier nationality",
+    awards = "Awards (count)",
+    total_spend_usd = "Total spend (USD)",
+    years_active = "Years active"
+  ) %>%
+  fmt_number(columns = awards, decimals = 0) %>%
+  fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
+  fmt_number(columns = years_active, decimals = 0) %>%
+  tab_header(
+    title = "Top Repeat Winners Within Each Sector",
+    subtitle = "Top 10 suppliers by award count (with nationality, spend, and persistence)"
+  )
 ```
 
 ### Repeat Winners by Project / Loan (incumbency within a project)
@@ -749,57 +993,110 @@ High spend combined with a narrow footprint can be consistent with specializatio
 
 ```{r}
 library(dplyr)
+library(stringr)
 library(gt)
 library(scales)
 
-supplier_footprint <- df %>%
-group_by(bidder_name) %>%
-summarise(
-awards = dplyr::n(),
-total_spend_usd = sum(spend_usd, na.rm = TRUE),
-countries_served = n_distinct(project_country),
-sectors_served = n_distinct(sector),
-years_active = n_distinct(year),
-.groups = "drop"
-) %>%
-arrange(desc(total_spend_usd))
+# Canonical name cleaner (for grouping only, not display)
+clean_name <- function(x){
+  x %>%
+    toupper() %>%
+    str_replace_all("[^A-Z ]", " ") %>%
+    str_replace_all("\\b(LTD|LIMITED|CORP|CORPORATION|CO|GROUP|HOLDING|HOLDINGS|INTL|INTERNATIONAL)\\b", "") %>%
+    str_squish()
+}
 
-supplier_footprint %>%
-slice_head(n = 50) %>%
-gt() %>%
-cols_label(
-bidder_name = "Supplier",
-awards = "Awards (count)",
-total_spend_usd = "Total spend (USD)",
-countries_served = "Countries served",
-sectors_served = "Sectors served",
-years_active = "Years active"
+df_fp <- df %>%
+  mutate(
+    bidder_name_raw = str_squish(as.character(bidder_name)),
+    bidder_name_key = clean_name(bidder_name_raw),
+    bidder_nationality_std = str_squish(as.character(bidder_nationality))
+  ) %>%
+  filter(!is.na(bidder_name_raw), bidder_name_raw != "")
+
+supplier_footprint_nat <- df_fp %>%
+  group_by(bidder_name_raw, bidder_name_key, bidder_nationality_std) %>%
+  summarise(
+    awards = n(),
+    total_spend_usd = sum(spend_usd, na.rm = TRUE),
+    countries_served = n_distinct(project_country),
+    sectors_served = n_distinct(sector),
+    years_active = n_distinct(year),
+    .groups = "drop"
+  )
+
+name_summary <- supplier_footprint_nat %>%
+  group_by(bidder_name_key) %>%
+  summarise(
+    legal_names = paste(unique(bidder_name_raw), collapse = " | "),
+    nationalities_observed = paste(unique(bidder_nationality_std), collapse = " | "),
+    nationality_count = n_distinct(bidder_nationality_std),
+    .groups = "drop"
+  )
+
+supplier_footprint_final <- supplier_footprint_nat %>%
+  left_join(name_summary, by = "bidder_name_key") %>%
+  arrange(desc(total_spend_usd), bidder_name_key, bidder_nationality_std)
+
+top50 <- supplier_footprint_final %>%
+  slice_max(order_by = total_spend_usd, n = 50, with_ties = TRUE) %>%
+  arrange(bidder_name_key, desc(total_spend_usd), bidder_nationality_std)
+
+top50 %>%
+  gt(groupname_col = "bidder_name_key") %>%
+  cols_label(
+  bidder_name_raw = "Legal supplier name",
+  bidder_nationality_std = "Supplier nationality",
+  awards = "Awards",
+  total_spend_usd = "Total spend (USD)",
+  countries_served = "Countries served",
+  sectors_served = "Sectors served",
+  years_active = "Years active",
+  nationality_count = "Nationality variants",
+  nationalities_observed = "All nationalities observed",
+  legal_names = "Legal entity name variants"
 ) %>%
-fmt_number(
-columns = c(awards, countries_served, sectors_served, years_active),
-decimals = 0
-) %>%
-fmt_currency(
-columns = total_spend_usd,
-currency = "USD",
-decimals = 0
-) %>%
-tab_header(
-title = "Top 50 Suppliers by Total Spend — Footprint Summary",
-subtitle = "Breadth (countries/sectors) and persistence (years active)"
-)
+  fmt_number(columns = c(awards, countries_served, sectors_served, years_active, nationality_count), decimals = 0) %>%
+  fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
+  tab_header(
+    title = "Top 50 Suppliers by Total Spend — Canonical Name Grouping",
+    subtitle = "Suppliers clustered by normalized corporate name to reveal subsidiaries and spelling variants (e.g., Sinohydro)"
+  ) %>%
+  tab_source_note(
+    source_note = md("Rows are grouped by a normalized supplier name (case-insensitive, legal suffixes removed) to visually cluster subsidiaries and spelling variants without merging them.")
+  )
 ```
 
 ### Footprint Typology (Classification + Distribution)
 
 ```{r}
+library(dplyr)
+library(gt)
+library(scales)
+
+# 1 row per canonical supplier (bidder_name_key)
+
+supplier_footprint <- supplier_footprint_final %>%
+group_by(bidder_name_key) %>%
+summarise(
+awards = sum(awards, na.rm = TRUE),
+total_spend_usd = sum(total_spend_usd, na.rm = TRUE),
+countries_served = max(countries_served, na.rm = TRUE),
+sectors_served = max(sectors_served, na.rm = TRUE),
+years_active = max(years_active, na.rm = TRUE),
+legal_names = dplyr::first(legal_names),
+nationalities_observed = dplyr::first(nationalities_observed),
+nationality_count = dplyr::first(nationality_count),
+.groups = "drop"
+)
+
 supplier_profile <- supplier_footprint %>%
 mutate(
 footprint_type = case_when(
 countries_served == 1 & sectors_served == 1 ~ "Single-country, single-sector",
-countries_served == 1 & sectors_served > 1  ~ "Single-country, multi-sector",
-countries_served > 1  & sectors_served == 1 ~ "Multi-country, single-sector",
-TRUE                                        ~ "Multi-country, multi-sector"
+countries_served == 1 & sectors_served > 1 ~ "Single-country, multi-sector",
+countries_served > 1 & sectors_served == 1 ~ "Multi-country, single-sector",
+TRUE ~ "Multi-country, multi-sector"
 )
 )
 
@@ -825,19 +1122,36 @@ subtitle = "Distribution of suppliers by breadth of participation"
 ### High-Spend Narrow-Footprint Watchlist (Screening)
 
 ```{r}
+library(dplyr)
+library(gt)
+library(scales)
+
 # High spend threshold (top 5% of suppliers by total spend)
 
 spend_cut <- quantile(supplier_profile$total_spend_usd, 0.95, na.rm = TRUE)
 
 narrow_high_spend <- supplier_profile %>%
-filter(total_spend_usd >= spend_cut,
-countries_served == 1 | sectors_served == 1) %>%
+filter(
+total_spend_usd >= spend_cut,
+countries_served == 1 | sectors_served == 1
+) %>%
 arrange(desc(total_spend_usd))
 
 narrow_high_spend %>%
+select(
+bidder_name_key,
+legal_names,
+total_spend_usd,
+awards,
+countries_served,
+sectors_served,
+years_active,
+footprint_type
+) %>%
 gt() %>%
 cols_label(
-bidder_name = "Supplier",
+bidder_name_key = "Supplier (canonical)",
+legal_names = "Legal entity name variants",
 total_spend_usd = "Total spend (USD)",
 awards = "Awards (count)",
 countries_served = "Countries served",
@@ -849,7 +1163,7 @@ fmt_currency(columns = total_spend_usd, currency = "USD", decimals = 0) %>%
 fmt_number(columns = c(awards, countries_served, sectors_served, years_active), decimals = 0) %>%
 tab_header(
 title = "High-Spend Narrow-Footprint Watchlist",
-subtitle = "Suppliers with high total spend but limited breadth (screening list)"
+subtitle = "Top 5% of suppliers by spend; flagged if single-country OR single-sector footprint"
 )
 ```
 
